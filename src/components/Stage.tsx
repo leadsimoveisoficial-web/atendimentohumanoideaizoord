@@ -15,7 +15,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import zoord from "@/assets/zoord.glb.asset.json";
 import dakkaiLogo from "@/assets/dakkai-logo.png";
-import { MENU, WHATSAPP, ORDER_URL, type Section } from "./menu";
+import { MENU, WHATSAPP, ORDER_URL } from "./menu";
 
 const CYAN = "#3fe0ff";
 const BLUE = "#2f7bff";
