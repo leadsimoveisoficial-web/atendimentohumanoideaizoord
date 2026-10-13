@@ -115,7 +115,7 @@ function Logo() {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => ref.current && (ref.current.rotation.z = clock.elapsedTime * 0.15));
   return (
-    <group position={[0, 5.2, -11.3]}>
+    <group position={[0, 6.6, -11.3]}>
       <mesh ref={ref} position-z={-0.05}>
         <ringGeometry args={[2.35, 2.42, 128]} />
         <meshBasicMaterial color={RED} toneMapped={false} transparent opacity={0.8} />
@@ -128,30 +128,33 @@ function Logo() {
   );
 }
 
+// Organized grid: 2 aligned rows on a curved arc behind Zoord
+const COLS = 6;
 function MenuPage({ s, i, n, onOpen }: { s: Section; i: number; n: number; onOpen: () => void }) {
   const ref = useRef<THREE.Group>(null);
-  // Arc ONLY behind Zoord: spread panels across ±62° at the back of the stage
-  const a = n > 1 ? ((i / (n - 1)) - 0.5) * 2.16 : 0;
-  const R = 6.8;
-  const y0 = 2.0 + (i % 3) * 0.6;
+  const rows = Math.ceil(n / COLS);
+  const row = Math.floor(i / COLS);
+  const col = i % COLS;
+  const inRow = Math.min(COLS, n - row * COLS);
+  const step = 0.3; // equal angular spacing
+  const a = (col - (inRow - 1) / 2) * step;
+  const R = 7.2;
+  const y0 = 2.7 + (rows - 1 - row) * 1.35;
   useFrame(({ clock }) => {
-    if (!ref.current) return;
-    const t = clock.elapsedTime;
-    ref.current.position.y = y0 + Math.sin(t * 0.8 + i) * 0.12;
-    ref.current.rotation.z = Math.sin(t * 0.6 + i) * 0.03;
+    if (ref.current) ref.current.position.y = y0 + Math.sin(clock.elapsedTime * 0.6) * 0.05;
   });
   return (
     <group ref={ref} position={[Math.sin(a) * R, y0, -Math.cos(a) * R]} rotation-y={-a}>
-      <Html transform distanceFactor={4.2} zIndexRange={[10, 0]} style={{ pointerEvents: "auto" }}>
+      <Html transform center distanceFactor={4.2} zIndexRange={[10, 0]} style={{ pointerEvents: "auto" }}>
         <button onClick={onOpen} className="menu-page">
           <span className="menu-page-num">{String(i + 1).padStart(2, "0")}</span>
           <h3>{s.t}</h3>
           <ul>
-            {s.items.slice(0, 4).map((it) => (
+            {s.items.slice(0, 3).map((it) => (
               <li key={it.n}><span>{it.n}</span><b>{it.p}</b></li>
             ))}
           </ul>
-          {s.items.length > 4 && <em>+{s.items.length - 4} itens</em>}
+          <em>{s.items.length} {s.items.length === 1 ? "item" : "itens"} — ver tudo</em>
         </button>
       </Html>
     </group>
@@ -159,13 +162,8 @@ function MenuPage({ s, i, n, onOpen }: { s: Section; i: number; n: number; onOpe
 }
 
 function FlyingMenu({ onOpen }: { onOpen: (i: number) => void }) {
-  const ref = useRef<THREE.Group>(null);
-  // gentle sway only — panels stay behind the robot
-  useFrame(({ clock }) => {
-    if (ref.current) ref.current.rotation.y = Math.sin(clock.elapsedTime * 0.15) * 0.04;
-  });
   return (
-    <group ref={ref}>
+    <group>
       {MENU.map((s, i) => <MenuPage key={s.t} s={s} i={i} n={MENU.length} onOpen={() => onOpen(i)} />)}
     </group>
   );
@@ -194,7 +192,7 @@ function Brain() {
     if (core.current) core.current.scale.setScalar(0.45 + Math.sin(clock.elapsedTime * 2) * 0.05);
   });
   return (
-    <group position={[0, 8.6, -10]}>
+    <group position={[0, 9.6, -10]}>
       <group ref={ref}>
         <lineSegments geometry={geo}>
           <lineBasicMaterial color={CYAN} transparent opacity={0.45} toneMapped={false} />
