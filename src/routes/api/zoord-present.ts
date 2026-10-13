@@ -49,6 +49,7 @@ export const Route = createFileRoute("/api/zoord-present")({
             instructions: INSTRUCTIONS + menuText(),
             messages: [{ role: "user", content: prompt }],
             abortSignal: request.signal,
+            onError: () => {},
             providerOptions: {
               openai: {
                 store: false,
@@ -63,6 +64,7 @@ export const Route = createFileRoute("/api/zoord-present")({
           if (!text) return Response.json({ error: "O Zoord não conseguiu responder agora." }, { status: 502 });
           return Response.json({ text });
         } catch (e: unknown) {
+          if (request.signal.aborted || (e as Error)?.name === "AbortError") return new Response(null, { status: 499 });
           const err = e as { statusCode?: number; message?: string };
           const status = err.statusCode ?? 500;
           const msg =
