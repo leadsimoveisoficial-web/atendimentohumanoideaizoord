@@ -10,6 +10,10 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
     if (error != null && typeof error === "object" && "statusCode" in error) {
       throw error;
     }
+    if (error instanceof Error && error.name === "AbortError") {
+      // Visitor cancelled / closed the connection — not a server failure.
+      return new Response(null, { status: 499 });
+    }
     console.error(error);
     return new Response(renderErrorPage(), {
       status: 500,
