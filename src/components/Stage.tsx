@@ -7,14 +7,19 @@ import {
   Environment,
   Lightformer,
   Sparkles,
+  useTexture,
+  Html,
 } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import zoord from "@/assets/zoord.glb.asset.json";
+import dakkaiLogo from "@/assets/dakkai-logo.png";
+import { MENU, WHATSAPP, ORDER_URL, type Section } from "./menu";
 
 const CYAN = "#3fe0ff";
 const BLUE = "#2f7bff";
+const RED = "#c4141f";
 
 function Robot({ anim }: { anim: string }) {
   const group = useRef<THREE.Group>(null);
@@ -103,48 +108,101 @@ function Wall() {
   );
 }
 
-function Holo({ position, rot }: { position: [number, number, number]; rot: number }) {
-  const ref = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
-    if (ref.current) ref.current.position.y = position[1] + Math.sin(clock.elapsedTime + rot * 3) * 0.08;
-  });
+function Logo() {
+  const tex = useTexture(dakkaiLogo);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => ref.current && (ref.current.rotation.z = clock.elapsedTime * 0.15));
   return (
-    <group ref={ref} position={position} rotation-y={rot}>
-      <mesh>
-        <planeGeometry args={[1.6, 1]} />
-        <meshBasicMaterial color={CYAN} transparent opacity={0.07} side={THREE.DoubleSide} toneMapped={false} />
+    <group position={[0, 5.2, -11.3]}>
+      <mesh ref={ref} position-z={-0.05}>
+        <ringGeometry args={[2.35, 2.42, 128]} />
+        <meshBasicMaterial color={RED} toneMapped={false} transparent opacity={0.8} />
       </mesh>
-      <lineSegments>
-        <edgesGeometry args={[new THREE.PlaneGeometry(1.6, 1)]} />
-        <lineBasicMaterial color={CYAN} toneMapped={false} />
-      </lineSegments>
-      {[0.25, 0.05, -0.15, -0.3].map((y, i) => (
-        <mesh key={i} position={[-0.3 + i * 0.05, y, 0.001]}>
-          <planeGeometry args={[0.8 - i * 0.15, 0.025]} />
-          <meshBasicMaterial color={i ? "#9fdcff" : CYAN} transparent opacity={0.7} toneMapped={false} />
-        </mesh>
-      ))}
+      <mesh>
+        <planeGeometry args={[6.4, 4.67]} />
+        <meshBasicMaterial map={tex} transparent toneMapped={false} depthWrite={false} />
+      </mesh>
     </group>
   );
 }
 
-function Network() {
+function MenuPage({ s, i, n, onOpen }: { s: Section; i: number; n: number; onOpen: () => void }) {
   const ref = useRef<THREE.Group>(null);
-  const geo = useMemo(() => {
+  const a = (i / n) * Math.PI * 2;
+  const R = 5.4;
+  const y0 = 2.1 + (i % 3) * 0.55;
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const t = clock.elapsedTime;
+    ref.current.position.y = y0 + Math.sin(t * 0.8 + i) * 0.12;
+    ref.current.rotation.z = Math.sin(t * 0.6 + i) * 0.03;
+  });
+  return (
+    <group ref={ref} position={[Math.sin(a) * R, y0, Math.cos(a) * R]} rotation-y={a}>
+      <Html transform distanceFactor={4.2} zIndexRange={[10, 0]} style={{ pointerEvents: "auto" }}>
+        <button onClick={onOpen} className="menu-page">
+          <span className="menu-page-num">{String(i + 1).padStart(2, "0")}</span>
+          <h3>{s.t}</h3>
+          <ul>
+            {s.items.slice(0, 4).map((it) => (
+              <li key={it.n}><span>{it.n}</span><b>{it.p}</b></li>
+            ))}
+          </ul>
+          {s.items.length > 4 && <em>+{s.items.length - 4} itens</em>}
+        </button>
+      </Html>
+    </group>
+  );
+}
+
+function FlyingMenu({ onOpen }: { onOpen: (i: number) => void }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame((_, d) => ref.current && (ref.current.rotation.y += d * 0.05));
+  return (
+    <group ref={ref}>
+      {MENU.map((s, i) => <MenuPage key={s.t} s={s} i={i} n={MENU.length} onOpen={() => onOpen(i)} />)}
+    </group>
+  );
+}
+
+// "Cérebro" DAKKAI IA: neural sphere pulsing in red + cyan
+function Brain() {
+  const ref = useRef<THREE.Group>(null);
+  const core = useRef<THREE.Mesh>(null);
+  const { geo, pts } = useMemo(() => {
     const pts: THREE.Vector3[] = [];
-    for (let i = 0; i < 40; i++) pts.push(new THREE.Vector3().randomDirection().multiplyScalar(1.2 + Math.random() * 0.4));
+    for (let i = 0; i < 70; i++) {
+      const v = new THREE.Vector3().randomDirection();
+      v.x *= 1.25; // brain-like ellipsoid
+      pts.push(v.multiplyScalar(1.1 + Math.random() * 0.35));
+    }
     const seg: number[] = [];
-    pts.forEach((a, i) => pts.forEach((b, j) => j > i && a.distanceTo(b) < 0.9 && seg.push(a.x, a.y, a.z, b.x, b.y, b.z)));
+    pts.forEach((a, i) => pts.forEach((b, j) => j > i && a.distanceTo(b) < 0.75 && seg.push(a.x, a.y, a.z, b.x, b.y, b.z)));
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(seg, 3));
-    return g;
+    const p = new THREE.BufferGeometry().setFromPoints(pts);
+    return { geo: g, pts: p };
   }, []);
-  useFrame((_, d) => ref.current && (ref.current.rotation.y += d * 0.08));
+  useFrame(({ clock }, d) => {
+    if (ref.current) ref.current.rotation.y += d * 0.12;
+    if (core.current) core.current.scale.setScalar(0.45 + Math.sin(clock.elapsedTime * 2) * 0.05);
+  });
   return (
-    <group ref={ref} position={[0, 6.2, -9]}>
-      <lineSegments geometry={geo}>
-        <lineBasicMaterial color={BLUE} transparent opacity={0.5} toneMapped={false} />
-      </lineSegments>
+    <group position={[0, 8.6, -10]}>
+      <group ref={ref}>
+        <lineSegments geometry={geo}>
+          <lineBasicMaterial color={CYAN} transparent opacity={0.45} toneMapped={false} />
+        </lineSegments>
+        <points geometry={pts}>
+          <pointsMaterial color={RED} size={0.09} toneMapped={false} />
+        </points>
+      </group>
+      <mesh ref={core}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshBasicMaterial color={RED} transparent opacity={0.35} toneMapped={false} />
+      </mesh>
     </group>
   );
 }
