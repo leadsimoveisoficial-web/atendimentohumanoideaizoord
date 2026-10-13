@@ -175,6 +175,18 @@
   .menu-page li span { @apply truncate; }
   .menu-page li b { @apply whitespace-nowrap font-semibold text-dakkai; }
   .menu-page em { @apply mt-auto block text-[9px] not-italic uppercase tracking-[0.2em] text-glow; }
+  .menu-hero {
+    @apply flex w-[250px] cursor-pointer flex-col rounded-2xl border border-dakkai/60 bg-background/80 p-5 text-left text-foreground backdrop-blur-md;
+    box-shadow: 0 0 40px -6px var(--dakkai), inset 0 0 24px -10px var(--glow);
+    transition: transform .35s ease, opacity .35s ease;
+  }
+  .menu-hero:hover { transform: scale(1.06); }
+  .menu-hero-flip { transform: rotateY(90deg); opacity: 0; }
+  .menu-hero h3 { @apply my-2 font-display text-lg uppercase tracking-[0.2em] text-foreground; }
+  .menu-hero li { @apply flex justify-between gap-2 border-b border-foreground/10 py-1 text-[11px] text-muted-foreground; }
+  .menu-hero li span { @apply truncate; }
+  .menu-hero li b { @apply whitespace-nowrap font-semibold text-dakkai; }
+  .menu-hero em { @apply mt-3 block text-[9px] not-italic uppercase tracking-[0.2em] text-glow; }
   .menu-sheet {
     @apply max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-dakkai/40 bg-background/90 p-6 backdrop-blur-xl;
     box-shadow: 0 0 60px -15px var(--dakkai);
