@@ -15,7 +15,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import zoord from "@/assets/zoord.glb.asset.json";
 import dakkaiLogo from "@/assets/dakkai-logo.png";
-import { MENU, WHATSAPP, ORDER_URL, type Section } from "./menu";
+import { MENU, WHATSAPP, ORDER_URL } from "./menu";
 
 const CYAN = "#3fe0ff";
 const BLUE = "#2f7bff";
@@ -128,43 +128,62 @@ function Logo() {
   );
 }
 
-// Organized grid: 2 aligned rows on a curved arc behind Zoord
-const COLS = 6;
-function MenuPage({ s, i, n, onOpen }: { s: Section; i: number; n: number; onOpen: () => void }) {
-  const ref = useRef<THREE.Group>(null);
-  const rows = Math.ceil(n / COLS);
-  const row = Math.floor(i / COLS);
-  const col = i % COLS;
-  const inRow = Math.min(COLS, n - row * COLS);
-  const step = 0.3; // equal angular spacing
-  const a = (col - (inRow - 1) / 2) * step;
-  const R = 7.2;
-  const y0 = 2.7 + (rows - 1 - row) * 1.35;
-  useFrame(({ clock }) => {
-    if (ref.current) ref.current.position.y = y0 + Math.sin(clock.elapsedTime * 0.6) * 0.05;
-  });
-  return (
-    <group ref={ref} position={[Math.sin(a) * R, y0, -Math.cos(a) * R]} rotation-y={-a}>
-      <Html transform center distanceFactor={4.2} zIndexRange={[10, 0]} style={{ pointerEvents: "auto" }}>
-        <button onClick={onOpen} className="menu-page">
-          <span className="menu-page-num">{String(i + 1).padStart(2, "0")}</span>
-          <h3>{s.t}</h3>
-          <ul>
-            {s.items.slice(0, 3).map((it) => (
-              <li key={it.n}><span>{it.n}</span><b>{it.p}</b></li>
-            ))}
-          </ul>
-          <em>{s.items.length} {s.items.length === 1 ? "item" : "itens"} — ver tudo</em>
-        </button>
-      </Html>
-    </group>
-  );
-}
-
+// One hero menu card: always floats beside Zoord (relative to the camera, never over his face),
+// flips through every category, orbited by red/cyan rings. Click opens the full menu.
 function FlyingMenu({ onOpen }: { onOpen: (i: number) => void }) {
+  const rig = useRef<THREE.Group>(null);
+  const card = useRef<THREE.Group>(null);
+  const r1 = useRef<THREE.Mesh>(null);
+  const r2 = useRef<THREE.Mesh>(null);
+  const [idx, setIdx] = useState(0);
+  const [flip, setFlip] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setFlip(true);
+      setTimeout(() => { setIdx((i) => (i + 1) % MENU.length); setFlip(false); }, 350);
+    }, 3200);
+    return () => clearInterval(id);
+  }, []);
+  useFrame(({ camera, clock }, d) => {
+    const t = clock.elapsedTime;
+    if (rig.current) {
+      const target = Math.atan2(camera.position.x, camera.position.z);
+      let diff = target - rig.current.rotation.y;
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      rig.current.rotation.y += diff * (1 - Math.exp(-4 * Math.min(d, 0.05)));
+    }
+    if (card.current) {
+      card.current.position.y = 1.85 + Math.sin(t * 0.9) * 0.1;
+      card.current.rotation.y = -0.35 + Math.sin(t * 0.5) * 0.06;
+    }
+    if (r1.current) r1.current.rotation.set(Math.PI / 2.3, t * 0.6, 0);
+    if (r2.current) r2.current.rotation.set(Math.PI / 1.8, -t * 0.4, 0.3);
+  });
+  const s = MENU[idx]!;
   return (
-    <group>
-      {MENU.map((s, i) => <MenuPage key={s.t} s={s} i={i} n={MENU.length} onOpen={() => onOpen(i)} />)}
+    <group ref={rig}>
+      <group ref={card} position={[2.25, 1.85, -1.2]}>
+        <mesh ref={r1}>
+          <torusGeometry args={[1.25, 0.012, 8, 128]} />
+          <meshBasicMaterial color={RED} toneMapped={false} />
+        </mesh>
+        <mesh ref={r2}>
+          <torusGeometry args={[1.4, 0.008, 8, 128]} />
+          <meshBasicMaterial color={CYAN} toneMapped={false} />
+        </mesh>
+        <Html transform center distanceFactor={3.2} zIndexRange={[10, 0]} style={{ pointerEvents: "auto" }}>
+          <button onClick={() => onOpen(idx)} className={`menu-hero ${flip ? "menu-hero-flip" : ""}`}>
+            <span className="menu-page-num">CARDÁPIO DAKKAI · {String(idx + 1).padStart(2, "0")}/{MENU.length}</span>
+            <h3>{s.t}</h3>
+            <ul>
+              {s.items.slice(0, 3).map((it) => (
+                <li key={it.n}><span>{it.n}</span><b>{it.p}</b></li>
+              ))}
+            </ul>
+            <em>Toque para abrir o cardápio completo</em>
+          </button>
+        </Html>
+      </group>
     </group>
   );
 }
@@ -266,7 +285,7 @@ export function Stage() {
           </div>
         </header>
         <div>
-          <p className="mb-3 text-center text-xs tracking-[0.3em] text-muted-foreground">{loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"} — toque numa página do cardápio</p>
+          <p className="mb-3 text-center text-xs tracking-[0.3em] text-muted-foreground">{loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"} — toque no cardápio flutuante</p>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
             {ANIMS.map((a) => (
               <button key={a} onClick={() => setAnim(a)} className={`stage-chip ${anim === a ? "stage-chip-active" : ""}`}>
