@@ -63,7 +63,6 @@ function Platform() {
       </mesh>
       <Ring r={2.3} w={0.04} />
       <Ring r={1.6} w={0.012} color={BLUE} />
-      <Ring r={0.9} w={0.008} color="#ffffff" />
       {/* hex edge glow */}
       <mesh position-y={0.05}>
         <cylinderGeometry args={[2.82, 2.82, 0.03, 6, 1, true]} />
@@ -150,15 +149,6 @@ function Network() {
   );
 }
 
-function SpotCone() {
-  return (
-    <mesh position-y={5} >
-      <coneGeometry args={[2.4, 10, 64, 1, true]} />
-      <meshBasicMaterial color="#bfefff" transparent opacity={0.035} depthWrite={false} side={THREE.DoubleSide} />
-    </mesh>
-  );
-}
-
 const ANIMS = ["Idle_12", "Formal_Bow", "Wave_One_Hand", "Stage_Walk", "Walking", "Hip_Hop_Dance_3", "All_Night_Dance", "Breakdance_1990", "Backflip_and_Rise", "Confused_Scratch"];
 const label = (s: string) => s.replace(/_\d+$/, "").replace(/_/g, " ");
 
@@ -167,26 +157,24 @@ export function Stage() {
   const [loaded, setLoaded] = useState(false);
   return (
     <div className="fixed inset-0 bg-background">
-      <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 1.1, 7.5], fov: 40 }} gl={{ antialias: true }}>
+      <Canvas shadows dpr={[1, 2.5]} camera={{ position: [0, 1.1, 7.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
         <color attach="background" args={["#030507"]} />
         <fog attach="fog" args={["#030507", 12, 26]} />
-        <ambientLight intensity={0.15} />
-        <spotLight position={[0, 9, 2]} angle={0.4} penumbra={0.6} intensity={120} castShadow shadow-mapSize={[1024, 1024]} color="#eaf8ff" />
-        <pointLight position={[-4, 2, 2]} intensity={12} color={CYAN} />
-        <pointLight position={[4, 2, 2]} intensity={12} color={BLUE} />
-        <Environment resolution={256}>
-          <Lightformer intensity={2} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
+        <ambientLight intensity={0.22} color="#8fdcff" />
+        <pointLight position={[-4, 2, 2]} intensity={26} color={CYAN} castShadow shadow-mapSize={[1024, 1024]} />
+        <pointLight position={[4, 2, 2]} intensity={26} color={BLUE} />
+        <Environment resolution={512}>
+          <Lightformer intensity={1.6} color={CYAN} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
           <Lightformer intensity={1.5} color={CYAN} position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[20, 0.5, 1]} />
           <Lightformer intensity={1.5} color={BLUE} position={[5, 1, -1]} rotation-y={-Math.PI / 2} scale={[20, 0.5, 1]} />
         </Environment>
 
         <mesh rotation-x={-Math.PI / 2} receiveShadow>
           <planeGeometry args={[60, 60]} />
-          <MeshReflectorMaterial blur={[300, 80]} resolution={1024} mixBlur={1} mixStrength={6} roughness={0.85} depthScale={1} minDepthThreshold={0.4} maxDepthThreshold={1.4} color="#07090c" metalness={0.6} mirror={0.6} />
+          <MeshReflectorMaterial blur={[300, 80]} resolution={2048} mixBlur={1} mixStrength={6} roughness={0.85} depthScale={1} minDepthThreshold={0.4} maxDepthThreshold={1.4} color="#07090c" metalness={0.6} mirror={0.6} />
         </mesh>
 
         <Platform />
-        <SpotCone />
         <Wall />
         <Network />
         <Holo position={[-3.6, 2.2, -1]} rot={0.5} />
@@ -201,8 +189,8 @@ export function Stage() {
         </Suspense>
 
         <OrbitControls target={[0, 1.3, 0]} enablePan={false} minDistance={3.5} maxDistance={12} maxPolarAngle={Math.PI / 2 - 0.05} autoRotate autoRotateSpeed={0.3} />
-        <EffectComposer>
-          <Bloom intensity={1.1} luminanceThreshold={0.6} mipmapBlur />
+        <EffectComposer multisampling={4}>
+          <Bloom intensity={0.7} luminanceThreshold={0.85} mipmapBlur />
           <Vignette darkness={0.6} offset={0.3} />
         </EffectComposer>
       </Canvas>
