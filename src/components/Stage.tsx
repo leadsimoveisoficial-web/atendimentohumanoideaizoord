@@ -115,7 +115,7 @@ function Logo() {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => ref.current && (ref.current.rotation.z = clock.elapsedTime * 0.15));
   return (
-    <group position={[0, 6.6, -11.3]}>
+    <group position={[0, 4.4, -11.3]}>
       <mesh ref={ref} position-z={-0.05}>
         <ringGeometry args={[2.35, 2.42, 128]} />
         <meshBasicMaterial color={RED} toneMapped={false} transparent opacity={0.8} />
@@ -128,62 +128,55 @@ function Logo() {
   );
 }
 
-// One hero menu card: always floats beside Zoord (relative to the camera, never over his face),
-// flips through every category, orbited by red/cyan rings. Click opens the full menu.
-function FlyingMenu({ onOpen }: { onOpen: (i: number) => void }) {
-  const rig = useRef<THREE.Group>(null);
-  const card = useRef<THREE.Group>(null);
-  const r1 = useRef<THREE.Mesh>(null);
-  const r2 = useRef<THREE.Mesh>(null);
-  const [idx, setIdx] = useState(0);
-  const [flip, setFlip] = useState(false);
-  useEffect(() => {
-    const id = setInterval(() => {
-      setFlip(true);
-      setTimeout(() => { setIdx((i) => (i + 1) % MENU.length); setFlip(false); }, 350);
-    }, 3200);
-    return () => clearInterval(id);
-  }, []);
-  useFrame(({ camera, clock }, d) => {
+// Futuristic LED menu panels: two floating columns on the sides, Zoord stays the star in the center.
+// Left column gets the first half of the menu, right column the rest. Click opens the full menu.
+function LedPanel({ i, x, y, phase, onOpen }: { i: number; x: number; y: number; phase: number; onOpen: (i: number) => void }) {
+  const g = useRef<THREE.Group>(null);
+  const led = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
     const t = clock.elapsedTime;
-    if (rig.current) {
-      const target = Math.atan2(camera.position.x, camera.position.z);
-      let diff = target - rig.current.rotation.y;
-      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-      rig.current.rotation.y += diff * (1 - Math.exp(-4 * Math.min(d, 0.05)));
+    if (g.current) {
+      g.current.position.y = y + Math.sin(t * 0.8 + phase) * 0.08;
+      g.current.rotation.y = (x < 0 ? 0.42 : -0.42) + Math.sin(t * 0.4 + phase) * 0.03;
     }
-    if (card.current) {
-      card.current.position.y = 1.85 + Math.sin(t * 0.9) * 0.1;
-      card.current.rotation.y = -0.35 + Math.sin(t * 0.5) * 0.06;
-    }
-    if (r1.current) r1.current.rotation.set(Math.PI / 2.3, t * 0.6, 0);
-    if (r2.current) r2.current.rotation.set(Math.PI / 1.8, -t * 0.4, 0.3);
+    if (led.current) (led.current.material as THREE.MeshBasicMaterial).opacity = 0.55 + Math.sin(t * 2 + phase) * 0.25;
   });
-  const s = MENU[idx]!;
+  const s = MENU[i]!;
+  const accent = i % 4 === 0 ? RED : i % 2 === 0 ? CYAN : BLUE;
   return (
-    <group ref={rig}>
-      <group ref={card} position={[2.25, 1.85, -1.2]}>
-        <mesh ref={r1}>
-          <torusGeometry args={[1.25, 0.012, 8, 128]} />
-          <meshBasicMaterial color={RED} toneMapped={false} />
-        </mesh>
-        <mesh ref={r2}>
-          <torusGeometry args={[1.4, 0.008, 8, 128]} />
-          <meshBasicMaterial color={CYAN} toneMapped={false} />
-        </mesh>
-        <Html transform center distanceFactor={3.2} zIndexRange={[10, 0]} style={{ pointerEvents: "auto" }}>
-          <button onClick={() => onOpen(idx)} className={`menu-hero ${flip ? "menu-hero-flip" : ""}`}>
-            <span className="menu-page-num">CARDÁPIO DAKKAI · {String(idx + 1).padStart(2, "0")}/{MENU.length}</span>
-            <h3>{s.t}</h3>
-            <ul>
-              {s.items.slice(0, 3).map((it) => (
-                <li key={it.n}><span>{it.n}</span><b>{it.p}</b></li>
-              ))}
-            </ul>
-            <em>Toque para abrir o cardápio completo</em>
-          </button>
-        </Html>
-      </group>
+    <group ref={g} position={[x, y, -2.2]}>
+      {/* LED edge glow */}
+      <mesh ref={led} position-z={-0.02}>
+        <planeGeometry args={[1.72, 1.06]} />
+        <meshBasicMaterial color={accent} toneMapped={false} transparent opacity={0.7} />
+      </mesh>
+      <Html transform center distanceFactor={4.2} zIndexRange={[10, 0]} style={{ pointerEvents: "auto" }}>
+        <button onClick={() => onOpen(i)} className="menu-led" style={{ ["--led" as string]: accent }}>
+          <span className="menu-page-num">{String(i + 1).padStart(2, "0")} · DAKKAI</span>
+          <h3>{s.t}</h3>
+          <ul>
+            {s.items.slice(0, 2).map((it) => (
+              <li key={it.n}><span>{it.n}</span><b>{it.p}</b></li>
+            ))}
+          </ul>
+          <em>{s.items.length} itens · toque para ver tudo</em>
+        </button>
+      </Html>
+    </group>
+  );
+}
+
+function FlyingMenu({ onOpen }: { onOpen: (i: number) => void }) {
+  const half = Math.ceil(MENU.length / 2);
+  return (
+    <group>
+      {MENU.map((_, i) => {
+        const left = i < half;
+        const row = left ? i : i - half;
+        const x = left ? -4.4 : 4.4;
+        const y = 3.35 - row * 0.78;
+        return <LedPanel key={i} i={i} x={x} y={y} phase={i * 1.3} onOpen={onOpen} />;
+      })}
     </group>
   );
 }
