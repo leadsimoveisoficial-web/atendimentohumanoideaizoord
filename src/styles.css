@@ -148,9 +148,11 @@
   --foreground: oklch(0.96 0.01 220);
   --muted-foreground: oklch(0.65 0.04 230);
   --glow: oklch(0.85 0.14 210);
+  --dakkai: oklch(0.52 0.2 27);
 }
 @theme inline {
   --color-glow: var(--glow);
+  --color-dakkai: var(--dakkai);
   --font-display: "Orbitron", sans-serif;
   --font-sans: "Manrope", sans-serif;
 }
@@ -160,5 +162,20 @@
   }
   .stage-chip:hover { @apply border-glow/60 text-foreground; }
   .stage-chip-active { @apply border-glow text-foreground; box-shadow: 0 0 18px -4px var(--glow); }
+  .stage-chip-red { @apply border-dakkai bg-dakkai/80 text-foreground; box-shadow: 0 0 20px -4px var(--dakkai); }
+  .stage-chip-red:hover { @apply border-dakkai bg-dakkai text-foreground; }
+  .menu-page {
+    @apply block w-[260px] cursor-pointer rounded-2xl border border-dakkai/50 bg-background/75 p-5 text-left text-foreground backdrop-blur-md transition-transform hover:scale-105;
+    box-shadow: 0 0 30px -8px var(--dakkai), inset 0 0 20px -12px var(--glow);
+  }
+  .menu-page h3 { @apply mb-3 font-display text-base uppercase tracking-[0.25em] text-foreground; }
+  .menu-page-num { @apply font-display text-[10px] tracking-[0.3em] text-dakkai; }
+  .menu-page li { @apply flex justify-between gap-3 border-b border-foreground/10 py-1.5 text-[11px] text-muted-foreground; }
+  .menu-page li b { @apply whitespace-nowrap font-semibold text-dakkai; }
+  .menu-page em { @apply mt-2 block text-[10px] not-italic uppercase tracking-[0.2em] text-glow; }
+  .menu-sheet {
+    @apply max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-dakkai/40 bg-background/90 p-6 backdrop-blur-xl;
+    box-shadow: 0 0 60px -15px var(--dakkai);
+  }
 }
 body { font-family: var(--font-sans); }

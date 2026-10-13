@@ -213,6 +213,7 @@ const label = (s: string) => s.replace(/_\d+$/, "").replace(/_/g, " ");
 export function Stage() {
   const [anim, setAnim] = useState("Idle_12");
   const [loaded, setLoaded] = useState(false);
+  const [open, setOpen] = useState<number | null>(null);
   return (
     <div className="fixed inset-0 bg-background">
       <Canvas shadows dpr={[1, 1.5]} camera={{ position: [0, 1.1, 7.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
