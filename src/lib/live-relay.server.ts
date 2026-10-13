@@ -2,6 +2,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { stepCountIs, streamText, tool, type ModelMessage } from "ai";
 import process from "node:process";
 import { z } from "zod";
+import { MENU } from "@/components/menu";
 
 export type LiveConfig = {
   baseURL: string;
@@ -12,7 +13,13 @@ export type LiveConfig = {
 };
 
 // Fill from co-loaded knowledge: the gateway URL, the Live model and the resolved chat model.
-const liveSettings = { baseURL: "", liveModel: "", backendModel: "" };
+const liveSettings = {
+  baseURL: "https://ai.gateway.lovable.dev",
+  liveModel: "openai/gpt-live-1",
+  backendModel: "openai/gpt-6-astra",
+  openingInstructions:
+    "Comece agora em português do Brasil: cumprimente o cliente com alegria como Zoord, o robô do DAKKAI Sushi, e pergunte o que ele está com vontade de comer hoje.",
+};
 
 export type LiveSocket = {
   readonly readyState: number;
@@ -111,34 +118,23 @@ export function handleLiveRequest(request: Request): Response {
   return new Response(null, response);
 }
 
-const conversationInstructions = `You are Mira, a calm learning companion.
-Speak naturally in brief replies. Ask a focused question when details are unclear.
-Backchannel policy: Use moderate listening sounds without taking over.
-Interruption policy: Stop your answer and listen when the user interrupts.
-Delegation policy:
-Backend tools: Reason through questions and plan study sessions across days.
-Delegate to the backend when: The user wants a study schedule or careful reasoning,
-or a correction changes a question already being worked on.
-Do not delegate to the backend when: Greeting, clarifying a question, or repeating
-a still-current answer. Wait for the backend result before presenting its answer.`;
+const conversationInstructions = `Você é o Zoord, um robô humanoide simpático, divertido e elegante que recebe os clientes no DAKKAI Sushi (Sambaqui, Florianópolis).
+Fale SEMPRE em português do Brasil, com frases curtas, naturais e calorosas, como um anfitrião de palco.
+Política de escuta: use sons de escuta moderados sem tomar a palavra.
+Interrupções: pare de falar e escute quando o cliente interromper.
+Delegação:
+Ferramentas do backend: conhece o cardápio completo com preços, enxerga a câmera do cliente quando ela está ligada e aponta para a categoria no palco.
+Delegue ao backend quando: o cliente perguntar sobre pratos, preços, combos, recomendações, ou pedir para você olhar/ver algo ("o que você vê?", "quantos somos?", "o que estou segurando?").
+Não delegue quando: cumprimentar, agradecer, conversa leve ou repetir uma resposta ainda válida. Espere o resultado do backend antes de citar pratos ou preços. Nunca invente preços.
+Para pedir, convide o cliente a tocar em "Pedir no WhatsApp".`;
 
-const studyScheduleInput = z
-  .object({
-    total_minutes: z.number().int().min(1).max(10_080),
-    days: z.number().int().min(1).max(30),
-  })
-  .strict();
+const menuText = MENU.map((s, i) => `## [${i}] ${s.t}\n` + s.items.map((it) => `- ${it.n}: ${it.p}${it.d ? ` (${it.d})` : ""}`).join("\n")).join("\n\n");
+
+const studyScheduleInput = z.object({ category: z.number().int() }).strict();
 
 function planStudySchedule(args: z.infer<typeof studyScheduleInput>) {
-  const daily = Math.floor(args.total_minutes / args.days);
-  return {
-    total_minutes: args.total_minutes,
-    days: args.days,
-    sessions: Array.from({ length: args.days }, (_, index) => ({
-      day: index + 1,
-      minutes: daily + (index < args.total_minutes % args.days ? 1 : 0),
-    })),
-  };
+  const category = Math.max(0, Math.min(MENU.length - 1, args.category));
+  return { category, name: MENU[category]!.t };
 }
 
 function isListeningSound(text: string) {
@@ -153,6 +149,7 @@ async function answerQuestion(
   signal: AbortSignal,
   consumeInput: () => void,
   onPlan: (plan: ReturnType<typeof planStudySchedule>) => void,
+  getFrame: () => string | undefined,
 ) {
   signal.throwIfAborted();
   const provider = createOpenAI({
@@ -173,7 +170,12 @@ async function answerQuestion(
     includeRawChunks: true,
     prepareStep() {
       consumeInput();
-      return { messages: [...messages] };
+      const frame = getFrame();
+      return {
+        messages: frame
+          ? [...messages, { role: "user" as const, content: [{ type: "text" as const, text: "Imagem atual da câmera do cliente:" }, { type: "image" as const, image: frame }] }]
+          : [...messages],
+      };
     },
     onStepFinish(step) {
       messages.push(...step.response.messages.slice(responseCursor));
@@ -200,17 +202,16 @@ async function answerQuestion(
       },
     },
     system:
-      "Help a spoken learning companion answer the latest user question. " +
-      "Transcripts may be incomplete or corrected. Use the latest correction. " +
-      "Continue from completed tool results; do not repeat completed actions. " +
-      "Return verified facts and useful next steps in at most 150 words. " +
-      "To display a study schedule for the current request, call plan_study_schedule with its total minutes and days. " +
-      "Ask for missing details instead of guessing. The tool only calculates a draft plan; " +
-      "it does not save calendar events. You have no other tools.",
+      "Você é o cérebro do Zoord, robô do DAKKAI Sushi. Ajude a voz do Zoord a responder a última fala do cliente. " +
+      "As transcrições podem estar incompletas; use a correção mais recente. Responda em português do Brasil, em até 80 palavras, " +
+      "pronto para ser falado (sem listas nem markdown). Use SOMENTE o cardápio abaixo e nunca invente preços. " +
+      "Quando falar de uma categoria, chame point_to_category com o número dela para o Zoord apontar no palco. " +
+      "Se houver uma imagem da câmera, ela mostra o cliente agora: descreva com gentileza o que for relevante, sem identificar pessoas. " +
+      "Se não houver imagem e o cliente pedir para você olhar, diga que ele pode ligar a câmera.\n\nCARDÁPIO:\n" + menuText,
     messages,
     tools: {
-      plan_study_schedule: tool({
-        description: "Distribute a total study time evenly across days and return a draft schedule.",
+      point_to_category: tool({
+        description: "Faz o Zoord apontar para a categoria do cardápio no palco. Use o número entre colchetes.",
         inputSchema: studyScheduleInput,
         execute: async (args) => {
           signal.throwIfAborted();
@@ -278,6 +279,7 @@ export function bindLiveConnection(
   const setupAbort = new AbortController();
   let gateway: LiveSocket | undefined;
   let sessionID: string | undefined;
+  let latestFrame: string | undefined;
   let starting = false;
   let closing = false;
   let finished = false;
@@ -420,7 +422,7 @@ export function bindLiveConnection(
           }),
         );
       }
-      if (plan) emit({ type: "app.study_schedule.plan", delegation_id: delegationID, plan });
+      
       completedDelegation = pendingDelegations.shift();
     } catch {
       stop();
@@ -451,7 +453,9 @@ export function bindLiveConnection(
         },
         (plan) => {
           pending.plan = plan;
+          emit({ type: "app.point", category: plan.category });
         },
+        () => latestFrame,
       );
       if (closing || controller.signal.aborted) return;
       if (taskRevision !== revision) return;
@@ -596,7 +600,7 @@ export function bindLiveConnection(
         session: {
           model: config.liveModel,
           instructions: conversationInstructions,
-          audio: { output: { voice: "marin" } },
+          audio: { output: { voice: "cedar" } },
           delegation: { type: "client" },
         },
         transport: { type: "webrtc", sdp },
@@ -606,7 +610,7 @@ export function bindLiveConnection(
 
   browser.onMessage((data) => {
     try {
-      if (typeof data !== "string" || data.length > 64 * 1024) throw new Error("Invalid client message");
+      if (typeof data !== "string" || data.length > 512 * 1024) throw new Error("Invalid client message");
       const event = JSON.parse(data);
       if (event.type === "session.close") return stop();
       if (closing) return;
@@ -625,6 +629,11 @@ export function bindLiveConnection(
             stop();
           }),
         );
+        return;
+      }
+      if (event.type === "app.frame") {
+        if (event.image === null) latestFrame = undefined;
+        else if (typeof event.image === "string" && event.image.startsWith("data:image/jpeg;base64,")) latestFrame = event.image;
         return;
       }
       if (event.type === "app.ready") {

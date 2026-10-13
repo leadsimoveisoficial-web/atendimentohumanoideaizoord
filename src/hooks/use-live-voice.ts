@@ -116,7 +116,10 @@ export function useLiveVoice(
     void controller.current?.resumePlayback();
   }, []);
 
-  return { ...call, audioRef, start, stop, setMuted, resumePlayback };
+  const sendFrame = useCallback((image: string | null) => {
+    controller.current?.sendFrame(image);
+  }, []);
+  return { ...call, audioRef, start, stop, setMuted, resumePlayback, sendFrame };
 }
 
 type LiveOptions = {
@@ -396,5 +399,8 @@ function createLiveVoice(options: LiveOptions) {
     }
   }
 
-  return { start, stop, setMuted, resumePlayback };
+  function sendFrame(image: string | null) {
+    send({ type: "app.frame", image });
+  }
+  return { start, stop, setMuted, resumePlayback, sendFrame };
 }
