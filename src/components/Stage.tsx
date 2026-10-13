@@ -147,7 +147,7 @@ function LedPanel({ i, x, y, phase, onOpen }: { i: number; x: number; y: number;
     <group ref={g} position={[x, y, -2.2]}>
       {/* LED edge glow */}
       <mesh ref={led} position-z={-0.02}>
-        <planeGeometry args={[1.72, 1.06]} />
+        <planeGeometry args={[1.96, 1.3]} />
         <meshBasicMaterial color={accent} toneMapped={false} transparent opacity={0.7} />
       </mesh>
       <Html transform center distanceFactor={4.2} zIndexRange={[10, 0]} style={{ pointerEvents: "auto" }}>
