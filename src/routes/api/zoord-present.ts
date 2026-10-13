@@ -60,6 +60,10 @@ export const Route = createFileRoute("/api/zoord-present")({
               },
             },
           });
+          for (const k of ["response", "usage", "totalUsage", "finishReason", "steps", "content", "reasoning", "reasoningText", "sources", "files", "toolCalls", "toolResults", "providerMetadata", "warnings", "request", "output"] as const) {
+            const v = (result as unknown as Record<string, unknown>)[k];
+            if (v && typeof (v as Promise<unknown>).then === "function") (v as Promise<unknown>).then(undefined, () => {});
+          }
           const text = (await result.text).trim();
           if (!text) return Response.json({ error: "O Zoord não conseguiu responder agora." }, { status: 502 });
           return Response.json({ text });
