@@ -7,14 +7,19 @@ import {
   Environment,
   Lightformer,
   Sparkles,
+  useTexture,
+  Html,
 } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import zoord from "@/assets/zoord.glb.asset.json";
+import dakkaiLogo from "@/assets/dakkai-logo.png";
+import { MENU, WHATSAPP, ORDER_URL, type Section } from "./menu";
 
 const CYAN = "#3fe0ff";
 const BLUE = "#2f7bff";
+const RED = "#c4141f";
 
 function Robot({ anim }: { anim: string }) {
   const group = useRef<THREE.Group>(null);
@@ -103,48 +108,101 @@ function Wall() {
   );
 }
 
-function Holo({ position, rot }: { position: [number, number, number]; rot: number }) {
-  const ref = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
-    if (ref.current) ref.current.position.y = position[1] + Math.sin(clock.elapsedTime + rot * 3) * 0.08;
-  });
+function Logo() {
+  const tex = useTexture(dakkaiLogo);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => ref.current && (ref.current.rotation.z = clock.elapsedTime * 0.15));
   return (
-    <group ref={ref} position={position} rotation-y={rot}>
-      <mesh>
-        <planeGeometry args={[1.6, 1]} />
-        <meshBasicMaterial color={CYAN} transparent opacity={0.07} side={THREE.DoubleSide} toneMapped={false} />
+    <group position={[0, 5.2, -11.3]}>
+      <mesh ref={ref} position-z={-0.05}>
+        <ringGeometry args={[2.35, 2.42, 128]} />
+        <meshBasicMaterial color={RED} toneMapped={false} transparent opacity={0.8} />
       </mesh>
-      <lineSegments>
-        <edgesGeometry args={[new THREE.PlaneGeometry(1.6, 1)]} />
-        <lineBasicMaterial color={CYAN} toneMapped={false} />
-      </lineSegments>
-      {[0.25, 0.05, -0.15, -0.3].map((y, i) => (
-        <mesh key={i} position={[-0.3 + i * 0.05, y, 0.001]}>
-          <planeGeometry args={[0.8 - i * 0.15, 0.025]} />
-          <meshBasicMaterial color={i ? "#9fdcff" : CYAN} transparent opacity={0.7} toneMapped={false} />
-        </mesh>
-      ))}
+      <mesh>
+        <planeGeometry args={[6.4, 4.67]} />
+        <meshBasicMaterial map={tex} transparent toneMapped={false} depthWrite={false} />
+      </mesh>
     </group>
   );
 }
 
-function Network() {
+function MenuPage({ s, i, n, onOpen }: { s: Section; i: number; n: number; onOpen: () => void }) {
   const ref = useRef<THREE.Group>(null);
-  const geo = useMemo(() => {
+  const a = (i / n) * Math.PI * 2;
+  const R = 5.4;
+  const y0 = 2.1 + (i % 3) * 0.55;
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const t = clock.elapsedTime;
+    ref.current.position.y = y0 + Math.sin(t * 0.8 + i) * 0.12;
+    ref.current.rotation.z = Math.sin(t * 0.6 + i) * 0.03;
+  });
+  return (
+    <group ref={ref} position={[Math.sin(a) * R, y0, Math.cos(a) * R]} rotation-y={a}>
+      <Html transform distanceFactor={4.2} zIndexRange={[10, 0]} style={{ pointerEvents: "auto" }}>
+        <button onClick={onOpen} className="menu-page">
+          <span className="menu-page-num">{String(i + 1).padStart(2, "0")}</span>
+          <h3>{s.t}</h3>
+          <ul>
+            {s.items.slice(0, 4).map((it) => (
+              <li key={it.n}><span>{it.n}</span><b>{it.p}</b></li>
+            ))}
+          </ul>
+          {s.items.length > 4 && <em>+{s.items.length - 4} itens</em>}
+        </button>
+      </Html>
+    </group>
+  );
+}
+
+function FlyingMenu({ onOpen }: { onOpen: (i: number) => void }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame((_, d) => ref.current && (ref.current.rotation.y += d * 0.05));
+  return (
+    <group ref={ref}>
+      {MENU.map((s, i) => <MenuPage key={s.t} s={s} i={i} n={MENU.length} onOpen={() => onOpen(i)} />)}
+    </group>
+  );
+}
+
+// "Cérebro" DAKKAI IA: neural sphere pulsing in red + cyan
+function Brain() {
+  const ref = useRef<THREE.Group>(null);
+  const core = useRef<THREE.Mesh>(null);
+  const { geo, pts } = useMemo(() => {
     const pts: THREE.Vector3[] = [];
-    for (let i = 0; i < 40; i++) pts.push(new THREE.Vector3().randomDirection().multiplyScalar(1.2 + Math.random() * 0.4));
+    for (let i = 0; i < 70; i++) {
+      const v = new THREE.Vector3().randomDirection();
+      v.x *= 1.25; // brain-like ellipsoid
+      pts.push(v.multiplyScalar(1.1 + Math.random() * 0.35));
+    }
     const seg: number[] = [];
-    pts.forEach((a, i) => pts.forEach((b, j) => j > i && a.distanceTo(b) < 0.9 && seg.push(a.x, a.y, a.z, b.x, b.y, b.z)));
+    pts.forEach((a, i) => pts.forEach((b, j) => j > i && a.distanceTo(b) < 0.75 && seg.push(a.x, a.y, a.z, b.x, b.y, b.z)));
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(seg, 3));
-    return g;
+    const p = new THREE.BufferGeometry().setFromPoints(pts);
+    return { geo: g, pts: p };
   }, []);
-  useFrame((_, d) => ref.current && (ref.current.rotation.y += d * 0.08));
+  useFrame(({ clock }, d) => {
+    if (ref.current) ref.current.rotation.y += d * 0.12;
+    if (core.current) core.current.scale.setScalar(0.45 + Math.sin(clock.elapsedTime * 2) * 0.05);
+  });
   return (
-    <group ref={ref} position={[0, 6.2, -9]}>
-      <lineSegments geometry={geo}>
-        <lineBasicMaterial color={BLUE} transparent opacity={0.5} toneMapped={false} />
-      </lineSegments>
+    <group position={[0, 8.6, -10]}>
+      <group ref={ref}>
+        <lineSegments geometry={geo}>
+          <lineBasicMaterial color={CYAN} transparent opacity={0.45} toneMapped={false} />
+        </lineSegments>
+        <points geometry={pts}>
+          <pointsMaterial color={RED} size={0.09} toneMapped={false} />
+        </points>
+      </group>
+      <mesh ref={core}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshBasicMaterial color={RED} transparent opacity={0.35} toneMapped={false} />
+      </mesh>
     </group>
   );
 }
@@ -155,6 +213,7 @@ const label = (s: string) => s.replace(/_\d+$/, "").replace(/_/g, " ");
 export function Stage() {
   const [anim, setAnim] = useState("Idle_12");
   const [loaded, setLoaded] = useState(false);
+  const [open, setOpen] = useState<number | null>(null);
   return (
     <div className="fixed inset-0 bg-background">
       <Canvas shadows dpr={[1, 1.5]} camera={{ position: [0, 1.1, 7.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
@@ -176,19 +235,20 @@ export function Stage() {
 
         <Platform />
         <Wall />
-        <Network />
-        <Holo position={[-3.6, 2.2, -1]} rot={0.5} />
-        <Holo position={[3.6, 2.2, -1]} rot={-0.5} />
-        <Holo position={[-5.5, 3.2, -4]} rot={0.6} />
-        <Holo position={[5.5, 3.2, -4]} rot={-0.6} />
-        <Sparkles count={80} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#a8eaff" opacity={0.6} />
+        <pointLight position={[0, 4, -8]} intensity={18} color={RED} distance={12} />
+        <Suspense fallback={null}>
+          <Logo />
+        </Suspense>
+        <Brain />
+        <FlyingMenu onOpen={setOpen} />
+        <Sparkles count={80} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#ff9aa0" opacity={0.5} />
 
         <Suspense fallback={null}>
           <Robot anim={anim} />
           <Loaded onLoad={() => setLoaded(true)} />
         </Suspense>
 
-        <OrbitControls target={[0, 1.3, 0]} enablePan={false} minDistance={3.5} maxDistance={12} maxPolarAngle={Math.PI / 2 - 0.05} autoRotate autoRotateSpeed={0.3} />
+        <OrbitControls target={[0, 1.6, 0]} enablePan={false} minDistance={3.5} maxDistance={14} maxPolarAngle={Math.PI / 2 - 0.05} autoRotate autoRotateSpeed={0.3} />
         <EffectComposer multisampling={2}>
           <Bloom intensity={0.7} luminanceThreshold={0.85} mipmapBlur />
           <Vignette darkness={0.6} offset={0.3} />
@@ -197,17 +257,56 @@ export function Stage() {
 
       <div className="pointer-events-none fixed inset-0 flex flex-col justify-between p-6 md:p-10">
         <header className="flex items-center justify-between">
-          <span className="font-display text-sm tracking-[0.5em] text-foreground">ZOORD</span>
-          <span className="text-xs tracking-[0.3em] text-muted-foreground">{loaded ? "SYSTEM ONLINE" : "INITIALIZING…"}</span>
+          <span className="font-display text-sm tracking-[0.5em] text-foreground">DAKKAI <span className="text-dakkai">×</span> ZOORD</span>
+          <div className="pointer-events-auto flex items-center gap-3">
+            <button onClick={() => setOpen(0)} className="stage-chip">Cardápio</button>
+            <a href={WHATSAPP} target="_blank" rel="noreferrer" className="stage-chip stage-chip-red">Pedir no WhatsApp</a>
+          </div>
         </header>
-        <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
-          {ANIMS.map((a) => (
-            <button key={a} onClick={() => setAnim(a)} className={`stage-chip ${anim === a ? "stage-chip-active" : ""}`}>
-              {label(a)}
-            </button>
-          ))}
-        </nav>
+        <div>
+          <p className="mb-3 text-center text-xs tracking-[0.3em] text-muted-foreground">{loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"} — toque numa página do cardápio</p>
+          <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
+            {ANIMS.map((a) => (
+              <button key={a} onClick={() => setAnim(a)} className={`stage-chip ${anim === a ? "stage-chip-active" : ""}`}>
+                {label(a)}
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
+
+      {open !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-md" onClick={() => setOpen(null)}>
+          <div className="menu-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-4">
+              <img src={dakkaiLogo} alt="DAKKAI Sushi" className="h-16 w-auto" />
+              <button onClick={() => setOpen(null)} className="stage-chip" aria-label="Fechar">✕</button>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {MENU.map((s, i) => (
+                <button key={s.t} onClick={() => setOpen(i)} className={`stage-chip ${open === i ? "stage-chip-active" : ""}`}>{s.t}</button>
+              ))}
+            </div>
+            <h2 className="mt-6 font-display text-2xl tracking-widest text-foreground">{MENU[open]!.t}</h2>
+            <ul className="mt-4 space-y-3">
+              {MENU[open]!.items.map((it) => (
+                <li key={it.n} className="flex items-start justify-between gap-4 border-b border-border pb-3">
+                  <div>
+                    <p className="font-semibold text-foreground">{it.n}</p>
+                    <p className="text-sm text-muted-foreground">{it.d}</p>
+                  </div>
+                  <span className="whitespace-nowrap font-display text-dakkai">{it.p}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a href={WHATSAPP} target="_blank" rel="noreferrer" className="stage-chip stage-chip-red">Pedir no WhatsApp</a>
+              <a href={ORDER_URL} target="_blank" rel="noreferrer" className="stage-chip">Cardápio digital ↗</a>
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">Preços e disponibilidade podem variar. Rod. Rafael da Rocha Pires, 1650 — Sambaqui, Florianópolis/SC</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
