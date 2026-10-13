@@ -173,8 +173,8 @@ function FlyingMenu({ onOpen }: { onOpen: (i: number) => void }) {
       {MENU.map((_, i) => {
         const left = i < half;
         const row = left ? i : i - half;
-        const x = left ? -4.4 : 4.4;
-        const y = 3.35 - row * 0.78;
+        const x = left ? -4.6 : 4.6;
+        const y = 3.6 - row * 1.02;
         return <LedPanel key={i} i={i} x={x} y={y} phase={i * 1.3} onOpen={onOpen} />;
       })}
     </group>
