@@ -21,10 +21,45 @@ const CYAN = "#3fe0ff";
 const BLUE = "#2f7bff";
 const RED = "#c4141f";
 
-function Robot({ anim }: { anim: string }) {
+export function panelPos(i: number) {
+  const half = Math.ceil(MENU.length / 2);
+  const left = i < half;
+  const row = left ? i : i - half;
+  return new THREE.Vector3(left ? -4.6 : 4.6, 3.6 - row * 1.02, -2.2);
+}
+
+const _Y = new THREE.Vector3(0, 1, 0);
+const _a = new THREE.Vector3();
+const _q = new THREE.Quaternion();
+const _pq = new THREE.Quaternion();
+const _id = new THREE.Quaternion();
+
+function Robot({ anim, point }: { anim: string; point: number | null }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(zoord.url);
   const { actions } = useAnimations(animations, group);
+  const w = useRef(0);
+  const side = useRef<"Left" | "Right">("Right");
+  // Procedural pointing gesture, layered on top of the playing animation
+  useFrame((_, d) => {
+    w.current = THREE.MathUtils.damp(w.current, point === null ? 0 : 1, 4, d);
+    if (w.current < 0.001) return;
+    const target = panelPos(point ?? 0);
+    if (point !== null) side.current = target.x < 0 ? "Left" : "Right";
+    const arm = scene.getObjectByName(`mixamorig${side.current}Arm`) ?? scene.getObjectByName(`mixamorig:${side.current}Arm`);
+    const fore = scene.getObjectByName(`mixamorig${side.current}ForeArm`) ?? scene.getObjectByName(`mixamorig:${side.current}ForeArm`);
+    const head = scene.getObjectByName("mixamorigHead") ?? scene.getObjectByName("mixamorig:Head");
+    if (!arm?.parent) return;
+    arm.updateWorldMatrix(true, false);
+    arm.getWorldPosition(_a);
+    const dir = target.clone().sub(_a).normalize();
+    _q.setFromUnitVectors(_Y, dir);
+    arm.parent.getWorldQuaternion(_pq);
+    _q.premultiply(_pq.invert());
+    arm.quaternion.slerp(_q, w.current);
+    fore?.quaternion.slerp(_id, w.current * 0.9);
+    if (head) head.rotation.y += (target.x < 0 ? 0.35 : -0.35) * w.current;
+  });
   useEffect(() => {
     scene.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) o.castShadow = true;
@@ -182,7 +217,7 @@ function FlyingMenu({ onOpen }: { onOpen: (i: number) => void }) {
 }
 
 // "Cérebro" DAKKAI IA: neural sphere pulsing in red + cyan
-function Brain() {
+function Brain({ active }: { active: boolean }) {
   const ref = useRef<THREE.Group>(null);
   const core = useRef<THREE.Mesh>(null);
   const { geo, pts } = useMemo(() => {
@@ -200,8 +235,8 @@ function Brain() {
     return { geo: g, pts: p };
   }, []);
   useFrame(({ clock }, d) => {
-    if (ref.current) ref.current.rotation.y += d * 0.12;
-    if (core.current) core.current.scale.setScalar(0.45 + Math.sin(clock.elapsedTime * 2) * 0.05);
+    if (ref.current) ref.current.rotation.y += d * (active ? 0.6 : 0.12);
+    if (core.current) core.current.scale.setScalar((active ? 0.6 : 0.45) + Math.sin(clock.elapsedTime * (active ? 9 : 2)) * (active ? 0.12 : 0.05));
   });
   return (
     <group position={[0, 9.6, -10]}>
@@ -221,6 +256,50 @@ function Brain() {
   );
 }
 
+// Neural beam: brain -> menu panel the Zoord is pointing at
+function Beam({ point }: { point: number | null }) {
+  const geo = useMemo(() => new THREE.BufferGeometry(), []);
+  const mat = useMemo(() => new THREE.LineBasicMaterial({ color: RED, transparent: true, toneMapped: false }), []);
+  const obj = useMemo(() => new THREE.Line(geo, mat), [geo, mat]);
+  useFrame(({ clock }) => {
+    if (point === null) return;
+    const end = panelPos(point);
+    const start = new THREE.Vector3(0, 9.6, -10);
+    const mid = start.clone().lerp(end, 0.5).add(new THREE.Vector3(0, 1.5, 0));
+    const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+    geo.setFromPoints(curve.getPoints(40));
+    mat.opacity = 0.55 + Math.sin(clock.elapsedTime * 10) * 0.35;
+  });
+  if (point === null) return null;
+  return <primitive object={obj} />;
+}
+
+function speakText(text: string, onEnd: () => void) {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+    const t = setTimeout(onEnd, 6000);
+    return () => clearTimeout(t);
+  }
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "pt-BR";
+  u.rate = 1.02;
+  const v = speechSynthesis.getVoices().find((x) => x.lang.toLowerCase().startsWith("pt-br"));
+  if (v) u.voice = v;
+  u.onend = onEnd;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+  return () => {
+    u.onend = null;
+    speechSynthesis.cancel();
+  };
+}
+
+function sectionSpeech(i: number) {
+  const s = MENU[i]!;
+  const items = s.items.slice(0, 3).map((it) => `${it.n}, ${it.p.startsWith("R$") ? `por ${it.p.replace("R$", "").trim()} reais` : "sob consulta"}`).join("; ");
+  const intro = i === 0 ? "Olá! Eu sou o Zoord, a inteligência do Dakkai Sushi. Vou te apresentar o nosso cardápio. " : "";
+  return `${intro}Aqui em ${s.t}, temos ${items}.`;
+}
+
 const ANIMS = ["Idle_12", "Formal_Bow", "Wave_One_Hand", "Stage_Walk", "Walking", "Hip_Hop_Dance_3", "All_Night_Dance", "Breakdance_1990", "Backflip_and_Rise", "Confused_Scratch"];
 const label = (s: string) => s.replace(/_\d+$/, "").replace(/_/g, " ");
 
@@ -228,6 +307,11 @@ export function Stage() {
   const [anim, setAnim] = useState("Idle_12");
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
+  const [point, setPoint] = useState<number | null>(null);
+  useEffect(() => {
+    if (point === null) return;
+    return speakText(sectionSpeech(point), () => setPoint((p) => (p === null || p + 1 >= MENU.length ? null : p + 1)));
+  }, [point]);
   return (
     <div className="fixed inset-0 bg-background">
       <Canvas shadows dpr={[1, 1.5]} camera={{ position: [0, 1.1, 7.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
@@ -253,12 +337,13 @@ export function Stage() {
         <Suspense fallback={null}>
           <Logo />
         </Suspense>
-        <Brain />
+        <Brain active={point !== null} />
+        <Beam point={point} />
         <FlyingMenu onOpen={setOpen} />
         <Sparkles count={80} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#ff9aa0" opacity={0.5} />
 
         <Suspense fallback={null}>
-          <Robot anim={anim} />
+          <Robot anim={anim} point={point} />
           <Loaded onLoad={() => setLoaded(true)} />
         </Suspense>
 
@@ -273,12 +358,15 @@ export function Stage() {
         <header className="flex items-center justify-between">
           <span className="font-display text-sm tracking-[0.5em] text-foreground">DAKKAI <span className="text-dakkai">×</span> ZOORD</span>
           <div className="pointer-events-auto flex items-center gap-3">
+            <button onClick={() => setPoint((p) => (p === null ? 0 : null))} className={`stage-chip ${point !== null ? "stage-chip-active" : ""}`}>
+              {point === null ? "Zoord apresenta" : "Parar"}
+            </button>
             <button onClick={() => setOpen(0)} className="stage-chip">Cardápio</button>
             <a href={WHATSAPP} target="_blank" rel="noreferrer" className="stage-chip stage-chip-red">Pedir no WhatsApp</a>
           </div>
         </header>
         <div>
-          <p className="mb-3 text-center text-xs tracking-[0.3em] text-muted-foreground">{loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"} — toque no cardápio flutuante</p>
+          <p className="mb-3 text-center text-xs tracking-[0.3em] text-muted-foreground">{point !== null ? `ZOORD APRESENTANDO • ${MENU[point]!.t.toUpperCase()}` : `${loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"} — toque no cardápio flutuante`}</p>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
             {ANIMS.map((a) => (
               <button key={a} onClick={() => setAnim(a)} className={`stage-chip ${anim === a ? "stage-chip-active" : ""}`}>
