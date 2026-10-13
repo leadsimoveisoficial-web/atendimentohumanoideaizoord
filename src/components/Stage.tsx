@@ -157,13 +157,13 @@ export function Stage() {
   const [loaded, setLoaded] = useState(false);
   return (
     <div className="fixed inset-0 bg-background">
-      <Canvas shadows dpr={[1, 2.5]} camera={{ position: [0, 1.1, 7.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
+      <Canvas shadows dpr={[1, 1.5]} camera={{ position: [0, 1.1, 7.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
         <color attach="background" args={["#030507"]} />
         <fog attach="fog" args={["#030507", 12, 26]} />
         <ambientLight intensity={0.22} color="#8fdcff" />
-        <pointLight position={[-4, 2, 2]} intensity={26} color={CYAN} castShadow shadow-mapSize={[1024, 1024]} />
+        <pointLight position={[-4, 2, 2]} intensity={26} color={CYAN} castShadow shadow-mapSize={[512, 512]} />
         <pointLight position={[4, 2, 2]} intensity={26} color={BLUE} />
-        <Environment resolution={512}>
+        <Environment resolution={256}>
           <Lightformer intensity={1.6} color={CYAN} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
           <Lightformer intensity={1.5} color={CYAN} position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[20, 0.5, 1]} />
           <Lightformer intensity={1.5} color={BLUE} position={[5, 1, -1]} rotation-y={-Math.PI / 2} scale={[20, 0.5, 1]} />
@@ -171,7 +171,7 @@ export function Stage() {
 
         <mesh rotation-x={-Math.PI / 2} receiveShadow>
           <planeGeometry args={[60, 60]} />
-          <MeshReflectorMaterial blur={[300, 80]} resolution={2048} mixBlur={1} mixStrength={6} roughness={0.85} depthScale={1} minDepthThreshold={0.4} maxDepthThreshold={1.4} color="#07090c" metalness={0.6} mirror={0.6} />
+          <MeshReflectorMaterial blur={[300, 80]} resolution={1024} mixBlur={1} mixStrength={6} roughness={0.85} depthScale={1} minDepthThreshold={0.4} maxDepthThreshold={1.4} color="#07090c" metalness={0.6} mirror={0.6} />
         </mesh>
 
         <Platform />
@@ -181,7 +181,7 @@ export function Stage() {
         <Holo position={[3.6, 2.2, -1]} rot={-0.5} />
         <Holo position={[-5.5, 3.2, -4]} rot={0.6} />
         <Holo position={[5.5, 3.2, -4]} rot={-0.6} />
-        <Sparkles count={120} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#a8eaff" opacity={0.6} />
+        <Sparkles count={80} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#a8eaff" opacity={0.6} />
 
         <Suspense fallback={null}>
           <Robot anim={anim} />
@@ -189,7 +189,7 @@ export function Stage() {
         </Suspense>
 
         <OrbitControls target={[0, 1.3, 0]} enablePan={false} minDistance={3.5} maxDistance={12} maxPolarAngle={Math.PI / 2 - 0.05} autoRotate autoRotateSpeed={0.3} />
-        <EffectComposer multisampling={4}>
+        <EffectComposer multisampling={2}>
           <Bloom intensity={0.7} luminanceThreshold={0.85} mipmapBlur />
           <Vignette darkness={0.6} offset={0.3} />
         </EffectComposer>
