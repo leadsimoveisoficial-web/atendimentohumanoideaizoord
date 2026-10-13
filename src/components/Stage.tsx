@@ -367,7 +367,7 @@ export function Stage() {
         </header>
         <div>
           <div className="mb-3 flex justify-center">
-            <AskZoord onPoint={(i) => { speechSynthesis?.cancel?.(); setAiPoint(i); }} />
+            <AskZoord onPoint={(i: number | null) => { speechSynthesis?.cancel?.(); setAiPoint(i); }} />
           </div>
           <p className="mb-3 text-center text-xs tracking-[0.3em] text-muted-foreground">{shown !== null ? `ZOORD APRESENTANDO • ${MENU[shown]!.t.toUpperCase()}` : `${loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"} — toque no cardápio flutuante`}</p>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">

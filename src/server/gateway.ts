@@ -17,7 +17,7 @@ export function createRunIdFetch(initialRunId?: string) {
 }
 
 export function apiKey() {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
   return key;
 }
