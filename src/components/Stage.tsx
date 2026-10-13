@@ -258,8 +258,9 @@ function Brain({ active }: { active: boolean }) {
 
 // Neural beam: brain -> menu panel the Zoord is pointing at
 function Beam({ point }: { point: number | null }) {
-  const line = useRef<THREE.Line>(null);
   const geo = useMemo(() => new THREE.BufferGeometry(), []);
+  const mat = useMemo(() => new THREE.LineBasicMaterial({ color: RED, transparent: true, toneMapped: false }), []);
+  const obj = useMemo(() => new THREE.Line(geo, mat), [geo, mat]);
   useFrame(({ clock }) => {
     if (point === null) return;
     const end = panelPos(point);
@@ -267,16 +268,10 @@ function Beam({ point }: { point: number | null }) {
     const mid = start.clone().lerp(end, 0.5).add(new THREE.Vector3(0, 1.5, 0));
     const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
     geo.setFromPoints(curve.getPoints(40));
-    const m = line.current?.material as THREE.LineBasicMaterial | undefined;
-    if (m) m.opacity = 0.55 + Math.sin(clock.elapsedTime * 10) * 0.35;
+    mat.opacity = 0.55 + Math.sin(clock.elapsedTime * 10) * 0.35;
   });
   if (point === null) return null;
-  return (
-    // @ts-expect-error three line element
-    <line ref={line} geometry={geo}>
-      <lineBasicMaterial color={RED} transparent toneMapped={false} />
-    </line>
-  );
+  return <primitive object={obj} />;
 }
 
 function speakText(text: string, onEnd: () => void) {
@@ -300,7 +295,7 @@ function speakText(text: string, onEnd: () => void) {
 
 function sectionSpeech(i: number) {
   const s = MENU[i]!;
-  const items = s.items.slice(0, 3).map((it) => `${it.n}, por ${it.p.replace("R$", "").trim()} reais`).join("; ");
+  const items = s.items.slice(0, 3).map((it) => `${it.n}, ${it.p.startsWith("R$") ? `por ${it.p.replace("R$", "").trim()} reais` : "sob consulta"}`).join("; ");
   const intro = i === 0 ? "Olá! Eu sou o Zoord, a inteligência do Dakkai Sushi. Vou te apresentar o nosso cardápio. " : "";
   return `${intro}Aqui em ${s.t}, temos ${items}.`;
 }

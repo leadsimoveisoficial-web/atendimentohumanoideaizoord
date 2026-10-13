@@ -7,4 +7,5 @@
 - [x] Save Dakkai menu facts to memory
 - [x] Floating menu pages only behind Zoord — he is the screen highlight
 - [x] Verify the stage in the browser and show the user a screenshot
-- [ ] Future evolution: Zoord presents the whole menu by voice (voice mode) — pending user confirmation
+- [x] Zoord points at menu + brain beam + browser voice presentation
+- [ ] Upgrade voice to AI voice (Lovable AI TTS) (voice mode) — pending user confirmation
