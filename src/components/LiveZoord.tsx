@@ -11,11 +11,11 @@ export function LiveZoord({ onPoint }: { onPoint: (i: number | null) => void }) 
 
   const call = useLiveVoice({
     onEvent: (e: LiveEvent) => {
-      if (e.type === "app.point" && typeof e.category === "number") onPoint(e.category);
+      if (e.type === "app.point" && typeof e["category"] === "number") onPoint(e["category"] as number);
       if (e.type === "app.delegation.pending") setThinking(true);
-      if (e.type === "session.output_transcript.delta" && typeof e.delta === "string") {
+      if (e.type === "session.output_transcript.delta" && typeof e["delta"] === "string") {
         setThinking(false);
-        setCaption((c) => (c + e.delta).slice(-180));
+        setCaption((c) => (c + (e["delta"] as string)).slice(-180));
       }
       if (e.type === "session.input_transcript.delta") setCaption("");
       if (e.type === "app.closed") { setThinking(false); setCaption(""); onPoint(null); }
