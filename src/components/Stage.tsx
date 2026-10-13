@@ -287,9 +287,9 @@ export function Stage() {
                 <button key={s.t} onClick={() => setOpen(i)} className={`stage-chip ${open === i ? "stage-chip-active" : ""}`}>{s.t}</button>
               ))}
             </div>
-            <h2 className="mt-6 font-display text-2xl tracking-widest text-foreground">{MENU[open].t}</h2>
+            <h2 className="mt-6 font-display text-2xl tracking-widest text-foreground">{MENU[open]!.t}</h2>
             <ul className="mt-4 space-y-3">
-              {MENU[open].items.map((it) => (
+              {MENU[open]!.items.map((it) => (
                 <li key={it.n} className="flex items-start justify-between gap-4 border-b border-border pb-3">
                   <div>
                     <p className="font-semibold text-foreground">{it.n}</p>
