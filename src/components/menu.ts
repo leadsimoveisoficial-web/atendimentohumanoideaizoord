@@ -1,61 +1,79 @@
 export type Item = { n: string; d: string; p: string };
 export type Section = { t: string; items: Item[] };
-const W = "Consulte";
 
 export const MENU: Section[] = [
+  { t: "Especiais", items: [
+    { n: "Ebi Holl", d: "6 unid. Camarão empanado na panko, envolvido com lâminas de salmão", p: "R$ 49,00" },
+    { n: "Uramaki Camarão Crocante", d: "Maki recheado com camarão empanado, cream cheese, laminado", p: "R$ 49,90" },
+    { n: "Uramaki Camarão Filadélfia", d: "Maki recheado de camarão salteado, cream cheese e gergelim mix torrado", p: "R$ 47,90" },
+    { n: "Uramaki Salmão Crocante", d: "Maki recheado com salmão empanado, cream cheese, laminado", p: "R$ 47,90" },
+  ]},
   { t: "Combinados", items: [
-    { n: "Combo Família", d: "Uramakis, hossomakis, 20 Hot Filadélfia e 20 Hot Banana", p: "R$ 119,90" },
-    { n: "Dakkai Minha Delícia — 22 pç", d: "Uramakis, hossomaki, niguiri e joy salmão", p: "R$ 49,90" },
-    { n: "Dakkai Chef — 50 pç", d: "Ura Filadélfia, Ura Skin, hossomaki, niguiris e hot", p: "R$ 98,00" },
-    { n: "Dakkai Salmão — 46 pç", d: "Sashimi, uramakis, hossomaki, niguiri e joy", p: "R$ 149,90" },
-    { n: "Trio Joy Especiais — 12 pç", d: "Joy gorgonzola, brie e amêndoas", p: "R$ 59,90" },
-    { n: "Combo Gourmet — 32 pç", d: "Ura trufado, niguiri brie, sashimi com salsa trufada", p: "R$ 169,90" },
-  ]},
-  { t: "Joy", items: [
-    { n: "Joy Salmão — 4 un", d: "Salmão, arroz, cream cheese e cebolete", p: "R$ 22,90" },
-    { n: "Joy Salmão Amêndoas — 4 un", d: "Cream cheese, amêndoas e teriyaki", p: "R$ 26,90" },
-    { n: "Joy (Dupla) Gorgonzola", d: "Creme gorgonzola e nozes", p: "R$ 26,00" },
-  ]},
-  { t: "Hot Roll", items: [
-    { n: "Hot Filadélfia", d: "Empanado crocante, salmão e cream cheese", p: W },
-    { n: "Hot Banana com Doce de Leite", d: "Hot doce empanado", p: W },
-    { n: "Hot Salmão & Camarão — 10 un", d: "Recheio de salmão e camarão", p: W },
-  ]},
-  { t: "Sashimi", items: [
-    { n: "Sashimi Salmão — 6 lâminas", d: "Lâminas frescas de salmão", p: "R$ 36,00" },
-    { n: "Sashimi Salmão Crispy — 16", d: "Maçaricado, molho de ostras, togarashi, crispy de batata-doce", p: "R$ 69,00" },
-  ]},
-  { t: "Niguiris", items: [
-    { n: "Niguiri Salmão — 4 un", d: "Salmão e arroz japonês", p: "R$ 26,90" },
-    { n: "Niguiri Skin — 4 un", d: "Skin crocante e arroz", p: W },
-    { n: "Niguiri Salmão Brie — 4 un", d: "Maçaricado, brie e geleia de pimenta", p: "R$ 39,90" },
+    { n: "Combo Família", d: "10 Uramaki Salmão Filadélfia, 10 Uramaki Kani, 10 Uramaki Salmão", p: "R$ 129,90" },
+    { n: "Combo Grill 10 peças + Temaki Hot", d: "5 Uramakis de Salmão Grelhado, 5 Hot Salmão Filadélfia e 1 Temaki Hot", p: "R$ 59,90" },
+    { n: "Combo Hot Mix — 20 peças", d: "20 Hots Salmão Filadélfia e com diferentes cryspis da casa", p: "R$ 49,90" },
+    { n: "Combo Moçambique — 60 Peças", d: "10 Uramaki Salmão, 10 Uramaki Dragon com Cryspi, 10...", p: "R$ 199,90" },
+    { n: "Combo Sambaqui — 70 Peças", d: "10 Uramaki Salmão Filadélfia, 10 Uramaki Kani, 10 Uramaki Salmão...", p: "R$ 98,90" },
+    { n: "Dakkai Chef — 50 peças", d: "10 Uramaki Salmão Filadélfia, 10 Ura Kani, 10 hossomaki Salmão, 5 niguiri...", p: "R$ 99,90" },
+    { n: "Dakkai Junior — 15 Peças", d: "5 Uramaki Salmão Filadélfia, 5 Hossomaki de Salmão, 5 Hot Salmão", p: "R$ 59,90" },
+    { n: "Dakkai Mini Delícia — 22 peças", d: "5 Uramaki Salmão Filadélfia, 5 Uramaki Salmão grelhado, 4 hossomaki...", p: "R$ 65,90" },
+    { n: "Dakkai Salmão 46 Peças", d: "8 Sashimi Salmão, 10 Uramaki Salmão Filadélfia, 10 Uramaki Salmão Grelhado...", p: "R$ 139,90" },
+    { n: "Dakkai Titanic — 100 peças", d: "10 Ura salmão Fila, 10 Ura salmão grelhado, 10 Ura Kani, 10 hossomaki...", p: "R$ 149,00" },
+    { n: "Trio Joy Crispys — 12 pçs", d: "4 Joe de Salmão Alho-poró Crispy, 4 Joe Salmão Couve Crispy e 4 Joe...", p: "R$ 49,90" },
+    { n: "Trio Joy Especiais — 12 pçs", d: "4 Salmão Gorgonzola, 4 Salmão Brie, 4 Salmão Amêndoas", p: "R$ 59,90" },
   ]},
   { t: "Temaki", items: [
-    { n: "Temaki Califórnia", d: "Manga, pepino e abacate (vegano)", p: "R$ 29,90" },
-    { n: "Temaki Salmão Filadélfia", d: "Salmão, cream cheese e arroz", p: "R$ 44,90" },
-    { n: "Temaki Salmão Spicy Alho-Poró", d: "Toque picante e alho-poró crocante", p: "R$ 44,90" },
-    { n: "Temaki Salmão Sem Arroz", d: "Low carb", p: "R$ 49,90" },
+    { n: "Temaki Camarão Filadélfia", d: "Grelhado ou empanado", p: "R$ 49,90" },
+    { n: "Temaki Hot Salmão Filadélfia", d: "Cone de alga nori empanado na panko recheado com arroz japonês", p: "R$ 49,90" },
+    { n: "Temaki Salmão Filadélfia", d: "Cone de alga nori recheado com arroz japonês, cream cheese, salmão", p: "R$ 48,00" },
+    { n: "Temaki Salmão Grelhado", d: "Cone de alga nori recheado com arroz japonês, cream cheese, salmão", p: "R$ 32,90" },
+    { n: "Temaki Salmão Sem Arroz", d: "Cone de alga nori recheado com cream cheese, salmão filadélfia", p: "R$ 43,00" },
+    { n: "Temaki Salmão Spyce Alho Poró", d: "Cone de alga nori recheado com arroz japonês, cream cheese, salmão", p: "R$ 39,00" },
+    { n: "Temaki Shimeji Filadélfia", d: "Shimeji com cream cheese", p: "R$ 39,90" },
   ]},
-  { t: "Uramaki", items: [
-    { n: "Salmão Filadélfia", d: "Salmão, cream cheese, nori e gergelim", p: "R$ 47,00" },
-    { n: "Califórnia — 10 pç", d: "Pepino, manga, aspargos (opção vegana)", p: "R$ 21,90" },
-    { n: "Cogumelos Filadélfia — 10 pç", d: "Cogumelos salteados (opção vegana)", p: "R$ 24,90" },
-    { n: "Salmão Crocante", d: "Empanado, laminado, crispy de alho-poró", p: "R$ 61,00" },
-    { n: "Camarão Filadélfia", d: "Camarão, cream cheese, nori e gergelim", p: "R$ 47,00" },
-    { n: "Camarão Crocante", d: "Empanado, laminado, crispy de couve", p: "R$ 56,00" },
+  { t: "Hot Holl", items: [
+    { n: "Hot Banana com Doce de Leite", d: "10 unidades", p: "R$ 24,90" },
+    { n: "Hot Holl Salmão Alho Poró", d: "10 unidades", p: "R$ 39,90" },
+    { n: "Hot Holl Salmão e Camarão Empanado", d: "10 unidades", p: "R$ 49,90" },
+    { n: "Hot Holl Salmão Filadélfia", d: "10 unidades", p: "R$ 35,90" },
+    { n: "Hot Holl Salmão Tartar", d: "10 unidades", p: "R$ 42,90" },
   ]},
   { t: "Hossomaki", items: [
-    { n: "Salmão — 8 un", d: "Clássico de salmão", p: "R$ 26,90" },
-    { n: "Kani — 8 un", d: "Kani e arroz japonês", p: "R$ 21,90" },
-    { n: "Pepino — 8 un", d: "Refrescante e leve", p: "R$ 18,00" },
-    { n: "Manga — 8 un", d: "Vegano", p: "R$ 16,90" },
+    { n: "Hossomaki Salmão", d: "8 unidades", p: "R$ 29,90" },
+    { n: "Hossomaki Pepino", d: "8 unidades", p: "R$ 19,90" },
   ]},
-  { t: "Entradas & Bebidas", items: [
-    { n: "Sonomono", d: "Salada agridoce de pepino com gergelim", p: "R$ 19,90" },
-    { n: "Fanta Laranja 350ml", d: "Lata", p: "R$ 7,00" },
-    { n: "Fanta Guaraná 350ml", d: "Lata", p: "R$ 7,00" },
-    { n: "Água Tônica Schweppes 350ml", d: "Lata", p: "R$ 7,00" },
-    { n: "Água com Gás 500ml", d: "Flua", p: "R$ 5,00" },
+  { t: "Uramaki", items: [
+    { n: "Uramaki Califórnia", d: "10 peças — Maki holl com delicada camada de shari (arroz japonês)", p: "R$ 32,90" },
+    { n: "Uramaki Salmão Filadélfia", d: "Holl de salmão, arroz japonês, cream cheese, nori e gergelim", p: "R$ 49,90" },
+  ]},
+  { t: "Joy", items: [
+    { n: "Joy Salmão", d: "4 un. Arroz japonês, cream cheese e ceboletes", p: "R$ 26,90" },
+    { n: "Joy Salmão Amêndoas", d: "4 un. Lâminas de salmão, cream cheese, amêndoas e molho teriyaki", p: "R$ 29,90" },
+    { n: "Joy Salmão e Camarão", d: "4 un. Lâminas de salmão com arroz japonês, cream cheese", p: "R$ 32,90" },
+  ]},
+  { t: "Niguiris", items: [
+    { n: "Niguiri Salmão", d: "4 un. Salmão e arroz japonês", p: "R$ 24,90" },
+    { n: "Niguiri Skin", d: "4 unidades", p: "R$ 22,90" },
+  ]},
+  { t: "Sashimi", items: [
+    { n: "Sashimi Salmão", d: "6 lâminas de salmão", p: "R$ 46,00" },
+    { n: "Sashimi Salmão Crispy", d: "16 lâminas. Salmão maçaricado com molho de ostras, togarashi e crispy", p: "R$ 89,90" },
+    { n: "Sashimi Salmão Tamagô Trufado", d: "6 lâminas. Salmão em cubos maçaricado com creme trufado", p: "R$ 60,00" },
+  ]},
+  { t: "Pokes", items: [
+    { n: "Poke de Camarão Empanado", d: "Base de arroz japonês agridoce, camarão empanado, manga, tomate", p: "R$ 46,90" },
+    { n: "Poke de Camarão Grelhado", d: "Base de arroz japonês agridoce, camarão grelhado, manga, tomate", p: "R$ 46,90" },
+    { n: "Poke Salmão", d: "Base de arroz japonês agridoce, salmão fresco, manga, tomate cereja", p: "R$ 42,90" },
+  ]},
+  { t: "Teppaniaky", items: [
+    { n: "Teppaniaky de Salmão", d: "Arroz japonês, salmão grelhado, óleo de gergelim e legumes salteados", p: "R$ 49,90" },
+  ]},
+  { t: "Bebidas", items: [
+    { n: "Água com Gás", d: "510ml", p: "R$ 5,00" },
+    { n: "Coca-Cola", d: "Lata 310ml", p: "R$ 7,00" },
+    { n: "Coca-Cola Zero", d: "Lata 310ml", p: "R$ 7,00" },
+    { n: "Coca-Cola Zero Lata", d: "350ml", p: "R$ 7,00" },
+    { n: "Heineken Long Neck", d: "Garrafa", p: "R$ 14,00" },
   ]},
 ];
 

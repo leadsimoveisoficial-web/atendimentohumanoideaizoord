@@ -130,9 +130,10 @@ function Logo() {
 
 function MenuPage({ s, i, n, onOpen }: { s: Section; i: number; n: number; onOpen: () => void }) {
   const ref = useRef<THREE.Group>(null);
-  const a = (i / n) * Math.PI * 2;
-  const R = 5.4;
-  const y0 = 2.1 + (i % 3) * 0.55;
+  // Arc ONLY behind Zoord: spread panels across ±62° at the back of the stage
+  const a = n > 1 ? ((i / (n - 1)) - 0.5) * 2.16 : 0;
+  const R = 6.8;
+  const y0 = 2.0 + (i % 3) * 0.6;
   useFrame(({ clock }) => {
     if (!ref.current) return;
     const t = clock.elapsedTime;
@@ -140,7 +141,7 @@ function MenuPage({ s, i, n, onOpen }: { s: Section; i: number; n: number; onOpe
     ref.current.rotation.z = Math.sin(t * 0.6 + i) * 0.03;
   });
   return (
-    <group ref={ref} position={[Math.sin(a) * R, y0, Math.cos(a) * R]} rotation-y={a}>
+    <group ref={ref} position={[Math.sin(a) * R, y0, -Math.cos(a) * R]} rotation-y={-a}>
       <Html transform distanceFactor={4.2} zIndexRange={[10, 0]} style={{ pointerEvents: "auto" }}>
         <button onClick={onOpen} className="menu-page">
           <span className="menu-page-num">{String(i + 1).padStart(2, "0")}</span>
@@ -159,7 +160,10 @@ function MenuPage({ s, i, n, onOpen }: { s: Section; i: number; n: number; onOpe
 
 function FlyingMenu({ onOpen }: { onOpen: (i: number) => void }) {
   const ref = useRef<THREE.Group>(null);
-  useFrame((_, d) => ref.current && (ref.current.rotation.y += d * 0.05));
+  // gentle sway only — panels stay behind the robot
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.rotation.y = Math.sin(clock.elapsedTime * 0.15) * 0.04;
+  });
   return (
     <group ref={ref}>
       {MENU.map((s, i) => <MenuPage key={s.t} s={s} i={i} n={MENU.length} onOpen={() => onOpen(i)} />)}
