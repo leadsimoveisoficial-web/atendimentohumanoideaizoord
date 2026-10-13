@@ -147,7 +147,7 @@ function LedPanel({ i, x, y, phase, onOpen }: { i: number; x: number; y: number;
     <group ref={g} position={[x, y, -2.2]}>
       {/* LED edge glow */}
       <mesh ref={led} position-z={-0.02}>
-        <planeGeometry args={[1.72, 1.06]} />
+        <planeGeometry args={[1.96, 1.3]} />
         <meshBasicMaterial color={accent} toneMapped={false} transparent opacity={0.7} />
       </mesh>
       <Html transform center distanceFactor={4.2} zIndexRange={[10, 0]} style={{ pointerEvents: "auto" }}>
@@ -173,8 +173,8 @@ function FlyingMenu({ onOpen }: { onOpen: (i: number) => void }) {
       {MENU.map((_, i) => {
         const left = i < half;
         const row = left ? i : i - half;
-        const x = left ? -4.4 : 4.4;
-        const y = 3.35 - row * 0.78;
+        const x = left ? -4.6 : 4.6;
+        const y = 3.6 - row * 1.02;
         return <LedPanel key={i} i={i} x={x} y={y} phase={i * 1.3} onOpen={onOpen} />;
       })}
     </group>
