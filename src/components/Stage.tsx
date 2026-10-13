@@ -115,7 +115,7 @@ function Logo() {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => ref.current && (ref.current.rotation.z = clock.elapsedTime * 0.15));
   return (
-    <group position={[0, 5.2, -11.3]}>
+    <group position={[0, 6.6, -11.3]}>
       <mesh ref={ref} position-z={-0.05}>
         <ringGeometry args={[2.35, 2.42, 128]} />
         <meshBasicMaterial color={RED} toneMapped={false} transparent opacity={0.8} />
@@ -192,7 +192,7 @@ function Brain() {
     if (core.current) core.current.scale.setScalar(0.45 + Math.sin(clock.elapsedTime * 2) * 0.05);
   });
   return (
-    <group position={[0, 8.6, -10]}>
+    <group position={[0, 9.6, -10]}>
       <group ref={ref}>
         <lineSegments geometry={geo}>
           <lineBasicMaterial color={CYAN} transparent opacity={0.45} toneMapped={false} />
