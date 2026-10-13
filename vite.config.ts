@@ -5,6 +5,7 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { liveVoiceDev } from "./live-vite-plugin";
 
 // The devtools source injector adds `data-tsd-source` to every JSX element, including
 // three.js elements, which react-three-fiber rejects. Strip it from 3D scene files.
@@ -26,5 +27,5 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  vite: { plugins: [stripTsdSourceFor3D] },
+  vite: { plugins: [stripTsdSourceFor3D, liveVoiceDev()] },
 });
