@@ -234,19 +234,20 @@ export function Stage() {
 
         <Platform />
         <Wall />
-        <Network />
-        <Holo position={[-3.6, 2.2, -1]} rot={0.5} />
-        <Holo position={[3.6, 2.2, -1]} rot={-0.5} />
-        <Holo position={[-5.5, 3.2, -4]} rot={0.6} />
-        <Holo position={[5.5, 3.2, -4]} rot={-0.6} />
-        <Sparkles count={80} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#a8eaff" opacity={0.6} />
+        <pointLight position={[0, 4, -8]} intensity={18} color={RED} distance={12} />
+        <Suspense fallback={null}>
+          <Logo />
+        </Suspense>
+        <Brain />
+        <FlyingMenu onOpen={setOpen} />
+        <Sparkles count={80} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#ff9aa0" opacity={0.5} />
 
         <Suspense fallback={null}>
           <Robot anim={anim} />
           <Loaded onLoad={() => setLoaded(true)} />
         </Suspense>
 
-        <OrbitControls target={[0, 1.3, 0]} enablePan={false} minDistance={3.5} maxDistance={12} maxPolarAngle={Math.PI / 2 - 0.05} autoRotate autoRotateSpeed={0.3} />
+        <OrbitControls target={[0, 1.6, 0]} enablePan={false} minDistance={3.5} maxDistance={14} maxPolarAngle={Math.PI / 2 - 0.05} autoRotate autoRotateSpeed={0.3} />
         <EffectComposer multisampling={2}>
           <Bloom intensity={0.7} luminanceThreshold={0.85} mipmapBlur />
           <Vignette darkness={0.6} offset={0.3} />
@@ -255,17 +256,56 @@ export function Stage() {
 
       <div className="pointer-events-none fixed inset-0 flex flex-col justify-between p-6 md:p-10">
         <header className="flex items-center justify-between">
-          <span className="font-display text-sm tracking-[0.5em] text-foreground">ZOORD</span>
-          <span className="text-xs tracking-[0.3em] text-muted-foreground">{loaded ? "SYSTEM ONLINE" : "INITIALIZING…"}</span>
+          <span className="font-display text-sm tracking-[0.5em] text-foreground">DAKKAI <span className="text-dakkai">×</span> ZOORD</span>
+          <div className="pointer-events-auto flex items-center gap-3">
+            <button onClick={() => setOpen(0)} className="stage-chip">Cardápio</button>
+            <a href={WHATSAPP} target="_blank" rel="noreferrer" className="stage-chip stage-chip-red">Pedir no WhatsApp</a>
+          </div>
         </header>
-        <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
-          {ANIMS.map((a) => (
-            <button key={a} onClick={() => setAnim(a)} className={`stage-chip ${anim === a ? "stage-chip-active" : ""}`}>
-              {label(a)}
-            </button>
-          ))}
-        </nav>
+        <div>
+          <p className="mb-3 text-center text-xs tracking-[0.3em] text-muted-foreground">{loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"} — toque numa página do cardápio</p>
+          <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
+            {ANIMS.map((a) => (
+              <button key={a} onClick={() => setAnim(a)} className={`stage-chip ${anim === a ? "stage-chip-active" : ""}`}>
+                {label(a)}
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
+
+      {open !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-md" onClick={() => setOpen(null)}>
+          <div className="menu-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-4">
+              <img src={dakkaiLogo} alt="DAKKAI Sushi" className="h-16 w-auto" />
+              <button onClick={() => setOpen(null)} className="stage-chip" aria-label="Fechar">✕</button>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {MENU.map((s, i) => (
+                <button key={s.t} onClick={() => setOpen(i)} className={`stage-chip ${open === i ? "stage-chip-active" : ""}`}>{s.t}</button>
+              ))}
+            </div>
+            <h2 className="mt-6 font-display text-2xl tracking-widest text-foreground">{MENU[open].t}</h2>
+            <ul className="mt-4 space-y-3">
+              {MENU[open].items.map((it) => (
+                <li key={it.n} className="flex items-start justify-between gap-4 border-b border-border pb-3">
+                  <div>
+                    <p className="font-semibold text-foreground">{it.n}</p>
+                    <p className="text-sm text-muted-foreground">{it.d}</p>
+                  </div>
+                  <span className="whitespace-nowrap font-display text-dakkai">{it.p}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a href={WHATSAPP} target="_blank" rel="noreferrer" className="stage-chip stage-chip-red">Pedir no WhatsApp</a>
+              <a href={ORDER_URL} target="_blank" rel="noreferrer" className="stage-chip">Cardápio digital ↗</a>
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">Preços e disponibilidade podem variar. Rod. Rafael da Rocha Pires, 1650 — Sambaqui, Florianópolis/SC</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
