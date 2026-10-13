@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiZoordPresentRouteImport } from './routes/api/zoord-present'
+import { Route as ApiZoordSpeakRouteImport } from './routes/api/zoord-speak'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiZoordPresentRoute = ApiZoordPresentRouteImport.update({
+  id: '/api/zoord-present',
+  path: '/api/zoord-present',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiZoordSpeakRoute = ApiZoordSpeakRouteImport.update({
+  id: '/api/zoord-speak',
+  path: '/api/zoord-speak',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/zoord-present': typeof ApiZoordPresentRoute
+  '/api/zoord-speak': typeof ApiZoordSpeakRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/zoord-present': typeof ApiZoordPresentRoute
+  '/api/zoord-speak': typeof ApiZoordSpeakRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/zoord-present': typeof ApiZoordPresentRoute
+  '/api/zoord-speak': typeof ApiZoordSpeakRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/zoord-present' | '/api/zoord-speak'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/zoord-present' | '/api/zoord-speak'
+  id: '__root__' | '/' | '/api/zoord-present' | '/api/zoord-speak'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiZoordPresentRoute: typeof ApiZoordPresentRoute
+  ApiZoordSpeakRoute: typeof ApiZoordSpeakRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/zoord-present': {
+      id: '/api/zoord-present'
+      path: '/api/zoord-present'
+      fullPath: '/api/zoord-present'
+      preLoaderRoute: typeof ApiZoordPresentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/zoord-speak': {
+      id: '/api/zoord-speak'
+      path: '/api/zoord-speak'
+      fullPath: '/api/zoord-speak'
+      preLoaderRoute: typeof ApiZoordSpeakRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiZoordPresentRoute: ApiZoordPresentRoute,
+  ApiZoordSpeakRoute: ApiZoordSpeakRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

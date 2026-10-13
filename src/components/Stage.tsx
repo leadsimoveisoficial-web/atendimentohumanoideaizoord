@@ -15,6 +15,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import zoord from "@/assets/zoord.glb.asset.json";
 import dakkaiLogo from "@/assets/dakkai-logo.png";
+import { AskZoord } from "./AskZoord";
 import { MENU, WHATSAPP, ORDER_URL } from "./menu";
 
 const CYAN = "#3fe0ff";
@@ -308,6 +309,8 @@ export function Stage() {
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
   const [point, setPoint] = useState<number | null>(null);
+  const [aiPoint, setAiPoint] = useState<number | null>(null);
+  const shown = aiPoint ?? point;
   useEffect(() => {
     if (point === null) return;
     return speakText(sectionSpeech(point), () => setPoint((p) => (p === null || p + 1 >= MENU.length ? null : p + 1)));
@@ -337,13 +340,13 @@ export function Stage() {
         <Suspense fallback={null}>
           <Logo />
         </Suspense>
-        <Brain active={point !== null} />
-        <Beam point={point} />
+        <Brain active={shown !== null} />
+        <Beam point={shown} />
         <FlyingMenu onOpen={setOpen} />
         <Sparkles count={80} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#ff9aa0" opacity={0.5} />
 
         <Suspense fallback={null}>
-          <Robot anim={anim} point={point} />
+          <Robot anim={anim} point={shown} />
           <Loaded onLoad={() => setLoaded(true)} />
         </Suspense>
 
@@ -366,7 +369,10 @@ export function Stage() {
           </div>
         </header>
         <div>
-          <p className="mb-3 text-center text-xs tracking-[0.3em] text-muted-foreground">{point !== null ? `ZOORD APRESENTANDO • ${MENU[point]!.t.toUpperCase()}` : `${loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"} — toque no cardápio flutuante`}</p>
+          <div className="mb-3 flex justify-center">
+            <AskZoord onPoint={(i: number | null) => { speechSynthesis?.cancel?.(); setAiPoint(i); }} />
+          </div>
+          <p className="mb-3 text-center text-xs tracking-[0.3em] text-muted-foreground">{shown !== null ? `ZOORD APRESENTANDO • ${MENU[shown]!.t.toUpperCase()}` : `${loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"} — toque no cardápio flutuante`}</p>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
             {ANIMS.map((a) => (
               <button key={a} onClick={() => setAnim(a)} className={`stage-chip ${anim === a ? "stage-chip-active" : ""}`}>
