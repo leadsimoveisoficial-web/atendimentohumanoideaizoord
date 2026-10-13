@@ -165,14 +165,16 @@
   .stage-chip-red { @apply border-dakkai bg-dakkai/80 text-foreground; box-shadow: 0 0 20px -4px var(--dakkai); }
   .stage-chip-red:hover { @apply border-dakkai bg-dakkai text-foreground; }
   .menu-page {
-    @apply block w-[260px] cursor-pointer rounded-2xl border border-dakkai/50 bg-background/75 p-5 text-left text-foreground backdrop-blur-md transition-transform hover:scale-105;
+    @apply flex h-[190px] w-[220px] cursor-pointer flex-col rounded-2xl border border-dakkai/50 bg-background/80 p-4 text-left text-foreground backdrop-blur-md transition-transform hover:scale-105;
     box-shadow: 0 0 30px -8px var(--dakkai), inset 0 0 20px -12px var(--glow);
   }
-  .menu-page h3 { @apply mb-3 font-display text-base uppercase tracking-[0.25em] text-foreground; }
+  .menu-page h3 { @apply mb-2 truncate font-display text-sm uppercase tracking-[0.2em] text-foreground; }
   .menu-page-num { @apply font-display text-[10px] tracking-[0.3em] text-dakkai; }
-  .menu-page li { @apply flex justify-between gap-3 border-b border-foreground/10 py-1.5 text-[11px] text-muted-foreground; }
+  .menu-page ul { @apply flex-1; }
+  .menu-page li { @apply flex justify-between gap-2 border-b border-foreground/10 py-1 text-[10px] text-muted-foreground; }
+  .menu-page li span { @apply truncate; }
   .menu-page li b { @apply whitespace-nowrap font-semibold text-dakkai; }
-  .menu-page em { @apply mt-2 block text-[10px] not-italic uppercase tracking-[0.2em] text-glow; }
+  .menu-page em { @apply mt-auto block text-[9px] not-italic uppercase tracking-[0.2em] text-glow; }
   .menu-sheet {
     @apply max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-dakkai/40 bg-background/90 p-6 backdrop-blur-xl;
     box-shadow: 0 0 60px -15px var(--dakkai);
