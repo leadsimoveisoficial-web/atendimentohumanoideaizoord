@@ -6,8 +6,9 @@ describe("Zoord LED blend shapes", () => {
   it("exports named, matching morph vertex sets on lips and cavity", () => {
     for (const cavity of [false, true]) {
       const geometry = createMouthGeometry(cavity);
-      expect(geometry.morphAttributes.position.map((target) => target.name)).toEqual([...MOUTH_TARGETS]);
-      for (const target of geometry.morphAttributes.position) expect(target.count).toBe(geometry.getAttribute("position").count);
+      const targets = geometry.morphAttributes.position ?? [];
+      expect(targets.map((target) => target.name)).toEqual([...MOUTH_TARGETS]);
+      for (const target of targets) expect(target.count).toBe(geometry.getAttribute("position").count);
       geometry.dispose();
     }
   });
