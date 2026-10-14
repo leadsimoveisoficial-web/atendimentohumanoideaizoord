@@ -13,7 +13,7 @@ export function ZoordMouth({ scene }: { scene: THREE.Object3D }) {
   useLayoutEffect(() => {
     setHead(scene.getObjectByName("mixamorig:Head") ?? scene.getObjectByName("mixamorigHead") ?? null);
     setLedColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-led-cyan").trim());
-    setCavityColor(getComputedStyle(document.documentElement).getPropertyValue("--background").trim());
+    setCavityColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-mouth-cavity").trim());
   }, [scene]);
   useFrame(() => {
     // No second envelope: it would smear syllables and keep moving after pauses.
