@@ -9,13 +9,14 @@ export function speechLevel(samples: Float32Array): number {
   return rms < 0.004 ? 0 : Math.min(1, Math.sqrt((rms - 0.004) * 4));
 }
 
-/** Route and analyse the SAME element that plays both live and menu speech.
+/** Analyse the stream attached to the SAME element playing live and menu speech.
  * Lazy initialization must run from Start/menu/Play's user gesture.
  * One graph for the element's lifetime avoids duplicate audio and stream-arrival races.
  */
 export function createPlaybackMeter(audio: HTMLAudioElement) {
   let ctx: AudioContext | undefined;
-  let source: MediaElementAudioSourceNode | undefined;
+  let source: MediaStreamAudioSourceNode | undefined;
+  let stream: MediaStream | undefined;
   let analyser: AnalyserNode | undefined;
   const samples = new Float32Array(256);
   let raf = 0;
@@ -28,6 +29,18 @@ export function createPlaybackMeter(audio: HTMLAudioElement) {
   const tick = () => {
     if (disposed || !analyser || ctx?.state !== "running" || audio.paused || audio.ended || audio.muted || audio.volume === 0) {
       reset();
+      return;
+    }
+    const playback = audio.srcObject;
+    if (playback instanceof MediaStream && playback !== stream && playback.getAudioTracks().length) {
+      source?.disconnect();
+      stream = playback;
+      source = ctx.createMediaStreamSource(playback);
+      source.connect(analyser);
+    }
+    if (!playback || !source) {
+      voiceLevel.v = 0;
+      raf = requestAnimationFrame(tick);
       return;
     }
     analyser.getFloatTimeDomainData(samples);
@@ -43,12 +56,10 @@ export function createPlaybackMeter(audio: HTMLAudioElement) {
     try {
       if (!ctx) {
         ctx = new AudioContext({ latencyHint: "interactive" });
-        source = ctx.createMediaElementSource(audio);
         analyser = ctx.createAnalyser();
         analyser.fftSize = samples.length;
         analyser.smoothingTimeConstant = 0;
-        source.connect(analyser);
-        analyser.connect(ctx.destination);
+        // Analysis-only branch: the mounted audio element remains the sole speaker.
         ctx.addEventListener("statechange", samplePlayback);
       }
       void ctx.resume().then(samplePlayback).catch(reset);
@@ -76,6 +87,7 @@ export function createPlaybackMeter(audio: HTMLAudioElement) {
       audio.removeEventListener("volumechange", samplePlayback);
       ctx?.removeEventListener("statechange", samplePlayback);
       source?.disconnect();
+      stream = undefined;
       analyser?.disconnect();
       if (ctx) void ctx.close().catch(() => {});
     },

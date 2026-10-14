@@ -22,7 +22,7 @@ describe("Zoord playback synchronization", () => {
       state = "running";
       destination = {};
       constructor() { construct(); }
-      createMediaElementSource = createSource;
+      createMediaStreamSource = createSource;
       createAnalyser = () => analyser;
       resume = async () => {};
       close = close;
@@ -32,6 +32,8 @@ describe("Zoord playback synchronization", () => {
     vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
     const audio = document.createElement("audio");
+    vi.stubGlobal("MediaStream", class { getAudioTracks() { return [{}]; } });
+    audio.srcObject = new MediaStream();
     let paused = true;
     Object.defineProperty(audio, "paused", { get: () => paused });
     const meter = createPlaybackMeter(audio);
