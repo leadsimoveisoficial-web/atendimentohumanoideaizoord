@@ -130,6 +130,15 @@ Para pedir, convide o cliente a tocar em "Pedir no WhatsApp".`;
 
 const menuText = MENU.map((s, i) => `## [${i}] ${s.t}\n` + s.items.map((it) => `- ${it.n}: ${it.p}${it.d ? ` (${it.d})` : ""}`).join("\n")).join("\n\n");
 
+function validMenuCategory(value: unknown): value is number | null {
+  return value === null || (typeof value === "number" && Number.isInteger(value) && value >= 0 && value < MENU.length);
+}
+
+function menuPresentation(category: number | null) {
+  const sections = category === null ? MENU : MENU.filter((_, i) => i === category);
+  return `O cliente escolheu ${category === null ? "a apresentação completa do cardápio" : sections[0]?.t}. Apresente todos os itens destas categorias e seus preços com naturalidade, em português brasileiro, sem inventar informações. Pronuncie os preços por extenso, faça pausas entre categorias e escute se o cliente interromper. Dados verificados: ` + sections.map((s) => `${s.t}: ` + s.items.map((it) => `${it.n}, ${it.p}`).join("; ")).join(". ");
+}
+
 const studyScheduleInput = z.object({ category: z.number().int() }).strict();
 
 function planStudySchedule(args: z.infer<typeof studyScheduleInput>) {
@@ -280,6 +289,7 @@ export function bindLiveConnection(
   let gateway: LiveSocket | undefined;
   let sessionID: string | undefined;
   let latestFrame: string | undefined;
+  let selectedMenu: { category: number | null } | undefined;
   let starting = false;
   let closing = false;
   let finished = false;
@@ -508,7 +518,7 @@ export function bindLiveConnection(
               type: "session.commentary.append",
               event_id: greetingCommand.id,
               delegation_id: null,
-              content: "Begin the conversation now, following the instructions provided.",
+              content: selectedMenu ? "Apresente agora o cardápio selecionado, usando os dados verificados fornecidos no início. Use sua voz natural, acolhedora e pausas elegantes." : "Comece a conversa agora, seguindo as instruções fornecidas.",
             }),
           );
         } else {
@@ -602,6 +612,7 @@ export function bindLiveConnection(
           instructions: conversationInstructions,
           audio: { output: { voice: "cedar" } },
           delegation: { type: "client" },
+          ...(selectedMenu ? { input: [{ role: "developer", content: [{ type: "input_text", text: menuPresentation(selectedMenu.category) }] }] } : {}),
         },
         transport: { type: "webrtc", sdp },
       }),
@@ -619,6 +630,11 @@ export function bindLiveConnection(
           throw new Error("Voice startup message required");
         }
         starting = true;
+        if (event.menu !== undefined) {
+          if (!event.menu || !validMenuCategory(event.menu.category)) throw new Error("Invalid menu selection");
+          selectedMenu = { category: event.menu.category };
+          config.openingInstructions = "Comece em português do Brasil apresentando o cardápio escolhido nos dados verificados de entrada, sem uma saudação longa. Seja natural, caloroso e preciso com todos os preços. Não use outra voz.";
+        }
         execution.waitUntil(
           startSession(event.sdp).catch((error) => {
             if (!closing)
@@ -634,6 +650,14 @@ export function bindLiveConnection(
       if (event.type === "app.frame") {
         if (event.image === null) latestFrame = undefined;
         else if (typeof event.image === "string" && event.image.startsWith("data:image/jpeg;base64,")) latestFrame = event.image;
+        return;
+      }
+      if (event.type === "app.menu") {
+        if (!browserReady || !validMenuCategory(event.category)) throw new Error("Invalid menu selection");
+        emit({ type: "app.point", category: event.category });
+        for (const content of commentaryChunks(menuPresentation(event.category))) {
+          gateway.send(JSON.stringify({ type: "session.commentary.append", event_id: crypto.randomUUID(), delegation_id: null, content }));
+        }
         return;
       }
       if (event.type === "app.ready") {

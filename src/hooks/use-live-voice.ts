@@ -53,7 +53,7 @@ export function useLiveVoice(
     };
   }, []);
 
-  const start = useCallback(() => {
+  const start = useCallback((menu?: { category: number | null }) => {
     if (!mounted.current || controller.current) return;
     const audio = audioRef.current;
     if (!audio) {
@@ -72,6 +72,7 @@ export function useLiveVoice(
     const voice = createLiveVoice({
       url: endpoint.href,
       audio,
+      menu,
       onEvent(event) {
         if (!mounted.current || controller.current !== voice) return;
         if (event.type === "app.connected") {
@@ -119,13 +120,17 @@ export function useLiveVoice(
   const sendFrame = useCallback((image: string | null) => {
     controller.current?.sendFrame(image);
   }, []);
-  return { ...call, audioRef, start, stop, setMuted, resumePlayback, sendFrame };
+  const sendMenu = useCallback((category: number | null) => {
+    controller.current?.sendMenu(category);
+  }, []);
+  return { ...call, audioRef, start, stop, setMuted, resumePlayback, sendFrame, sendMenu };
 }
 
 type LiveOptions = {
   url: string;
   audio: HTMLAudioElement;
   onEvent: (event: LiveEvent) => void;
+  menu?: { category: number | null };
 };
 
 function createLiveVoice(options: LiveOptions) {
@@ -354,7 +359,7 @@ function createLiveVoice(options: LiveOptions) {
       deadline = setTimeout(() => fail("Voice session did not start"), 50_000);
       socket.onopen = () => {
         if (!starting()) return release();
-        send({ type: "app.start", sdp });
+        send({ type: "app.start", sdp, menu: options.menu });
       };
       socket.onmessage = ({ data }) => {
         try {
@@ -402,5 +407,8 @@ function createLiveVoice(options: LiveOptions) {
   function sendFrame(image: string | null) {
     send({ type: "app.frame", image });
   }
-  return { start, stop, setMuted, resumePlayback, sendFrame };
+  function sendMenu(category: number | null) {
+    if (state === "active") send({ type: "app.menu", category });
+  }
+  return { start, stop, setMuted, resumePlayback, sendFrame, sendMenu };
 }
