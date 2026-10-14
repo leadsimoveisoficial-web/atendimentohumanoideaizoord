@@ -47,8 +47,10 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const dt = Math.min(rawDelta, 0.05);
     // Undo our previous offset only when the mixer has not replaced the bone pose.
     if (head.quaternion.angleTo(headMotion.last) < 0.00001) head.quaternion.multiply(headMotion.inverse);
-    headMotion.strength = THREE.MathUtils.damp(headMotion.strength, listening ? 1 : 0, 5, dt);
-    headMotion.euler.set(Math.sin(clock.elapsedTime * 2.4) * 0.045 * headMotion.strength, Math.sin(clock.elapsedTime * 0.9) * 0.035 * headMotion.strength, 0);
+    const presenting = point !== null && anim !== "Wave_One_Hand";
+    headMotion.strength = THREE.MathUtils.damp(headMotion.strength, listening || presenting ? 1 : 0, 5, dt);
+    const side = presenting ? (panelPos(point).x < 0 ? -1 : 1) : 0;
+    headMotion.euler.set(Math.sin(clock.elapsedTime * 2.4) * 0.025 * headMotion.strength, (side * 0.10 + Math.sin(clock.elapsedTime * 0.9) * 0.025) * headMotion.strength, 0);
     headMotion.next.setFromEuler(headMotion.euler);
     head.quaternion.multiply(headMotion.next);
     headMotion.last.copy(head.quaternion);
@@ -69,9 +71,13 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     // Present outward at chest height, never reach up toward the face or behind the body.
     target.y = THREE.MathUtils.clamp(target.y, shoulder.y - 0.45, shoulder.y + 0.12);
     target.z = shoulder.z + 0.65;
-    aimLimb(arm, fore, target, w.current);
-    fore.quaternion.slerp(_id, w.current * 0.85);
-    hand.quaternion.slerp(_id, w.current * 0.6);
+    // A lowered elbow and bent forearm read as an invitation, not a rigid T-pose.
+    const elbowTarget = shoulder.clone().lerp(target, 0.5);
+    elbowTarget.y = shoulder.y - 0.35;
+    elbowTarget.z = shoulder.z + 0.18;
+    aimLimb(arm, fore, elbowTarget, w.current);
+    aimLimb(fore, hand, target, w.current);
+    hand.quaternion.slerp(_id, w.current * 0.35);
   });
   useEffect(() => {
     scene.traverse((o) => {
@@ -316,6 +322,10 @@ export function Stage() {
   const endWave = useCallback(() => setAnim((current) => current === "Wave_One_Hand" ? "Idle_12" : current), []);
   const shown = aiPoint ?? open;
   const voiceCommands = useRef<LiveZoordCommands | null>(null);
+  const pointToMenu = useCallback((i: number | null) => {
+    setAiPoint(i);
+    if (i !== null && MENU[i]) setOpen(i);
+  }, []);
   const openMenu = (i: number) => {
     setOpen(i);
     setAnim("Idle_12");
@@ -376,7 +386,7 @@ export function Stage() {
         </header>
         <div className="stage-controls">
           <div className="mb-3 flex justify-center">
-            <LiveZoord ref={voiceCommands} onPoint={setAiPoint} onGreeting={wave} onListening={setListening} />
+            <LiveZoord ref={voiceCommands} onPoint={pointToMenu} onGreeting={wave} onListening={setListening} />
           </div>
           <p className="mb-3 text-center text-xs text-muted-foreground">{shown !== null ? `ZOORD • ${MENU[shown]?.t.toUpperCase() ?? "DAKKAI"}` : `${loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"}`}</p>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
