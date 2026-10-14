@@ -72,7 +72,7 @@ export function useLiveVoice(
     const voice = createLiveVoice({
       url: endpoint.href,
       audio,
-      menu,
+      ...(menu ? { menu } : {}),
       onEvent(event) {
         if (!mounted.current || controller.current !== voice) return;
         if (event.type === "app.connected") {
@@ -287,7 +287,10 @@ function createLiveVoice(options: LiveOptions) {
   async function gatherCandidates(connection: RTCPeerConnection) {
     if (connection.iceGatheringState === "complete") return;
     await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => finish(new Error("Voice network setup timed out")), 10_000);
+      const timeout = setTimeout(() => {
+        if (connection.localDescription?.sdp.includes("a=candidate:")) finish();
+        else finish(new Error("Não foi possível conectar a voz. Tente novamente."));
+      }, 10_000);
       function finish(error?: Error) {
         clearTimeout(timeout);
         connection.removeEventListener("icegatheringstatechange", changed);

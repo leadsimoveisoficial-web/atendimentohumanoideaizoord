@@ -16,7 +16,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
 
   const call = useLiveVoice({
     onEvent: (e: LiveEvent) => {
-      if (e.type === "app.point" && typeof e["category"] === "number") onPoint(e["category"] as number);
+      if (e.type === "app.point") onPoint(typeof e["category"] === "number" ? e["category"] as number : null);
       if (e.type === "app.delegation.pending") setThinking(true);
       if (e.type === "session.output_transcript.delta" && typeof e["delta"] === "string") {
         setThinking(false);

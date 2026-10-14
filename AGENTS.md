@@ -12,3 +12,5 @@
 - Keep one mounted live voice controller for conversation and menu selections; this preserves the same voice and prevents overlapping narrators.
 - Attach the procedural LED mouth to the model's head bone and drive it from actual output audio amplitude; this preserves animation alignment and audio synchronization.
 - Menu details use a nonmodal side panel (lower panel on narrow screens) so the robot remains visible.
+- Derive pointing axes from child-bone offsets and preserve animation twist; keep gesture targets outside the body at shoulder height to avoid face collisions.
+- Reserve a separate scene viewport beside or above menu details and keep one shared panel-position function for gestures and floating cards; framing stays aligned on resize.
