@@ -14,5 +14,6 @@
 - [x] Open the menu beside Zoord without covering his face
 - [x] Route clicked categories and full presentation through the approved live voice
 - [ ] Verify audible live voice and mouth synchronization — blocked by WebRTC media connection in the test environment
+- [ ] Synchronize the LED mouth with audible playback, including menu speech, pauses, and Stop
 - [x] Correct presentation gestures using measured child-bone axes and outward shoulder-height targets
 - [x] Refine stage framing and side menu layout using the posture reference
