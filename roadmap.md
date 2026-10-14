@@ -1,9 +1,12 @@
 # Roadmap
 
-- [ ] Prepare Blender/Audio2Face mouth shape-key export for the supplied Zoord model; identify available tooling and required inputs
-- [ ] Apply approved-voice audio lip animation to conversation and menu and verify playback
-- [ ] Test a real customer conversation with greeting wave, moving mouth and unobstructed side menu
-- [ ] Refine human-like posture, outward menu pointing and necklace placement
+- [x] Prepare offline Blender LED shape-key and Audio2Face-weight bake scripts; syntax checked
+- [ ] Execute Blender/Audio2Face export and import verified GLB — blocked by unavailable Blender/RTX Audio2Face service and real weight export
+- [x] Apply audio-driven jawOpen morph on the LED lips using the shared approved-voice playback meter; browser measured 0.46 on sound and 0 on pause, no runtime errors
+- [ ] Test a real customer conversation with greeting wave and moving mouth — microphone ICE gathering fails before the service connection in the sandbox; no audible conversation verified
+- [x] Refine outward menu gesture with lowered elbow and subtle head turn; side menu visible beside/under unobstructed stage in desktop/mobile checks
+- [ ] Adjust baked necklace independently — requires artist editing the original character mesh in Blender; preserved rather than destructively moving neck bones
+- [x] Correct camera attachment after video mounts; synthetic camera delivered 640×480 frames in browser (not the user's camera)
 
 - [x] Implement transcript-triggered greeting wave and gentle head motion; greeting unit tests passed and stage remains visible without runtime errors
 - [ ] Verify greeting and listening movements during an audible real call — blocked by WebRTC media connection in the test environment
