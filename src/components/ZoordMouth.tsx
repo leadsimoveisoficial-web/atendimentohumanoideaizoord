@@ -6,15 +6,14 @@ import { voiceLevel } from "@/lib/voice-level";
 export function ZoordMouth({ scene }: { scene: THREE.Object3D }) {
   const [head, setHead] = useState<THREE.Object3D | null>(null);
   const bars = useRef<THREE.Group>(null);
-  const envelope = useRef(0);
   const [ledColor, setLedColor] = useState<string>();
   useLayoutEffect(() => {
     setHead(scene.getObjectByName("mixamorig:Head") ?? scene.getObjectByName("mixamorigHead") ?? null);
     setLedColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-led-cyan").trim());
   }, [scene]);
-  useFrame((_, rawDelta) => {
-    const level = THREE.MathUtils.damp(envelope.current, voiceLevel.v, 22, Math.min(rawDelta, 0.05));
-    envelope.current = level;
+  useFrame(() => {
+    // No second envelope: it would smear syllables and keep moving after pauses.
+    const level = voiceLevel.v;
     bars.current?.children.forEach((object, i) => {
       if (!(object instanceof THREE.Mesh)) return;
       object.scale.y = 0.16 + level * (0.5 + (1 - Math.abs(i - 3) / 4) * 1.5);

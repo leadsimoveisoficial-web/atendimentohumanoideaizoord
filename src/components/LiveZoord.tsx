@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
-import { meter } from "@/lib/voice-level";
+import { createPlaybackMeter } from "@/lib/voice-level";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
 
@@ -13,6 +13,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const pendingMenu = useRef<{ category: number | null } | null>(null);
+  const playbackMeter = useRef<ReturnType<typeof createPlaybackMeter> | null>(null);
 
   const call = useLiveVoice({
     onEvent: (e: LiveEvent) => {
@@ -30,6 +31,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   const stopping = call.status === "stopping";
   useImperativeHandle(ref, () => ({
     present(category) {
+      playbackMeter.current?.resume();
       setCaption("");
       onPoint(category);
       if (call.status === "connected") call.sendMenu(category);
@@ -45,17 +47,14 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     if (call.status === "closed") pendingMenu.current = null;
   }, [call.status, call.sendMenu]);
 
-  // Mouth: meter Zoord's voice from the call audio
+  // One output graph stays mounted across connecting, captions, and menu changes.
   useEffect(() => {
-    if (call.status !== "connected") return;
     const audio = call.audioRef.current;
-    const stream = audio?.srcObject as MediaStream | null;
-    if (!stream || !stream.getAudioTracks().length) return;
-    const ctx = new AudioContext();
-    const stop = meter(ctx, ctx.createMediaStreamSource(stream));
-    void ctx.resume().catch(() => {});
-    return () => { stop(); void ctx.close(); };
-  }, [call.status, call.audioRef]);
+    if (!audio) return;
+    const output = createPlaybackMeter(audio);
+    playbackMeter.current = output;
+    return () => { playbackMeter.current = null; output.dispose(); };
+  }, [call.audioRef]);
 
   // Camera: send a small snapshot every 2s to Zoord's brain
   useEffect(() => {
@@ -106,7 +105,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       )}
       <div className="flex flex-wrap items-center justify-center gap-2">
         {!live ? (
-          <Button variant="ghost" onClick={() => call.start()} disabled={stopping} className="stage-chip stage-chip-red"><Mic />{stopping ? "Encerrando…" : "Falar com o Zoord"}</Button>
+          <Button variant="ghost" onClick={() => { playbackMeter.current?.resume(); call.start(); }} disabled={stopping} className="stage-chip stage-chip-red"><Mic />{stopping ? "Encerrando…" : "Falar com o Zoord"}</Button>
         ) : (
           <>
             <Button variant="ghost" onClick={call.stop} className="stage-chip stage-chip-active">
@@ -116,7 +115,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
           </>
         )}
         <Button variant="ghost" onClick={toggleCam} className={`stage-chip ${cam ? "stage-chip-active" : ""}`}>{cam ? <CameraOff /> : <Camera />}{cam ? "Câmera ligada" : "Câmera"}</Button>
-        {call.playbackBlocked && <Button variant="ghost" onClick={call.resumePlayback} className="stage-chip"><Volume2 />Tocar som</Button>}
+        {call.playbackBlocked && <Button variant="ghost" onClick={() => { playbackMeter.current?.resume(); call.resumePlayback(); }} className="stage-chip"><Volume2 />Tocar som</Button>}
       </div>
       {call.error && <p role="alert" className="max-w-xl text-center text-xs text-dakkai">{call.error}</p>}
     </div>
