@@ -16,3 +16,4 @@
 - Menu details use a nonmodal side panel (lower panel on narrow screens) so the robot remains visible.
 - Derive pointing axes from child-bone offsets and preserve animation twist; keep gesture targets outside the body at shoulder height to avoid face collisions.
 - Reserve a separate scene viewport beside or above menu details and keep one shared panel-position function for gestures and floating cards; framing stays aligned on resize.
+- Derive customer greeting gestures from incoming live transcript fragments and finish wave clips through mixer events; this avoids narrator-triggered waves and looping greetings without changing voice transport.

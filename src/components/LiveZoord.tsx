@@ -3,10 +3,11 @@ import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
 import { createPlaybackMeter } from "@/lib/voice-level";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
+import { emptyReaction, reactToCustomer } from "@/lib/zoord-interaction";
 
 export type LiveZoordCommands = { present: (category: number | null) => void };
 
-export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | null) => void }>(function LiveZoord({ onPoint }, ref) {
+export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | null) => void; onGreeting: () => void; onListening: (active: boolean) => void }>(function LiveZoord({ onPoint, onGreeting, onListening }, ref) {
   const [caption, setCaption] = useState("");
   const [thinking, setThinking] = useState(false);
   const [cam, setCam] = useState(false);
@@ -14,6 +15,8 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   const streamRef = useRef<MediaStream | null>(null);
   const pendingMenu = useRef<{ category: number | null } | null>(null);
   const playbackMeter = useRef<ReturnType<typeof createPlaybackMeter> | null>(null);
+  const reaction = useRef(emptyReaction());
+  const listeningTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const call = useLiveVoice({
     onEvent: (e: LiveEvent) => {
@@ -23,12 +26,25 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
         setThinking(false);
         setCaption((c) => (c + (e["delta"] as string)).slice(-180));
       }
-      if (e.type === "session.input_transcript.delta") setCaption("");
-      if (e.type === "app.closed") { setThinking(false); setCaption(""); onPoint(null); }
+      if (e.type === "session.input_transcript.delta" && typeof e["delta"] === "string") {
+        setCaption("");
+        const result = reactToCustomer(reaction.current, e["delta"], typeof e["start_ms"] === "number" ? e["start_ms"] : reaction.current.endMs, typeof e["end_ms"] === "number" ? e["end_ms"] : reaction.current.endMs);
+        reaction.current = result.state;
+        onListening(true);
+        if (listeningTimer.current) clearTimeout(listeningTimer.current);
+        listeningTimer.current = setTimeout(() => onListening(false), 1800);
+        if (result.wave) { onPoint(null); onGreeting(); }
+      }
+      if (e.type === "session.output_transcript.delta" || e.type === "app.stopping" || e.type === "app.closed") {
+        if (listeningTimer.current) clearTimeout(listeningTimer.current);
+        onListening(false);
+      }
+      if (e.type === "app.closed") { reaction.current = emptyReaction(); setThinking(false); setCaption(""); onPoint(null); }
     },
   });
   const live = call.status === "connecting" || call.status === "connected";
   const stopping = call.status === "stopping";
+  useEffect(() => () => { if (listeningTimer.current) clearTimeout(listeningTimer.current); }, []);
   useImperativeHandle(ref, () => ({
     present(category) {
       playbackMeter.current?.resume();
