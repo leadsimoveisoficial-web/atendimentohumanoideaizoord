@@ -1,5 +1,10 @@
 # Roadmap
 
+- [ ] Prepare Blender/Audio2Face mouth shape-key export for the supplied Zoord model; identify available tooling and required inputs
+- [ ] Apply approved-voice audio lip animation to conversation and menu and verify playback
+- [ ] Test a real customer conversation with greeting wave, moving mouth and unobstructed side menu
+- [ ] Refine human-like posture, outward menu pointing and necklace placement
+
 - [x] Implement transcript-triggered greeting wave and gentle head motion; greeting unit tests passed and stage remains visible without runtime errors
 - [ ] Verify greeting and listening movements during an audible real call — blocked by WebRTC media connection in the test environment
 - [x] Clarify Blender visemes versus current audio-amplitude mouth without claiming phoneme lip sync
