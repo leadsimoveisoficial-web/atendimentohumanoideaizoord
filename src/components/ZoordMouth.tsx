@@ -22,7 +22,7 @@ export function ZoordMouth({ scene }: { scene: THREE.Object3D }) {
       if (material instanceof THREE.MeshBasicMaterial) material.opacity = 0.55 + level * 0.45;
     });
   });
-  if (!head) return null;
+  if (!head || !ledColor) return null;
   return createPortal(
     <group name="ZoordVoiceMouth" position={[0, 3.5, 10.8]} rotation-x={0.524}>
       <group ref={bars}>
