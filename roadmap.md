@@ -17,3 +17,4 @@
 - [x] Synchronize the LED mouth with audible playback, including menu speech, pauses, and Stop — unit tests and real browser audio bursts passed; full live voice check remains blocked above
 - [x] Correct presentation gestures using measured child-bone axes and outward shoulder-height targets
 - [x] Refine stage framing and side menu layout using the posture reference
+- [x] Replace equalizer bars with closed-at-rest lips driven by output amplitude; verified open/closed geometry and corrected the anchor from throat to actual lips (full live call remains blocked above)

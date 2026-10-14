@@ -151,6 +151,7 @@
   --stage-led-cyan: #3fe0ff;
   --stage-led-blue: #2f7bff;
   --stage-led-red: #c4141f;
+  --stage-mouth-cavity: #030507;
   --glass-highlight: oklch(0.96 0.01 220 / 0.08);
   --dakkai: oklch(0.52 0.2 27);
 }
