@@ -7,8 +7,10 @@ export function ZoordMouth({ scene }: { scene: THREE.Object3D }) {
   const [head, setHead] = useState<THREE.Object3D | null>(null);
   const bars = useRef<THREE.Group>(null);
   const envelope = useRef(0);
+  const [ledColor, setLedColor] = useState<string>();
   useLayoutEffect(() => {
     setHead(scene.getObjectByName("mixamorig:Head") ?? scene.getObjectByName("mixamorigHead") ?? null);
+    setLedColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-led-cyan").trim());
   }, [scene]);
   useFrame((_, rawDelta) => {
     const level = THREE.MathUtils.damp(envelope.current, voiceLevel.v, 22, Math.min(rawDelta, 0.05));
@@ -27,7 +29,7 @@ export function ZoordMouth({ scene }: { scene: THREE.Object3D }) {
         {Array.from({ length: 7 }, (_, i) => (
           <mesh key={i} position-x={(i - 3) * 0.7}>
             <boxGeometry args={[0.48, 1.5, 0.18]} />
-            <meshBasicMaterial color="var(--glow)" transparent toneMapped={false} />
+            <meshBasicMaterial color={ledColor} transparent toneMapped={false} />
           </mesh>
         ))}
       </group>
