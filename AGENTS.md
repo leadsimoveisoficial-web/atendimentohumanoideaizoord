@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep one mounted live voice controller for conversation and menu selections; this preserves the same voice and prevents overlapping narrators.
+- Attach the procedural LED mouth to the model's head bone and drive it from actual output audio amplitude; this preserves animation alignment and audio synchronization.
+- Menu details use a nonmodal side panel (lower panel on narrow screens) so the robot remains visible.

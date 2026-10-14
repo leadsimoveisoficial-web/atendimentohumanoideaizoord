@@ -148,6 +148,7 @@
   --foreground: oklch(0.96 0.01 220);
   --muted-foreground: oklch(0.65 0.04 230);
   --glow: oklch(0.85 0.14 210);
+  --stage-led-cyan: #3fe0ff;
   --dakkai: oklch(0.52 0.2 27);
 }
 @theme inline {
@@ -203,3 +204,13 @@
   }
 }
 body { font-family: var(--font-sans); }
+.zoord-side-menu {
+  top: 96px;
+  right: 16px;
+  bottom: 160px;
+  width: min(36vw, 420px);
+}
+@media (max-width: 767px) {
+  .zoord-side-menu { top: 52%; right: 8px; bottom: 8px; width: calc(100% - 16px); }
+  .zoord-side-menu .menu-sheet { padding: 16px; }
+}
