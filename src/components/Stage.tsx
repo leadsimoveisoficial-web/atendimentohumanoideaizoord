@@ -11,7 +11,7 @@ import {
   Html,
 } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import zoord from "@/assets/zoord.glb.asset.json";
 import dakkaiLogo from "@/assets/dakkai-logo.png";
@@ -35,14 +35,28 @@ export function panelPos(i: number) {
 
 const _id = new THREE.Quaternion();
 
-function Robot({ anim, point }: { anim: string; point: number | null }) {
+function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; point: number | null; listening: boolean; waveId: number; onWaveEnd: () => void }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(zoord.url);
-  const { actions } = useAnimations(animations, group);
+  const { actions, mixer } = useAnimations(animations, group);
   const w = useRef(0);
+  const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0 }), []);
+  useFrame(({ clock }, rawDelta) => {
+    const head = scene.getObjectByName("mixamorig:Head") ?? scene.getObjectByName("mixamorigHead");
+    if (!head) return;
+    const dt = Math.min(rawDelta, 0.05);
+    // Undo our previous offset only when the mixer has not replaced the bone pose.
+    if (head.quaternion.angleTo(headMotion.last) < 0.00001) head.quaternion.multiply(headMotion.inverse);
+    headMotion.strength = THREE.MathUtils.damp(headMotion.strength, listening ? 1 : 0, 5, dt);
+    headMotion.euler.set(Math.sin(clock.elapsedTime * 2.4) * 0.045 * headMotion.strength, Math.sin(clock.elapsedTime * 0.9) * 0.035 * headMotion.strength, 0);
+    headMotion.next.setFromEuler(headMotion.euler);
+    head.quaternion.multiply(headMotion.next);
+    headMotion.last.copy(head.quaternion);
+    headMotion.inverse.copy(headMotion.next).invert();
+  });
   // Procedural pointing gesture, layered on top of the playing animation
   useFrame((_, d) => {
-    w.current = THREE.MathUtils.damp(w.current, point === null ? 0 : 1, 4, d);
+    w.current = THREE.MathUtils.damp(w.current, point === null || anim === "Wave_One_Hand" ? 0 : 1, 4, Math.min(d, 0.05));
     if (w.current < 0.001) return;
     const target = panelPos(point ?? 0);
     const side = target.x < 0 ? "Right" : "Left";
@@ -66,11 +80,18 @@ function Robot({ anim, point }: { anim: string; point: number | null }) {
   }, [scene]);
   useEffect(() => {
     const a = actions[anim];
+    if (a) {
+      a.setLoop(anim === "Wave_One_Hand" ? THREE.LoopOnce : THREE.LoopRepeat, anim === "Wave_One_Hand" ? 1 : Infinity);
+      a.clampWhenFinished = anim === "Wave_One_Hand";
+    }
+    const finished = (event: { action: THREE.AnimationAction }) => { if (event.action === a && anim === "Wave_One_Hand") onWaveEnd(); };
+    mixer.addEventListener("finished", finished);
     a?.reset().fadeIn(0.4).play();
     return () => {
+      mixer.removeEventListener("finished", finished);
       a?.fadeOut(0.4);
     };
-  }, [anim, actions]);
+  }, [anim, actions, mixer, waveId, onWaveEnd]);
   return (
     <group ref={group} position={[0, 0.3, 0]} scale={2.3}>
       <primitive object={scene} />
@@ -289,6 +310,10 @@ export function Stage() {
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
   const [aiPoint, setAiPoint] = useState<number | null>(null);
+  const [listening, setListening] = useState(false);
+  const [waveId, setWaveId] = useState(0);
+  const wave = useCallback(() => { setAiPoint(null); setAnim("Wave_One_Hand"); setWaveId((id) => id + 1); }, []);
+  const endWave = useCallback(() => setAnim((current) => current === "Wave_One_Hand" ? "Idle_12" : current), []);
   const shown = aiPoint ?? open;
   const voiceCommands = useRef<LiveZoordCommands | null>(null);
   const openMenu = (i: number) => {
@@ -329,7 +354,7 @@ export function Stage() {
         <Sparkles count={80} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#ff9aa0" opacity={0.5} />
 
         <Suspense fallback={null}>
-          <Robot anim={anim} point={shown} />
+          <Robot anim={anim} point={shown} listening={listening} waveId={waveId} onWaveEnd={endWave} />
           <Loaded onLoad={() => setLoaded(true)} />
         </Suspense>
 
@@ -351,11 +376,11 @@ export function Stage() {
         </header>
         <div className="stage-controls">
           <div className="mb-3 flex justify-center">
-            <LiveZoord ref={voiceCommands} onPoint={setAiPoint} />
+            <LiveZoord ref={voiceCommands} onPoint={setAiPoint} onGreeting={wave} onListening={setListening} />
           </div>
           <p className="mb-3 text-center text-xs text-muted-foreground">{shown !== null ? `ZOORD • ${MENU[shown]?.t.toUpperCase() ?? "DAKKAI"}` : `${loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"}`}</p>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
-            <Button variant="ghost" onClick={() => { setAiPoint(null); setAnim("Wave_One_Hand"); }} className="stage-chip"><Hand />Acenar</Button>
+            <Button variant="ghost" onClick={wave} className="stage-chip"><Hand />Acenar</Button>
             <Button variant="ghost" onClick={() => { setAnim("Idle_12"); voiceCommands.current?.present(null); }} className="stage-chip"><UtensilsCrossed />Apresentar cardápio</Button>
             <Button variant="ghost" onClick={() => { setAiPoint(null); setAnim("Idle_12"); }} className="stage-chip" aria-label="Voltar à postura inicial" title="Postura inicial"><RotateCcw /></Button>
           </nav>
