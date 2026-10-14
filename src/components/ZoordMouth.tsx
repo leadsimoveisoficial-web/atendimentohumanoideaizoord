@@ -28,10 +28,10 @@ export function ZoordMouth({ scene }: { scene: THREE.Object3D }) {
   if (!head || !ledColor || !cavityColor) return null;
   return createPortal(
     <group name="ZoordVoiceMouth" position={[0, 11.5, 10.3]} rotation-x={0.524}>
-      <mesh ref={opening} geometry={geometry.cavity}>
+      <mesh ref={opening} args={[geometry.cavity]}>
         <meshBasicMaterial color={cavityColor} toneMapped={false} />
       </mesh>
-      <mesh ref={lips} position-z={0.04} geometry={geometry.lips}>
+      <mesh ref={lips} position-z={0.04} args={[geometry.lips]}>
         <meshBasicMaterial color={ledColor} transparent opacity={0.65} toneMapped={false} />
       </mesh>
     </group>, head,
