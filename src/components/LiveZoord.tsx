@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
 import { meter } from "@/lib/voice-level";
+import { Button } from "@/components/ui/button";
+import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
 
 export function LiveZoord({ onPoint }: { onPoint: (i: number | null) => void }) {
   const [caption, setCaption] = useState("");
@@ -22,6 +24,7 @@ export function LiveZoord({ onPoint }: { onPoint: (i: number | null) => void }) 
     },
   });
   const live = call.status === "connecting" || call.status === "connected";
+  const stopping = call.status === "stopping";
 
   // Mouth: meter Zoord's voice from the call audio
   useEffect(() => {
@@ -31,6 +34,7 @@ export function LiveZoord({ onPoint }: { onPoint: (i: number | null) => void }) 
     if (!stream || !stream.getAudioTracks().length) return;
     const ctx = new AudioContext();
     const stop = meter(ctx, ctx.createMediaStreamSource(stream));
+    void ctx.resume().catch(() => {});
     return () => { stop(); void ctx.close(); };
   }, [call.status, call.audioRef]);
 
@@ -43,7 +47,9 @@ export function LiveZoord({ onPoint }: { onPoint: (i: number | null) => void }) 
       if (!v || !v.videoWidth) return;
       const w = 384, h = Math.round((v.videoHeight / v.videoWidth) * w);
       canvas.width = w; canvas.height = h;
-      canvas.getContext("2d")!.drawImage(v, 0, 0, w, h);
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      context.drawImage(v, 0, 0, w, h);
       call.sendFrame(canvas.toDataURL("image/jpeg", 0.6));
     }, 2000);
     return () => clearInterval(t);
@@ -81,19 +87,19 @@ export function LiveZoord({ onPoint }: { onPoint: (i: number | null) => void }) 
       )}
       <div className="flex flex-wrap items-center justify-center gap-2">
         {!live ? (
-          <button onClick={call.start} className="stage-chip stage-chip-red">🎙️ Falar com o Zoord</button>
+          <Button variant="ghost" onClick={call.start} disabled={stopping} className="stage-chip stage-chip-red"><Mic />{stopping ? "Encerrando…" : "Falar com o Zoord"}</Button>
         ) : (
           <>
-            <button onClick={call.stop} className="stage-chip stage-chip-active">
-              {call.status === "connecting" ? "Conectando… (encerrar)" : "● Ao vivo — encerrar"}
-            </button>
-            <button onClick={() => call.setMuted(!call.muted)} className="stage-chip">{call.muted ? "Ativar microfone" : "Silenciar"}</button>
+            <Button variant="ghost" onClick={call.stop} className="stage-chip stage-chip-active">
+              <PhoneOff />{call.status === "connecting" ? "Conectando… (encerrar)" : "Ao vivo — encerrar"}
+            </Button>
+            <Button variant="ghost" disabled={call.status !== "connected"} onClick={() => call.setMuted(!call.muted)} className="stage-chip">{call.muted ? <MicOff /> : <Mic />}{call.muted ? "Ativar microfone" : "Silenciar"}</Button>
           </>
         )}
-        <button onClick={toggleCam} className={`stage-chip ${cam ? "stage-chip-active" : ""}`}>{cam ? "Câmera ligada" : "📷 Câmera"}</button>
-        {call.playbackBlocked && <button onClick={call.resumePlayback} className="stage-chip">Tocar som</button>}
+        <Button variant="ghost" onClick={toggleCam} className={`stage-chip ${cam ? "stage-chip-active" : ""}`}>{cam ? <CameraOff /> : <Camera />}{cam ? "Câmera ligada" : "Câmera"}</Button>
+        {call.playbackBlocked && <Button variant="ghost" onClick={call.resumePlayback} className="stage-chip"><Volume2 />Tocar som</Button>}
       </div>
-      {call.error && <p className="text-xs text-dakkai">{call.error}</p>}
+      {call.error && <p role="alert" className="max-w-xl text-center text-xs text-dakkai">{call.error}</p>}
     </div>
   );
 }
