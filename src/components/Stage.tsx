@@ -15,7 +15,9 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import zoord from "@/assets/zoord.glb.asset.json";
 import dakkaiLogo from "@/assets/dakkai-logo.png";
-import { AskZoord } from "./AskZoord";
+import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
+import { ZoordMouth } from "./ZoordMouth";
+import { Button } from "@/components/ui/button";
 import { MENU, WHATSAPP, ORDER_URL } from "./menu";
 
 const CYAN = "#3fe0ff";
@@ -76,6 +78,7 @@ function Robot({ anim, point }: { anim: string; point: number | null }) {
   return (
     <group ref={group} position={[0, 0.3, 0]}>
       <primitive object={scene} />
+      <ZoordMouth scene={scene} />
     </group>
   );
 }
@@ -275,32 +278,6 @@ function Beam({ point }: { point: number | null }) {
   return <primitive object={obj} />;
 }
 
-function speakText(text: string, onEnd: () => void) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-    const t = setTimeout(onEnd, 6000);
-    return () => clearTimeout(t);
-  }
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "pt-BR";
-  u.rate = 1.02;
-  const v = speechSynthesis.getVoices().find((x) => x.lang.toLowerCase().startsWith("pt-br"));
-  if (v) u.voice = v;
-  u.onend = onEnd;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(u);
-  return () => {
-    u.onend = null;
-    speechSynthesis.cancel();
-  };
-}
-
-function sectionSpeech(i: number) {
-  const s = MENU[i]!;
-  const items = s.items.slice(0, 3).map((it) => `${it.n}, ${it.p.startsWith("R$") ? `por ${it.p.replace("R$", "").trim()} reais` : "sob consulta"}`).join("; ");
-  const intro = i === 0 ? "Olá! Eu sou o Zoord, a inteligência do Dakkai Sushi. Vou te apresentar o nosso cardápio. " : "";
-  return `${intro}Aqui em ${s.t}, temos ${items}.`;
-}
-
 const ANIMS = ["Idle_12", "Formal_Bow", "Wave_One_Hand", "Stage_Walk", "Walking", "Hip_Hop_Dance_3", "All_Night_Dance", "Breakdance_1990", "Backflip_and_Rise", "Confused_Scratch"];
 const label = (s: string) => s.replace(/_\d+$/, "").replace(/_/g, " ");
 
@@ -308,13 +285,13 @@ export function Stage() {
   const [anim, setAnim] = useState("Idle_12");
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
-  const [point, setPoint] = useState<number | null>(null);
   const [aiPoint, setAiPoint] = useState<number | null>(null);
-  const shown = aiPoint ?? point;
-  useEffect(() => {
-    if (point === null) return;
-    return speakText(sectionSpeech(point), () => setPoint((p) => (p === null || p + 1 >= MENU.length ? null : p + 1)));
-  }, [point]);
+  const shown = aiPoint;
+  const voiceCommands = useRef<LiveZoordCommands | null>(null);
+  const openMenu = (i: number) => {
+    setOpen(i);
+    voiceCommands.current?.present(i);
+  };
   return (
     <div className="fixed inset-0 bg-background">
       <Canvas shadows dpr={[1, 1.5]} camera={{ position: [0, 1.1, 7.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
@@ -342,7 +319,7 @@ export function Stage() {
         </Suspense>
         <Brain active={shown !== null} />
         <Beam point={shown} />
-        <FlyingMenu onOpen={setOpen} />
+        <FlyingMenu onOpen={openMenu} />
         <Sparkles count={80} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#ff9aa0" opacity={0.5} />
 
         <Suspense fallback={null}>
@@ -361,16 +338,14 @@ export function Stage() {
         <header className="flex items-center justify-between">
           <span className="font-display text-sm tracking-[0.5em] text-foreground">DAKKAI <span className="text-dakkai">×</span> ZOORD</span>
           <div className="pointer-events-auto flex items-center gap-3">
-            <button onClick={() => setPoint((p) => (p === null ? 0 : null))} className={`stage-chip ${point !== null ? "stage-chip-active" : ""}`}>
-              {point === null ? "Zoord apresenta" : "Parar"}
-            </button>
+            <Button variant="ghost" onClick={() => voiceCommands.current?.present(null)} className="stage-chip">Zoord apresenta</Button>
             <button onClick={() => setOpen(0)} className="stage-chip">Cardápio</button>
             <a href={WHATSAPP} target="_blank" rel="noreferrer" className="stage-chip stage-chip-red">Pedir no WhatsApp</a>
           </div>
         </header>
         <div>
           <div className="mb-3 flex justify-center">
-            <AskZoord onPoint={(i: number | null) => { speechSynthesis?.cancel?.(); setAiPoint(i); }} />
+            <LiveZoord ref={voiceCommands} onPoint={setAiPoint} />
           </div>
           <p className="mb-3 text-center text-xs tracking-[0.3em] text-muted-foreground">{shown !== null ? `ZOORD APRESENTANDO • ${MENU[shown]!.t.toUpperCase()}` : `${loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"} — toque no cardápio flutuante`}</p>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
@@ -384,15 +359,15 @@ export function Stage() {
       </div>
 
       {open !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-md" onClick={() => setOpen(null)}>
-          <div className="menu-sheet" onClick={(e) => e.stopPropagation()}>
+        <aside aria-label="Cardápio Dakkai" className="zoord-side-menu fixed z-50" >
+          <div className="menu-sheet !max-h-full !rounded-lg">
             <div className="flex items-center justify-between gap-4">
               <img src={dakkaiLogo} alt="DAKKAI Sushi" className="h-16 w-auto" />
               <button onClick={() => setOpen(null)} className="stage-chip" aria-label="Fechar">✕</button>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               {MENU.map((s, i) => (
-                <button key={s.t} onClick={() => setOpen(i)} className={`stage-chip ${open === i ? "stage-chip-active" : ""}`}>{s.t}</button>
+                <Button variant="ghost" key={s.t} onClick={() => openMenu(i)} className={`stage-chip ${open === i ? "stage-chip-active" : ""}`}>{s.t}</Button>
               ))}
             </div>
             <h2 className="mt-6 font-display text-2xl tracking-widest text-foreground">{MENU[open]!.t}</h2>
@@ -413,7 +388,7 @@ export function Stage() {
             </div>
             <p className="mt-4 text-xs text-muted-foreground">Preços e disponibilidade podem variar. Rod. Rafael da Rocha Pires, 1650 — Sambaqui, Florianópolis/SC</p>
           </div>
-        </div>
+        </aside>
       )}
     </div>
   );

@@ -1,15 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
 import { meter } from "@/lib/voice-level";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
 
-export function LiveZoord({ onPoint }: { onPoint: (i: number | null) => void }) {
+export type LiveZoordCommands = { present: (category: number | null) => void };
+
+export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | null) => void }>(function LiveZoord({ onPoint }, ref) {
   const [caption, setCaption] = useState("");
   const [thinking, setThinking] = useState(false);
   const [cam, setCam] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const pendingMenu = useRef<{ category: number | null } | null>(null);
 
   const call = useLiveVoice({
     onEvent: (e: LiveEvent) => {
@@ -25,6 +28,22 @@ export function LiveZoord({ onPoint }: { onPoint: (i: number | null) => void }) 
   });
   const live = call.status === "connecting" || call.status === "connected";
   const stopping = call.status === "stopping";
+  useImperativeHandle(ref, () => ({
+    present(category) {
+      setCaption("");
+      onPoint(category);
+      if (call.status === "connected") call.sendMenu(category);
+      else if (call.status === "connecting" || stopping) pendingMenu.current = { category };
+      else call.start({ category });
+    },
+  }), [call.status, call.sendMenu, call.start, onPoint, stopping]);
+  useEffect(() => {
+    if (call.status === "connected" && pendingMenu.current) {
+      call.sendMenu(pendingMenu.current.category);
+      pendingMenu.current = null;
+    }
+    if (call.status === "closed") pendingMenu.current = null;
+  }, [call.status, call.sendMenu]);
 
   // Mouth: meter Zoord's voice from the call audio
   useEffect(() => {
@@ -87,7 +106,7 @@ export function LiveZoord({ onPoint }: { onPoint: (i: number | null) => void }) 
       )}
       <div className="flex flex-wrap items-center justify-center gap-2">
         {!live ? (
-          <Button variant="ghost" onClick={call.start} disabled={stopping} className="stage-chip stage-chip-red"><Mic />{stopping ? "Encerrando…" : "Falar com o Zoord"}</Button>
+          <Button variant="ghost" onClick={() => call.start()} disabled={stopping} className="stage-chip stage-chip-red"><Mic />{stopping ? "Encerrando…" : "Falar com o Zoord"}</Button>
         ) : (
           <>
             <Button variant="ghost" onClick={call.stop} className="stage-chip stage-chip-active">
@@ -102,4 +121,4 @@ export function LiveZoord({ onPoint }: { onPoint: (i: number | null) => void }) 
       {call.error && <p role="alert" className="max-w-xl text-center text-xs text-dakkai">{call.error}</p>}
     </div>
   );
-}
+});
