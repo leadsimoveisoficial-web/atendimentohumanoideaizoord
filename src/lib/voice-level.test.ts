@@ -33,7 +33,6 @@ describe("Zoord playback synchronization", () => {
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
     const audio = document.createElement("audio");
     vi.stubGlobal("MediaStream", class { getAudioTracks() { return [{}]; } });
-    audio.srcObject = new MediaStream();
     let paused = true;
     Object.defineProperty(audio, "paused", { get: () => paused });
     const meter = createPlaybackMeter(audio);
@@ -41,12 +40,17 @@ describe("Zoord playback synchronization", () => {
     meter.resume();
     await Promise.resolve();
     expect(voiceLevel.v).toBe(0);
+    // The remote track may arrive after connection; playback must attach it then.
+    audio.srcObject = new MediaStream();
     paused = false;
     audio.dispatchEvent(new Event("playing"));
     expect(voiceLevel.v).toBeGreaterThan(0);
     meter.resume();
     await Promise.resolve();
     expect(createSource).toHaveBeenCalledTimes(1);
+    audio.srcObject = new MediaStream();
+    audio.dispatchEvent(new Event("playing"));
+    expect(createSource).toHaveBeenCalledTimes(2);
     audio.muted = true;
     audio.dispatchEvent(new Event("volumechange"));
     expect(voiceLevel.v).toBe(0);
@@ -58,6 +62,6 @@ describe("Zoord playback synchronization", () => {
     expect(voiceLevel.v).toBe(0);
     meter.dispose();
     expect(close).toHaveBeenCalledOnce();
-    expect(source.disconnect).toHaveBeenCalledOnce();
+    expect(source.disconnect).toHaveBeenCalledTimes(2);
   });
 });
