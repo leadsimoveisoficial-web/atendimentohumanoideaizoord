@@ -1,7 +1,8 @@
 # Roadmap
 
-- [ ] React to spoken greetings with a one-shot wave and gentle listening head movement, preserving the live voice
-- [ ] Clarify Blender visemes versus current audio-amplitude mouth without claiming phoneme lip sync
+- [x] Implement transcript-triggered greeting wave and gentle head motion; greeting unit tests passed and stage remains visible without runtime errors
+- [ ] Verify greeting and listening movements during an audible real call — blocked by WebRTC media connection in the test environment
+- [x] Clarify Blender visemes versus current audio-amplitude mouth without claiming phoneme lip sync
 
 - [x] Remove the white light from Zoord (white key spotlight, white overhead light, white ring under him)
 - [x] Make the stage render sharp and crisp at 4K (resolution, pixel ratio, bloom and edge quality)
