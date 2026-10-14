@@ -74,6 +74,10 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
 
   // Camera: send a small snapshot every 2s to Zoord's brain
   useEffect(() => {
+    if (cam && videoRef.current && streamRef.current) videoRef.current.srcObject = streamRef.current;
+  }, [cam]);
+
+  useEffect(() => {
     if (!cam || call.status !== "connected") return;
     const canvas = document.createElement("canvas");
     const t = setInterval(() => {
@@ -101,7 +105,6 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       const s = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
       streamRef.current = s;
       setCam(true);
-      requestAnimationFrame(() => { if (videoRef.current) videoRef.current.srcObject = s; });
     } catch {
       alert("Não consegui acessar a câmera. Verifique a permissão do navegador.");
     }
