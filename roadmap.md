@@ -11,3 +11,6 @@
 - [ ] Upgrade voice to AI voice (Lovable AI TTS) (voice mode) — pending user confirmation
 - [ ] Attach a voice-reactive cyan LED mouth to Zoord's animated head
 - [ ] Mount the live conversation panel on the stage and verify its controls
+- [ ] Open the menu beside Zoord without covering his face
+- [ ] Use the approved live Zoord voice for clicked menu categories and the full presentation, replacing browser speech
+- [ ] Synchronize the LED mouth with menu speech and live conversation
