@@ -26,12 +26,12 @@ export function speechTimbre(freqDb: Float32Array, sampleRate: number): { round:
   return { round: Math.max(0, Math.min(1, (0.25 - ratio) * 4)), wide: Math.max(0, Math.min(1, (ratio - 0.35) * 2.5)) };
 }
 
-export function sampleVoice(analyser: AnalyserNode, samples: Float32Array, freq: Float32Array, gain = 1) {
+export function sampleVoice(analyser: AnalyserNode, samples: Float32Array<ArrayBuffer>, freq: Float32Array<ArrayBuffer>, gain = 1) {
   analyser.getFloatTimeDomainData(samples);
   voiceLevel.v = speechLevel(samples) * gain;
-  if (voiceLevel.v > 0) {
+  if (voiceLevel.v > 0 && typeof analyser.getFloatFrequencyData === "function") {
     analyser.getFloatFrequencyData(freq);
-    const t = speechTimbre(freq, analyser.context.sampleRate);
+    const t = speechTimbre(freq, analyser.context?.sampleRate ?? 48000);
     // Light smoothing on shape only; loudness stays instant so pauses close the mouth.
     voiceLevel.round += (t.round - voiceLevel.round) * 0.5;
     voiceLevel.wide += (t.wide - voiceLevel.wide) * 0.5;
