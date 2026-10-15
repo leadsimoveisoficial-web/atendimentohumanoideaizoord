@@ -1,5 +1,6 @@
 // Shared, mutable loudness of Zoord's audible output (0..1), sampled by the 3D mouth.
-export const voiceLevel = { v: 0 };
+// round: low-frequency dominance (O/U-like); wide: high-frequency dominance (E/I/S-like).
+export const voiceLevel = { v: 0, round: 0, wide: 0 };
 
 export function speechLevel(samples: Float32Array): number {
   let sum = 0;
@@ -7,6 +8,37 @@ export function speechLevel(samples: Float32Array): number {
   const rms = Math.sqrt(sum / Math.max(1, samples.length));
   // Ignore the noise floor; keep quiet syllables while avoiding clipping loud speech.
   return rms < 0.004 ? 0 : Math.min(1, Math.sqrt((rms - 0.004) * 4));
+}
+
+/** Measured spectral balance (dB bins) → mouth roundness/width. Not phoneme recognition. */
+export function speechTimbre(freqDb: Float32Array, sampleRate: number): { round: number; wide: number } {
+  const hz = sampleRate / 2 / freqDb.length;
+  let low = 0, high = 0;
+  for (let i = 0; i < freqDb.length; i++) {
+    const f = i * hz;
+    const p = Number.isFinite(freqDb[i]) ? Math.pow(10, freqDb[i] / 10) : 0;
+    if (f >= 200 && f < 900) low += p;
+    else if (f >= 1800 && f < 5000) high += p;
+  }
+  const total = low + high;
+  if (!(total > 0)) return { round: 0, wide: 0 };
+  const ratio = high / total; // 0 = dark (O/U), 1 = bright (E/I/S)
+  return { round: Math.max(0, Math.min(1, (0.25 - ratio) * 4)), wide: Math.max(0, Math.min(1, (ratio - 0.35) * 2.5)) };
+}
+
+export function sampleVoice(analyser: AnalyserNode, samples: Float32Array, freq: Float32Array, gain = 1) {
+  analyser.getFloatTimeDomainData(samples);
+  voiceLevel.v = speechLevel(samples) * gain;
+  if (voiceLevel.v > 0) {
+    analyser.getFloatFrequencyData(freq);
+    const t = speechTimbre(freq, analyser.context.sampleRate);
+    // Light smoothing on shape only; loudness stays instant so pauses close the mouth.
+    voiceLevel.round += (t.round - voiceLevel.round) * 0.5;
+    voiceLevel.wide += (t.wide - voiceLevel.wide) * 0.5;
+  } else {
+    voiceLevel.round = 0;
+    voiceLevel.wide = 0;
+  }
 }
 
 /** Analyse the stream attached to the SAME element playing live and menu speech.
