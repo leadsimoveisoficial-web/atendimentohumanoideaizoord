@@ -44,6 +44,18 @@ const _id = new THREE.Quaternion();
 function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; point: number | null; listening: boolean; waveId: number; onWaveEnd: () => void }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(zoord.url);
+  const maxAniso = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
+  // Sharper face: full anisotropic filtering on the avatar's textures, viewed at a glancing angle.
+  useEffect(() => {
+    scene.traverse((o) => {
+      const mat = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+      if (!mat || Array.isArray(mat)) return;
+      for (const tex of [mat.map, mat.normalMap, mat.roughnessMap, mat.metalnessMap]) {
+        if (tex) { tex.anisotropy = maxAniso; tex.needsUpdate = true; }
+      }
+      if (mat.map) mat.map.colorSpace = THREE.SRGBColorSpace;
+    });
+  }, [scene, maxAniso]);
   const { actions, mixer } = useAnimations(animations, group);
   const w = useRef(0);
   const waveTime = useRef(0);
@@ -378,7 +390,7 @@ export function Stage() {
   return (
     <div className="fixed inset-0 bg-background">
       <div className={`stage-scene ${open !== null ? "stage-scene-menu" : ""}`}>
-      <Canvas shadows="percentage" dpr={[1, 1.5]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
+      <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
         <StageCamera />
         <color attach="background" args={["#030507"]} />
         <fog attach="fog" args={["#030507", 12, 26]} />
@@ -412,7 +424,7 @@ export function Stage() {
         </Suspense>
 
         <OrbitControls target={[0, 2.45, 0]} enablePan={false} minDistance={7} maxDistance={16} minAzimuthAngle={-0.25} maxAzimuthAngle={0.25} minPolarAngle={1.25} maxPolarAngle={1.55} enableDamping />
-        <EffectComposer multisampling={2}>
+        <EffectComposer multisampling={4}>
           <Bloom intensity={0.7} luminanceThreshold={0.85} mipmapBlur />
           <Vignette darkness={0.6} offset={0.3} />
         </EffectComposer>
