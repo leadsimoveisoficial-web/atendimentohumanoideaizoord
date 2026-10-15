@@ -22,6 +22,7 @@ import { RecordRepeat } from "./RecordRepeat";
 import { Button } from "@/components/ui/button";
 import { MENU, WHATSAPP, ORDER_URL } from "./menu";
 import { aimLimb } from "@/lib/zoord-gesture";
+import { PoseLayer } from "@/lib/zoord-pose";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
 
 const CYAN = "#3fe0ff";
@@ -44,18 +45,40 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const w = useRef(0);
   const waveTime = useRef(0);
   const speakUntil = useRef(0);
+  const poseLayer = useMemo(() => new PoseLayer(), []);
+  const restWeight = useRef(1);
   const waving = anim === "Wave_One_Hand";
   const clipName = point !== null && !waving ? "Talk_with_Hands_Open" : "Talk_with_Left_Hand_on_Hip";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0 }), []);
   const spineLean = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler() }), []);
   useFrame(({ clock }, rawDelta) => {
+    poseLayer.restore();
     const head = scene.getObjectByName("mixamorig:Head") ?? scene.getObjectByName("mixamorigHead");
     if (!head) return;
     const dt = Math.min(rawDelta, 0.05);
     // Gesture with the supplied talking clip while Zoord's voice is audible; hold briefly across syllable gaps.
     if (voiceLevel.v > 0.05) speakUntil.current = clock.elapsedTime + 0.8;
-    const relaxed = actions["Talk_with_Left_Hand_on_Hip"];
-    if (clipName === "Talk_with_Left_Hand_on_Hip" && relaxed) relaxed.paused = clock.elapsedTime > speakUntil.current;
+    const talking = clock.elapsedTime < speakUntil.current;
+    const active = actions[clipName];
+    if (active) active.paused = !talking;
+    restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving ? 1 : 0, 5, dt);
+    // Relax both arms beside the torso instead of freezing midway through a talking gesture.
+    for (const side of ["Right", "Left"]) {
+      const arm = scene.getObjectByName(`mixamorig:${side}Arm`) ?? scene.getObjectByName(`mixamorig${side}Arm`);
+      const fore = scene.getObjectByName(`mixamorig:${side}ForeArm`) ?? scene.getObjectByName(`mixamorig${side}ForeArm`);
+      const hand = scene.getObjectByName(`mixamorig:${side}Hand`) ?? scene.getObjectByName(`mixamorig${side}Hand`);
+      if (!arm || !fore || !hand || restWeight.current < 0.001) continue;
+      arm.updateWorldMatrix(true, true);
+      const shoulder = arm.getWorldPosition(new THREE.Vector3());
+      const sign = side === "Right" ? -1 : 1;
+      const scale = arm.getWorldScale(new THREE.Vector3()).length() / Math.sqrt(3);
+      const upper = fore.position.length() * scale;
+      const lower = hand.position.length() * scale;
+      const elbow = shoulder.clone().add(new THREE.Vector3(sign * upper * 0.28, -upper * 0.95, 0.04));
+      const palm = elbow.clone().add(new THREE.Vector3(sign * lower * 0.12, -lower * 0.96, lower * 0.20));
+      poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, restWeight.current));
+      poseLayer.apply(fore, () => aimLimb(fore, hand, palm, restWeight.current));
+    }
     // Undo our previous offset only when the mixer has not replaced the bone pose.
     if (head.quaternion.angleTo(headMotion.last) < 0.00001) head.quaternion.multiply(headMotion.inverse);
     const presenting = point !== null && anim !== "Wave_One_Hand";
@@ -82,8 +105,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const weight = THREE.MathUtils.smoothstep(t, 0, 0.5) * (1 - THREE.MathUtils.smoothstep(t, 2.6, 3.2));
     const elbow = shoulder.clone().add(new THREE.Vector3(-0.48, -0.12, 0.3));
     const palm = shoulder.clone().add(new THREE.Vector3(-0.72 + Math.sin(t * 8) * 0.12, 0.55, 0.45));
-    aimLimb(arm, fore, elbow, weight);
-    aimLimb(fore, hand, palm, weight);
+    poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, weight));
+    poseLayer.apply(fore, () => aimLimb(fore, hand, palm, weight));
   });
   // Procedural pointing gesture, layered on top of the playing animation
   useFrame((_, d) => {
@@ -97,25 +120,26 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     if (!arm?.parent || !fore || !hand) return;
     arm.updateWorldMatrix(true, false);
     const shoulder = arm.getWorldPosition(new THREE.Vector3());
+    const scale = arm.getWorldScale(new THREE.Vector3()).length() / Math.sqrt(3);
+    const reach = (fore.position.length() + hand.position.length()) * scale;
     // Present outward at chest height, never reach up toward the face or behind the body.
     target.y = THREE.MathUtils.clamp(target.y, shoulder.y - 0.45, shoulder.y + 0.12);
     target.z = shoulder.z + 0.65;
+    target.x = shoulder.x + (target.x < shoulder.x ? -1 : 1) * reach * 0.72;
+    target.sub(shoulder).clampLength(0, reach * 0.88).add(shoulder);
     // A lowered elbow and bent forearm read as an invitation, not a rigid T-pose.
     const elbowTarget = shoulder.clone().lerp(target, 0.5);
     elbowTarget.y = shoulder.y - 0.35;
     elbowTarget.z = shoulder.z + 0.18;
-    aimLimb(arm, fore, elbowTarget, w.current);
-    aimLimb(fore, hand, target, w.current);
-    hand.quaternion.slerp(_id, w.current * 0.35);
+    poseLayer.apply(arm, () => aimLimb(arm, fore, elbowTarget, w.current));
+    poseLayer.apply(fore, () => aimLimb(fore, hand, target, w.current));
+    poseLayer.apply(hand, () => hand.quaternion.slerp(_id, w.current * 0.2));
     // Human touch: lean the chest slightly toward the panel while presenting.
     const spine = scene.getObjectByName("mixamorig:Spine2") ?? scene.getObjectByName("mixamorigSpine2");
     if (spine) {
       const lean = (target.x < 0 ? -1 : 1) * 0.06 * w.current;
       spineLean.next.setFromEuler(spineLean.euler.set(0, lean, lean * 0.4));
-      if (spine.quaternion.angleTo(spineLean.last) < 0.00001) spine.quaternion.multiply(spineLean.inverse);
-      spine.quaternion.multiply(spineLean.next);
-      spineLean.last.copy(spine.quaternion);
-      spineLean.inverse.copy(spineLean.next).invert();
+      poseLayer.apply(spine, () => spine.quaternion.multiply(spineLean.next));
     }
   });
   useEffect(() => {
@@ -131,6 +155,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       a.clampWhenFinished = false;
       a.paused = false;
       a.reset().fadeIn(0.4).play();
+      a.setEffectiveTimeScale(0.85);
       // Keep the relaxed supplied pose at rest; use the full open-hand clip when presenting.
       if (clipName === "Talk_with_Left_Hand_on_Hip") a.paused = true;
     }

@@ -23,3 +23,4 @@
 - Keep Blender preparation offline in tools/blender and preserve the supplied face, skeleton and baked necklace; this avoids destructive automatic face edits.
 - Voice category-selection events open the same nonmodal menu as clicks; this keeps spoken recommendations and visible menu details aligned.
 - Map the active avatar's supplied conversation clips to presentation and relaxed posture, with a model-specific head-local mouth anchor; this supports avatar replacement without changing the approved voice or source mesh.
+- Restore procedural limb layers before each frame without overwriting fresh mixer poses, and bound presentation reach by actual limb lengths; this prevents stuck arms and unnatural overextension when talking clips pause.

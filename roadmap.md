@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Organize Zoord posture: relaxed arms at rest, bounded menu reach and reversible gesture layers; verify resting, pointing and return from waving in the browser.
+
 - [x] Improve mouth playback synchronization: shared owner-scoped meter, processed silent stream branch and corrected forward-facing lips; recorded browser audio measured opening, round/wide changes and zero on completion, seven tests passed. Real live call remains unverified as listed below.
 
 - [x] Replace Zoord with the uploaded Cyber Hero; adapt supplied presentation clips, head-local audio mouth and bounded outward wave; browser verified new asset, raised hand and unobstructed side menu without runtime errors
