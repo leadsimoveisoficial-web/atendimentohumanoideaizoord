@@ -243,8 +243,8 @@ function createLiveVoice(options: LiveOptions) {
 
   function pulse() {
     if (state !== "active") return;
-    if (Date.now() - lastAck >= 5000) return fail("Voice control connection lost");
-    if (Date.now() - lastHeartbeat >= 5000) return fail("Voice media connection lost");
+    if (Date.now() - lastAck >= 5000) return fail("A conexão da voz caiu. Toque em Falar com o Zoord para tentar de novo.");
+    if (Date.now() - lastHeartbeat >= 5000) return fail("O som da voz caiu. Toque em Falar com o Zoord para tentar de novo.");
     if (!mediaReady()) return;
     try {
       send({ type: "gateway.heartbeat" });
@@ -312,9 +312,21 @@ function createLiveVoice(options: LiveOptions) {
     state = "starting";
     window.addEventListener("pagehide", stop);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-      });
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        });
+      } catch (micError) {
+        const name = micError instanceof DOMException ? micError.name : "";
+        if (name === "NotAllowedError" || name === "SecurityError") {
+          throw new Error("Permita o acesso ao microfone no navegador para falar com o Zoord.");
+        }
+        if (name === "NotFoundError" || name === "OverconstrainedError") {
+          throw new Error("Não encontrei um microfone neste aparelho.");
+        }
+        throw new Error("Não consegui ligar o microfone. Feche outros apps que usam o microfone e tente de novo.");
+      }
       microphone = stream;
       if (!starting()) {
         stream.getTracks().forEach((track) => track.stop());
