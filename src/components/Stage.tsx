@@ -63,7 +63,10 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const poseLayer = useMemo(() => new PoseLayer(), []);
   const restWeight = useRef(1);
   const waving = anim === "Wave_One_Hand";
-  const clipName = point !== null && !waving ? "Talk_with_Hands_Open" : "Talk_with_Left_Hand_on_Hip";
+  // Speaking uses both hands (open-palm, maître-style); at rest he keeps the relaxed pose.
+  const [speaking, setSpeaking] = useState(false);
+  const speakingRef = useRef(false);
+  const clipName = (point !== null || speaking) && !waving ? "Talk_with_Hands_Open" : "Talk_with_Left_Hand_on_Hip";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0 }), []);
   useEffect(() => {
     const move = (e: PointerEvent) => setMouseGaze((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
@@ -81,6 +84,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     // Gesture with the supplied talking clip while Zoord's voice is audible; hold briefly across syllable gaps.
     if (voiceLevel.v > 0.05) speakUntil.current = clock.elapsedTime + 0.8;
     const talking = clock.elapsedTime < speakUntil.current;
+    if (talking !== speakingRef.current) { speakingRef.current = talking; setSpeaking(talking); }
     const active = actions[clipName];
     if (active) active.paused = !talking;
     restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving ? 1 : 0, 5, dt);
@@ -189,7 +193,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       a.clampWhenFinished = false;
       a.paused = false;
       a.reset().fadeIn(0.4).play();
-      a.setEffectiveTimeScale(0.85);
+      a.setEffectiveTimeScale(0.72); // unhurried, refined gestures
       // Keep the relaxed supplied pose at rest; use the full open-hand clip when presenting.
       if (clipName === "Talk_with_Left_Hand_on_Hip") a.paused = true;
     }
