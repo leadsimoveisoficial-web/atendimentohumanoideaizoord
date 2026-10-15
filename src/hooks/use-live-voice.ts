@@ -70,11 +70,11 @@ export function useLiveVoice(
       setCall((previous) => ({ ...previous, error: "Invalid voice connection URL." }));
       return;
     }
+    let connectedOnce = false;
     const voice = createLiveVoice({
       url: endpoint.href,
       audio,
       ...(menu ? { menu } : {}),
-      let connectedOnce = false;
       onEvent(event) {
         if (!mounted.current || controller.current !== voice) return;
         if (event.type === "app.connected") {
