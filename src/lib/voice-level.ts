@@ -73,7 +73,7 @@ export function createPlaybackMeter(audio: HTMLAudioElement, mode: "stream" | "r
       return;
     }
     const playback = audio.srcObject;
-    if (playback instanceof MediaStream && playback !== stream && playback.getAudioTracks().length) {
+    if (mode === "stream" && typeof MediaStream !== "undefined" && playback instanceof MediaStream && playback !== stream && playback.getAudioTracks().length) {
       source?.disconnect();
       stream = playback;
       source = ctx.createMediaStreamSource(playback);
