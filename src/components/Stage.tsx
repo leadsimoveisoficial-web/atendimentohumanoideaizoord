@@ -87,19 +87,23 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     if (voiceLevel.v > 0.05) speakUntil.current = clock.elapsedTime + 0.8;
     const talking = clock.elapsedTime < speakUntil.current;
     if (talking !== speakingRef.current) { speakingRef.current = talking; setSpeaking(talking); }
-    // Poised weight shift: hips sway slowly, one knee softens while the other leg carries weight.
-    legWeight.current = THREE.MathUtils.damp(legWeight.current, talking || point !== null ? 1 : 0.35, 2, dt);
-    const sway = Math.sin(clock.elapsedTime * 0.55) * legWeight.current;
-    const bone = (n: string) => scene.getObjectByName(`mixamorig:${n}`) ?? scene.getObjectByName(`mixamorig${n}`);
-    const hips = bone("Hips");
-    const spine = bone("Spine");
-    if (hips) poseLayer.apply(hips, () => hips.quaternion.multiply(_q.setFromEuler(_e.set(0, sway * 0.06, sway * 0.035))));
-    if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(_q.setFromEuler(_e.set(0, -sway * 0.04, -sway * 0.03))));
-    for (const [side, k] of [["Left", 1], ["Right", -1]] as const) {
-      const bend = Math.max(0, sway * k) * 0.12;
-      const up = bone(`${side}UpLeg`), leg = bone(`${side}Leg`);
+    // Feet stay planted. Only while explaining the menu does the body shift weight: the torso turns toward
+    // the panel and one knee softens, so the legs follow the upper body like a person presenting.
+    legWeight.current = THREE.MathUtils.damp(legWeight.current, point !== null && !waving ? 1 : 0, 2.5, dt);
+    if (legWeight.current > 0.001) {
+      const bone = (n: string) => scene.getObjectByName(`mixamorig:${n}`) ?? scene.getObjectByName(`mixamorig${n}`);
+      const toward = point !== null && panelPos(point).x < 0 ? -1 : 1;
+      const breathe = Math.sin(clock.elapsedTime * 0.6) * 0.3;
+      const shift = legWeight.current * (0.7 + breathe * 0.3);
+      const spine = bone("Spine");
+      if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(_q.setFromEuler(_e.set(0, toward * 0.08 * shift, -toward * 0.025 * shift))));
+      // Soften the knee on the side away from the panel; thigh and shin bends cancel so the foot stays put.
+      const side = toward > 0 ? "Left" : "Right";
+      const bend = 0.09 * shift;
+      const up = bone(`${side}UpLeg`), leg = bone(`${side}Leg`), foot = bone(`${side}Foot`);
       if (up) poseLayer.apply(up, () => up.quaternion.multiply(_q.setFromEuler(_e.set(-bend, 0, 0))));
       if (leg) poseLayer.apply(leg, () => leg.quaternion.multiply(_q.setFromEuler(_e.set(bend * 2, 0, 0))));
+      if (foot) poseLayer.apply(foot, () => foot.quaternion.multiply(_q.setFromEuler(_e.set(-bend, 0, 0))));
     }
     const active = actions[clipName];
     if (active) active.paused = !talking;
