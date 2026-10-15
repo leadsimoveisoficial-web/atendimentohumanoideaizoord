@@ -13,6 +13,7 @@
 - Attach the procedural LED mouth to the model's head bone and drive it from actual output audio amplitude; this preserves animation alignment and audio synchronization.
 - Represent the procedural mouth as closed-at-rest lips and an audio-driven opening, not equalizer bars; this provides a readable mouth without altering the supplied face mesh or claiming phoneme recognition.
 - Keep one user-gesture-initialized, playback-gated stream analyser for live and menu audio, attaching late streams at playback time and resetting on stops; this avoids stream-arrival races without routing or duplicating speaker audio.
+- Use the shared playback meter for recordings too, with owner-scoped resets and a zero-gain destination branch for stream analysis; this prevents inactive players clearing mouth movement and ensures browsers process the analyser without duplicated speech.
 - Menu details use a nonmodal side panel (lower panel on narrow screens) so the robot remains visible.
 - Derive pointing axes from child-bone offsets and preserve animation twist; keep gesture targets outside the body at shoulder height to avoid face collisions.
 - Reserve a separate scene viewport beside or above menu details and keep one shared panel-position function for gestures and floating cards; framing stays aligned on resize.

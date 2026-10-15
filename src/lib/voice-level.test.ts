@@ -24,6 +24,7 @@ describe("Zoord playback synchronization", () => {
       constructor() { construct(); }
       createMediaStreamSource = createSource;
       createAnalyser = () => analyser;
+      createGain = () => ({ gain: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() });
       resume = async () => {};
       close = close;
       addEventListener = vi.fn();
@@ -63,5 +64,37 @@ describe("Zoord playback synchronization", () => {
     meter.dispose();
     expect(close).toHaveBeenCalledOnce();
     expect(source.disconnect).toHaveBeenCalledTimes(2);
+  });
+  it("does not let an inactive live player erase recorded speech", async () => {
+    const analyser = { disconnect: vi.fn(), connect: vi.fn(), getFloatTimeDomainData: (data: Float32Array) => data.fill(0.1), fftSize: 0, smoothingTimeConstant: 0 };
+    const source = { connect: vi.fn(), disconnect: vi.fn() };
+    vi.stubGlobal("AudioContext", class {
+      state = "running";
+      destination = {};
+      createAnalyser = () => analyser;
+      createMediaElementSource = () => source;
+      createGain = () => ({ gain: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() });
+      resume = async () => {};
+      close = async () => {};
+      addEventListener = vi.fn();
+      removeEventListener = vi.fn();
+    });
+    vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    const recording = document.createElement("audio");
+    Object.defineProperty(recording, "paused", { get: () => false });
+    const output = createPlaybackMeter(recording, "recording");
+    output.resume();
+    await Promise.resolve();
+    const amplitude = voiceLevel.v;
+    expect(amplitude).toBeGreaterThan(0);
+    const live = createPlaybackMeter(document.createElement("audio"));
+    live.resume();
+    await Promise.resolve();
+    live.dispose();
+    expect(voiceLevel.v).toBe(amplitude);
+    recording.dispatchEvent(new Event("ended"));
+    expect(voiceLevel).toEqual({ v: 0, round: 0, wide: 0 });
+    output.dispose();
   });
 });

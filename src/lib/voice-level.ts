@@ -1,6 +1,7 @@
 // Shared, mutable loudness of Zoord's audible output (0..1), sampled by the 3D mouth.
 // round: low-frequency dominance (O/U-like); wide: high-frequency dominance (E/I/S-like).
 export const voiceLevel = { v: 0, round: 0, wide: 0 };
+let playbackOwner: symbol | undefined;
 
 export function speechLevel(samples: Float32Array): number {
   let sum = 0;
@@ -45,21 +46,26 @@ export function sampleVoice(analyser: AnalyserNode, samples: Float32Array<ArrayB
  * Lazy initialization must run from Start/menu/Play's user gesture.
  * One graph for the element's lifetime avoids duplicate audio and stream-arrival races.
  */
-export function createPlaybackMeter(audio: HTMLAudioElement) {
+export function createPlaybackMeter(audio: HTMLAudioElement, mode: "stream" | "recording" = "stream") {
+  const owner = Symbol("Zoord playback");
   let ctx: AudioContext | undefined;
-  let source: MediaStreamAudioSourceNode | undefined;
+  let source: MediaStreamAudioSourceNode | MediaElementAudioSourceNode | undefined;
   let stream: MediaStream | undefined;
   let analyser: AnalyserNode | undefined;
-  const samples = new Float32Array(256);
-  const freq = new Float32Array(128);
+  let silentSink: GainNode | undefined;
+  const samples = new Float32Array(1024);
+  const freq = new Float32Array(512);
   let raf = 0;
   let disposed = false;
   const reset = () => {
     cancelAnimationFrame(raf);
     raf = 0;
-    voiceLevel.v = 0;
-    voiceLevel.round = 0;
-    voiceLevel.wide = 0;
+    if (playbackOwner === owner) {
+      playbackOwner = undefined;
+      voiceLevel.v = 0;
+      voiceLevel.round = 0;
+      voiceLevel.wide = 0;
+    }
   };
   const tick = () => {
     if (disposed || !analyser || ctx?.state !== "running" || audio.paused || audio.ended || audio.muted || audio.volume === 0) {
@@ -67,17 +73,17 @@ export function createPlaybackMeter(audio: HTMLAudioElement) {
       return;
     }
     const playback = audio.srcObject;
-    if (playback instanceof MediaStream && playback !== stream && playback.getAudioTracks().length) {
+    if (mode === "stream" && typeof MediaStream !== "undefined" && playback instanceof MediaStream && playback !== stream && playback.getAudioTracks().length) {
       source?.disconnect();
       stream = playback;
       source = ctx.createMediaStreamSource(playback);
       source.connect(analyser);
     }
-    if (!playback || !source) {
-      voiceLevel.v = 0;
+    if ((mode === "stream" && !playback) || !source) {
       raf = requestAnimationFrame(tick);
       return;
     }
+    playbackOwner = owner;
     sampleVoice(analyser, samples, freq, audio.volume);
     raf = requestAnimationFrame(tick);
   };
@@ -93,7 +99,17 @@ export function createPlaybackMeter(audio: HTMLAudioElement) {
         analyser = ctx.createAnalyser();
         analyser.fftSize = samples.length;
         analyser.smoothingTimeConstant = 0;
-        // Analysis-only branch: the mounted audio element remains the sole speaker.
+        if (mode === "recording") {
+          source = ctx.createMediaElementSource(audio);
+          source.connect(analyser);
+          analyser.connect(ctx.destination);
+        } else {
+          // Keep the analysis graph pulled by the audio renderer without a second speaker.
+          silentSink = ctx.createGain();
+          silentSink.gain.value = 0;
+          analyser.connect(silentSink);
+          silentSink.connect(ctx.destination);
+        }
         ctx.addEventListener("statechange", samplePlayback);
       }
       void ctx.resume().then(samplePlayback).catch(reset);
@@ -123,6 +139,7 @@ export function createPlaybackMeter(audio: HTMLAudioElement) {
       source?.disconnect();
       stream = undefined;
       analyser?.disconnect();
+      silentSink?.disconnect();
       if (ctx) void ctx.close().catch(() => {});
     },
   };
