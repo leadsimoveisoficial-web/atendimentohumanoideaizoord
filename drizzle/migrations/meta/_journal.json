@@ -8,6 +8,13 @@
       "when": 1792052232275,
       "tag": "0000_create_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792058723389,
+      "tag": "0001_migration",
+      "breakpoints": true
     }
   ]
 }

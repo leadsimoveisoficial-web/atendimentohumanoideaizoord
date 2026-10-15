@@ -18,6 +18,7 @@ import dakkaiLogo from "@/assets/dakkai-logo.png";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { voiceLevel } from "@/lib/voice-level";
 import { ZoordMouth } from "./ZoordMouth";
+import { SecurityBadge } from "./SecurityBadge";
 import { RecordRepeat } from "./RecordRepeat";
 import { Button } from "@/components/ui/button";
 import { OrderTicket, type TicketState } from "./OrderTicket";
@@ -495,7 +496,10 @@ export function Stage() {
       {ticket && <OrderTicket ticket={ticket} onClose={() => setTicket(null)} />}
       <div className="stage-overlay pointer-events-none fixed inset-0 flex flex-col justify-between p-4 md:p-6">
         <header className="stage-header flex items-center justify-between gap-3">
-          <span className="font-display text-sm tracking-[0.5em] text-foreground">DAKKAI <span className="text-dakkai">×</span> ZOORD</span>
+          <span className="flex items-center gap-3">
+            <span className="font-display text-sm tracking-[0.5em] text-foreground">DAKKAI <span className="text-dakkai">×</span> ZOORD</span>
+            <SecurityBadge />
+          </span>
           <div className="pointer-events-auto flex items-center gap-3">
             <Button variant="ghost" onClick={() => setOpen(0)} className="stage-chip"><UtensilsCrossed />Cardápio</Button>
             <a href={WHATSAPP} target="_blank" rel="noreferrer" className="stage-chip stage-chip-red">Pedir no WhatsApp</a>
