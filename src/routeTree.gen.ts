@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CozinhaRouteImport } from './routes/cozinha'
 import { Route as ApiZoordPresentRouteImport } from './routes/api/zoord-present'
 import { Route as ApiZoordSpeakRouteImport } from './routes/api/zoord-speak'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CozinhaRoute = CozinhaRouteImport.update({
+  id: '/cozinha',
+  path: '/cozinha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiZoordPresentRoute = ApiZoordPresentRouteImport.update({
@@ -31,30 +37,34 @@ const ApiZoordSpeakRoute = ApiZoordSpeakRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cozinha': typeof CozinhaRoute
   '/api/zoord-present': typeof ApiZoordPresentRoute
   '/api/zoord-speak': typeof ApiZoordSpeakRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cozinha': typeof CozinhaRoute
   '/api/zoord-present': typeof ApiZoordPresentRoute
   '/api/zoord-speak': typeof ApiZoordSpeakRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/cozinha': typeof CozinhaRoute
   '/api/zoord-present': typeof ApiZoordPresentRoute
   '/api/zoord-speak': typeof ApiZoordSpeakRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/zoord-present' | '/api/zoord-speak'
+  fullPaths: '/' | '/cozinha' | '/api/zoord-present' | '/api/zoord-speak'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/zoord-present' | '/api/zoord-speak'
-  id: '__root__' | '/' | '/api/zoord-present' | '/api/zoord-speak'
+  to: '/' | '/cozinha' | '/api/zoord-present' | '/api/zoord-speak'
+  id: '__root__' | '/' | '/cozinha' | '/api/zoord-present' | '/api/zoord-speak'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CozinhaRoute: typeof CozinhaRoute
   ApiZoordPresentRoute: typeof ApiZoordPresentRoute
   ApiZoordSpeakRoute: typeof ApiZoordSpeakRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cozinha': {
+      id: '/cozinha'
+      path: '/cozinha'
+      fullPath: '/cozinha'
+      preLoaderRoute: typeof CozinhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/zoord-present': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CozinhaRoute: CozinhaRoute,
   ApiZoordPresentRoute: ApiZoordPresentRoute,
   ApiZoordSpeakRoute: ApiZoordSpeakRoute,
 }

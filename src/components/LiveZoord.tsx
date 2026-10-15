@@ -3,11 +3,12 @@ import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
 import { createPlaybackMeter } from "@/lib/voice-level";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
+import type { NewOrder } from "@/lib/orders";
 import { emptyReaction, reactToCustomer } from "@/lib/zoord-interaction";
 
 export type LiveZoordCommands = { present: (category: number | null) => void };
 
-export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | null) => void; onGreeting: () => void; onListening: (active: boolean) => void }>(function LiveZoord({ onPoint, onGreeting, onListening }, ref) {
+export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | null) => void; onGreeting: () => void; onListening: (active: boolean) => void; onOrder?: (order: NewOrder) => void }>(function LiveZoord({ onPoint, onGreeting, onListening, onOrder }, ref) {
   const [caption, setCaption] = useState("");
   const [thinking, setThinking] = useState(false);
   const [cam, setCam] = useState(false);
@@ -21,6 +22,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   const call = useLiveVoice({
     onEvent: (e: LiveEvent) => {
       if (e.type === "app.point") onPoint(typeof e["category"] === "number" ? e["category"] as number : null);
+      if (e.type === "app.order" && e["order"] && typeof e["order"] === "object") onOrder?.(e["order"] as NewOrder);
       if (e.type === "app.delegation.pending") setThinking(true);
       if (e.type === "session.output_transcript.delta" && typeof e["delta"] === "string") {
         setThinking(false);

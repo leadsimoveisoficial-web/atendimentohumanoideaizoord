@@ -151,6 +151,32 @@ function isListeningSound(text: string) {
   return /^(?:m+hm+|uhhuh)[.,!]*$/.test(normalized);
 }
 
+export type KitchenOrder = {
+  customer_name: string;
+  table_number: string;
+  notes: string;
+  items: { name: string; quantity: number; price: number | null }[];
+  total: number;
+  unknown: string[];
+};
+
+const fold = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+function buildOrder(args: { customer_name: string; table_number: string; notes?: string | undefined; items: { name: string; quantity: number }[] }): KitchenOrder {
+  const all = MENU.flatMap((s) => s.items);
+  const items: KitchenOrder["items"] = [];
+  const unknown: string[] = [];
+  for (const it of args.items) {
+    const k = fold(it.name);
+    const hit = all.find((m) => fold(m.n) === k) ?? all.find((m) => fold(m.n).includes(k) || k.includes(fold(m.n)));
+    if (!hit) { unknown.push(it.name); continue; }
+    const m = hit.p.match(/([\d.]+),(\d{2})/);
+    const price = m ? Number(m[1]!.replace(/\./g, "") + "." + m[2]) : null;
+    items.push({ name: hit.n, quantity: it.quantity, price });
+  }
+  const total = Math.round(items.reduce((t, i) => t + (i.price ?? 0) * i.quantity, 0) * 100) / 100;
+  return { customer_name: args.customer_name.trim(), table_number: args.table_number.trim(), notes: (args.notes ?? "").trim(), items, total, unknown };
+}
+
 async function answerQuestion(
   messages: ModelMessage[],
   config: LiveConfig,
@@ -159,6 +185,7 @@ async function answerQuestion(
   consumeInput: () => void,
   onPlan: (plan: ReturnType<typeof planStudySchedule>) => void,
   getFrame: () => string | undefined,
+  onOrder: (order: KitchenOrder) => void = () => {},
 ) {
   signal.throwIfAborted();
   const provider = createOpenAI({
@@ -216,9 +243,27 @@ async function answerQuestion(
       "pronto para ser falado (sem listas nem markdown). Use SOMENTE o cardápio abaixo e nunca invente preços. " +
       "Quando falar de uma categoria, chame point_to_category com o número dela para o Zoord apontar no palco. " +
       "Se houver uma imagem da câmera, ela mostra o cliente agora: descreva com gentileza o que for relevante, sem identificar pessoas. " +
+      "Quando o cliente quiser fazer um pedido, pergunte o nome dele e o número da mesa se ainda não souber, confirme os itens e quantidades, " +
+      "e então chame register_order com os nomes exatos dos itens do cardápio. Depois diga o total e que o pedido foi para a cozinha. " +
       "Se não houver imagem e o cliente pedir para você olhar, diga que ele pode ligar a câmera.\n\nCARDÁPIO:\n" + menuText,
     messages,
     tools: {
+      register_order: tool({
+        description: "Anota o pedido confirmado do cliente e envia a comanda para a cozinha.",
+        inputSchema: z.object({
+          customer_name: z.string().max(60),
+          table_number: z.string().max(10),
+          items: z.array(z.object({ name: z.string().max(120), quantity: z.number().int().min(1).max(50) })).min(1).max(30),
+          notes: z.string().max(300).optional(),
+        }),
+        execute: async (args) => {
+          signal.throwIfAborted();
+          const order = buildOrder(args);
+          if (!order.items.length) return { ok: false, error: "Nenhum item corresponde ao cardápio", unknown: order.unknown };
+          onOrder(order);
+          return { ok: true, total: order.total, items: order.items, unknown: order.unknown };
+        },
+      }),
       point_to_category: tool({
         description: "Faz o Zoord apontar para a categoria do cardápio no palco. Use o número entre colchetes.",
         inputSchema: studyScheduleInput,
@@ -466,6 +511,7 @@ export function bindLiveConnection(
           emit({ type: "app.point", category: plan.category });
         },
         () => latestFrame,
+        (order) => emit({ type: "app.order", order }),
       );
       if (closing || controller.signal.aborted) return;
       if (taskRevision !== revision) return;
