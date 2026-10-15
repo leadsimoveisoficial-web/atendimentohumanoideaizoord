@@ -142,7 +142,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   return (
     <group ref={group} position={[0, 0.3, 0]} scale={2.3}>
       <primitive object={scene} />
-      <ZoordMouth scene={scene} position={[0, 5.4, 10.9]} rotationX={0.72} />
+      <ZoordMouth scene={scene} position={[0, 5.4, 10.9]} rotationX={-0.78} />
     </group>
   );
 }
