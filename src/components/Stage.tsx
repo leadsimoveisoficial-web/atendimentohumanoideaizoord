@@ -16,6 +16,7 @@ import * as THREE from "three";
 import zoord from "@/assets/zoord-cyber-hero.glb.asset.json";
 import dakkaiLogo from "@/assets/dakkai-logo.png";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
+import { voiceLevel } from "@/lib/voice-level";
 import { ZoordMouth } from "./ZoordMouth";
 import { RecordRepeat } from "./RecordRepeat";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const { actions, mixer } = useAnimations(animations, group);
   const w = useRef(0);
   const waveTime = useRef(0);
+  const speakUntil = useRef(0);
   const waving = anim === "Wave_One_Hand";
   const clipName = point !== null && !waving ? "Talk_with_Hands_Open" : "Talk_with_Left_Hand_on_Hip";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0 }), []);
@@ -50,10 +52,14 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const head = scene.getObjectByName("mixamorig:Head") ?? scene.getObjectByName("mixamorigHead");
     if (!head) return;
     const dt = Math.min(rawDelta, 0.05);
+    // Gesture with the supplied talking clip while Zoord's voice is audible; hold briefly across syllable gaps.
+    if (voiceLevel.v > 0.05) speakUntil.current = clock.elapsedTime + 0.8;
+    const relaxed = actions["Talk_with_Left_Hand_on_Hip"];
+    if (clipName === "Talk_with_Left_Hand_on_Hip" && relaxed) relaxed.paused = clock.elapsedTime > speakUntil.current;
     // Undo our previous offset only when the mixer has not replaced the bone pose.
     if (head.quaternion.angleTo(headMotion.last) < 0.00001) head.quaternion.multiply(headMotion.inverse);
     const presenting = point !== null && anim !== "Wave_One_Hand";
-    headMotion.strength = THREE.MathUtils.damp(headMotion.strength, listening || presenting ? 1 : 0, 5, dt);
+    headMotion.strength = THREE.MathUtils.damp(headMotion.strength, listening || presenting || clock.elapsedTime < speakUntil.current ? 1 : 0, 5, dt);
     const side = presenting ? (panelPos(point).x < 0 ? -1 : 1) : 0;
     headMotion.euler.set(Math.sin(clock.elapsedTime * 2.4) * 0.025 * headMotion.strength, (side * 0.10 + Math.sin(clock.elapsedTime * 0.9) * 0.025) * headMotion.strength, 0);
     headMotion.next.setFromEuler(headMotion.euler);

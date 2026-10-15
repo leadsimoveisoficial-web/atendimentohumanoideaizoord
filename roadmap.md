@@ -39,3 +39,5 @@
 - [ ] Necklace adjustment — needs artist in Blender
 - [x] Redo posture and menu pointing in code (chest lean toward panel); necklace remains baked in the mesh, artist-only
 - [ ] Verify live call + camera on the user's phone over the HTTPS preview
+- [x] Mouth shape (round/wide) from measured voice spectrum in browser, live + menu + replay
+- [x] Use the avatar's talking-hands clip while Zoord speaks, relaxed posture when silent

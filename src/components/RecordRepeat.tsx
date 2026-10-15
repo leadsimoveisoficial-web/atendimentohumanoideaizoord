@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic, Square, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { speechLevel, voiceLevel } from "@/lib/voice-level";
+import { sampleVoice, voiceLevel } from "@/lib/voice-level";
 
 /** Record the visitor, then Zoord replays it with the LED mouth driven by the recording's amplitude. */
 export function RecordRepeat() {
@@ -54,9 +54,9 @@ export function RecordRepeat() {
     src.connect(analyser);
     analyser.connect(ctx.current.destination);
     const samples = new Float32Array(256);
+    const freq = new Float32Array(128);
     const tick = () => {
-      analyser.getFloatTimeDomainData(samples);
-      voiceLevel.v = speechLevel(samples);
+      sampleVoice(analyser, samples, freq);
       raf.current = requestAnimationFrame(tick);
     };
     el.onended = () => {
