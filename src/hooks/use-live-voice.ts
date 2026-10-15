@@ -224,16 +224,16 @@ function createLiveVoice(options: LiveOptions) {
   function reportUnexpectedClosure(reason?: string) {
     if (state === "stopping" || state === "closed") return;
     const messages: Record<string, string> = {
-      startup_timeout: "Voice startup timed out. Start a new call to retry.",
-      initial_heartbeat_timeout: "Voice media did not connect. Start a new call to retry.",
-      heartbeat_timeout: "Voice connection was lost. Start a new call to retry.",
-      gateway_shutdown: "The voice service restarted. Start a new call to reconnect.",
-      inactivity_timeout: "The voice call ended after inactivity.",
-      duration_limit: "The voice call reached its duration limit. Start a new call to continue.",
+      startup_timeout: "A voz demorou para começar. Toque em Falar com o Zoord para tentar de novo.",
+      initial_heartbeat_timeout: "O som da voz não conectou. Toque em Falar com o Zoord para tentar de novo.",
+      heartbeat_timeout: "A conexão da voz caiu. Toque em Falar com o Zoord para tentar de novo.",
+      gateway_shutdown: "O serviço de voz reiniciou. Toque em Falar com o Zoord para reconectar.",
+      inactivity_timeout: "A conversa terminou por inatividade.",
+      duration_limit: "A conversa chegou ao limite de tempo. Toque em Falar com o Zoord para continuar.",
     };
     options.onEvent({
       type: "app.error",
-      error: { message: messages[reason ?? ""] ?? "The voice call ended unexpectedly. Start a new call to retry." },
+      error: { message: messages[reason ?? ""] ?? "A conversa terminou de forma inesperada. Toque em Falar com o Zoord para tentar de novo." },
     });
   }
 
@@ -277,7 +277,7 @@ function createLiveVoice(options: LiveOptions) {
     answerReceived = true;
     clearTimeout(deadline);
     deadline = setTimeout(
-      () => fail("Voice media did not connect within 12 seconds. Start a new call to retry."),
+      () => fail("O som da voz não conectou a tempo. Toque em Falar com o Zoord para tentar de novo."),
       12_000,
     );
     await peer.setRemoteDescription({ type: "answer", sdp: event.transport.sdp });
