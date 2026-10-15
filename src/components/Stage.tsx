@@ -117,7 +117,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     headMotion.euler.set(
       Math.sin(clock.elapsedTime * 2.4) * 0.025 * headMotion.strength - headMotion.lookY * 0.22,
       (side * 0.10 + Math.sin(clock.elapsedTime * 0.9) * 0.025) * headMotion.strength + headMotion.lookX * 0.5,
-      -headMotion.lookX * 0.06,
+      -headMotion.lookX * 0.06 + (speakingRef.current ? Math.sin(clock.elapsedTime * 0.7) * 0.04 * headMotion.strength : 0), // gentle courteous head tilt while speaking
     );
     // Euler is authored in world axes (Y = turn, X = nod); express it in the head's local frame.
     headMotion.next.setFromEuler(headMotion.euler);
