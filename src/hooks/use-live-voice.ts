@@ -74,10 +74,12 @@ export function useLiveVoice(
       url: endpoint.href,
       audio,
       ...(menu ? { menu } : {}),
+      let failedWhileConnecting = false;
       onEvent(event) {
         if (!mounted.current || controller.current !== voice) return;
         if (event.type === "app.connected") {
-          setCall((previous) => ({ ...previous, status: "connected", hasConnected: true }));
+          retried.current = false;
+          setCall((previous) => ({ ...previous, status: "connected", hasConnected: true, error: null }));
         } else if (event.type === "app.stopping") {
           setCall((previous) => ({ ...previous, status: "stopping", playbackBlocked: false }));
         } else if (event.type === "app.closed") {
@@ -89,10 +91,19 @@ export function useLiveVoice(
             playbackBlocked: false,
             finalized: event.finalized === true,
           }));
+          // Auto-retry once when the call never connected (network hiccup).
+          if (failedWhileConnecting && !retried.current && mounted.current) {
+            retried.current = true;
+            setCall((previous) => ({ ...previous, error: null, status: "connecting" }));
+            window.setTimeout(() => {
+              if (mounted.current && !controller.current) start(menu);
+            }, 1500);
+          }
         } else if (event.type === "app.playback.blocked" || event.type === "app.playback.resumed") {
           setCall((previous) => ({ ...previous, playbackBlocked: event.type === "app.playback.blocked" }));
         } else if (["app.error", "gateway.error", "error"].includes(event.type)) {
-          setCall((previous) => ({ ...previous, error: event.error?.message ?? "Voice request failed." }));
+          if (!retried.current) failedWhileConnecting = true;
+          setCall((previous) => ({ ...previous, error: event.error?.message ?? "A voz falhou. Tente de novo." }));
         }
         try {
           void Promise.resolve(latest.current.onEvent?.(event)).catch((error) => {
