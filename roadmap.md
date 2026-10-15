@@ -30,3 +30,8 @@
 - [x] Correct presentation gestures using measured child-bone axes and outward shoulder-height targets
 - [x] Refine stage framing and side menu layout using the posture reference
 - [x] Replace equalizer bars with closed-at-rest lips driven by output amplitude; verified open/closed geometry and corrected the anchor from throat to actual lips (full live call remains blocked above)
+
+- [x] Record visitor voice and have Zoord replay it with the audio-driven mouth, without the call
+- [ ] Real camera + call connection — browser permissions already request the real camera/mic; media connection still fails only inside the sandbox, needs testing on the user's device
+- [ ] Blender/Audio2Face export — blocked: no Blender or RTX GPU here
+- [ ] Necklace adjustment — needs artist in Blender
