@@ -74,10 +74,11 @@ export function useLiveVoice(
       url: endpoint.href,
       audio,
       ...(menu ? { menu } : {}),
-      let failedWhileConnecting = false;
+      let connectedOnce = false;
       onEvent(event) {
         if (!mounted.current || controller.current !== voice) return;
         if (event.type === "app.connected") {
+          connectedOnce = true;
           retried.current = false;
           setCall((previous) => ({ ...previous, status: "connected", hasConnected: true, error: null }));
         } else if (event.type === "app.stopping") {
