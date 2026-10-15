@@ -265,8 +265,26 @@ function Platform() {
   );
 }
 
+// Soft white/grey mottled texture (procedural, no extra download).
+function makeMarble() {
+  const c = document.createElement("canvas"); c.width = c.height = 512;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#e9edf1"; g.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 900; i++) {
+    const x = Math.random() * 512, y = Math.random() * 512, r = 6 + Math.random() * 60;
+    const v = 200 + Math.floor(Math.random() * 55);
+    const grd = g.createRadialGradient(x, y, 0, x, y, r);
+    grd.addColorStop(0, `rgba(${v},${v + 2 > 255 ? 255 : v + 2},${Math.min(255, v + 6)},0.35)`);
+    grd.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = grd; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
 function Wall() {
   const panels = useMemo(() => Array.from({ length: 15 }, (_, i) => (i - 7) * 0.17), []);
+  const marble = useMemo(makeMarble, []);
   return (
     <group>
       {panels.map((a, i) => {
@@ -277,15 +295,7 @@ function Wall() {
           <group key={i} position={[x, 0, z]} rotation-y={-a}>
             <mesh position-y={4}>
               <boxGeometry args={[1.95, 8, 0.15]} />
-              <meshStandardMaterial color="#0d1117" metalness={0.85} roughness={0.35} />
-            </mesh>
-            <mesh position={[0.99, 4, 0.09]}>
-              <boxGeometry args={[0.02, 7.6, 0.02]} />
-              <meshBasicMaterial color={i % 3 === 0 ? CYAN : "#5a7290"} toneMapped={false} />
-            </mesh>
-            <mesh position={[0, 0.06, 0.4]}>
-              <boxGeometry args={[1.95, 0.03, 0.03]} />
-              <meshBasicMaterial color={BLUE} toneMapped={false} />
+              <meshStandardMaterial map={marble} color="#ffffff" metalness={0.05} roughness={0.8} />
             </mesh>
           </group>
         );
@@ -314,15 +324,17 @@ function Logo() {
   );
 }
 
+const BRAIN_POS = new THREE.Vector3(0, 7.2, -9.2);
 // "Cérebro" DAKKAI IA: neural sphere pulsing in red + cyan
 function Brain({ active }: { active: boolean }) {
   const ref = useRef<THREE.Group>(null);
   const core = useRef<THREE.Mesh>(null);
   const { geo, pts } = useMemo(() => {
     const pts: THREE.Vector3[] = [];
-    for (let i = 0; i < 70; i++) {
+    for (let i = 0; i < 140; i++) {
       const v = new THREE.Vector3().randomDirection();
-      v.x *= 1.25; // brain-like ellipsoid
+      v.x = v.x * 1.25 + Math.sign(v.x || 1) * 0.12; // two hemispheres
+      v.y *= 0.85;
       pts.push(v.multiplyScalar(1.1 + Math.random() * 0.35));
     }
     const seg: number[] = [];
@@ -330,20 +342,28 @@ function Brain({ active }: { active: boolean }) {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(seg, 3));
     const p = new THREE.BufferGeometry().setFromPoints(pts);
+    p.setAttribute("color", new THREE.Float32BufferAttribute(new Float32Array(pts.length * 3), 3));
     return { geo: g, pts: p };
   }, []);
   useFrame(({ clock }, d) => {
     if (ref.current) ref.current.rotation.y += d * (active ? 0.6 : 0.12);
+    const col = pts.getAttribute("color") as THREE.BufferAttribute;
+    const t = clock.elapsedTime * (active ? 6 : 2);
+    for (let i = 0; i < col.count; i++) {
+      const k = 0.35 + 0.65 * Math.max(0, Math.sin(t + i * 1.7));
+      i % 3 ? col.setXYZ(i, 0.25 * k, 0.88 * k, k) : col.setXYZ(i, k, 0.1 * k, 0.15 * k);
+    }
+    col.needsUpdate = true;
     if (core.current) core.current.scale.setScalar((active ? 0.6 : 0.45) + Math.sin(clock.elapsedTime * (active ? 9 : 2)) * (active ? 0.12 : 0.05));
   });
   return (
-    <group position={[0, 9.6, -10]}>
+    <group position={BRAIN_POS.toArray()} scale={0.85}>
       <group ref={ref}>
         <lineSegments geometry={geo}>
           <lineBasicMaterial color={CYAN} transparent opacity={0.45} toneMapped={false} />
         </lineSegments>
         <points geometry={pts}>
-          <pointsMaterial color={RED} size={0.09} toneMapped={false} />
+          <pointsMaterial vertexColors size={0.13} toneMapped={false} />
         </points>
       </group>
       <mesh ref={core}>
@@ -362,7 +382,7 @@ function Beam({ point }: { point: number | null }) {
   useFrame(({ clock }) => {
     if (point === null) return;
     const end = panelPos(point);
-    const start = new THREE.Vector3(0, 9.6, -10);
+    const start = BRAIN_POS.clone();
     const mid = start.clone().lerp(end, 0.5).add(new THREE.Vector3(0, 1.5, 0));
     const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
     geo.setFromPoints(curve.getPoints(40));
@@ -415,9 +435,9 @@ export function Stage() {
       <div className={`stage-scene ${open !== null ? "stage-scene-menu" : ""}`}>
       <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
         <StageCamera />
-        <color attach="background" args={["#030507"]} />
-        <fog attach="fog" args={["#030507", 12, 26]} />
-        <ambientLight intensity={0.22} color="#8fdcff" />
+        <color attach="background" args={["#d9e0e6"]} />
+        <fog attach="fog" args={["#d9e0e6", 14, 30]} />
+        <ambientLight intensity={0.9} color="#cfeaff" />
         <pointLight position={[-4, 2, 2]} intensity={26} color={CYAN} castShadow shadow-mapSize={[512, 512]} />
         <pointLight position={[4, 2, 2]} intensity={26} color={BLUE} />
         <Environment resolution={256}>
@@ -428,7 +448,7 @@ export function Stage() {
 
         <mesh rotation-x={-Math.PI / 2} receiveShadow>
           <planeGeometry args={[60, 60]} />
-          <MeshReflectorMaterial blur={[300, 80]} resolution={1024} mixBlur={1} mixStrength={6} roughness={0.85} depthScale={1} minDepthThreshold={0.4} maxDepthThreshold={1.4} color="#07090c" metalness={0.6} mirror={0.6} />
+          <MeshReflectorMaterial blur={[300, 80]} resolution={1024} mixBlur={1} mixStrength={6} roughness={0.85} depthScale={1} minDepthThreshold={0.4} maxDepthThreshold={1.4} color="#b9c3cc" metalness={0.3} mirror={0.4} />
         </mesh>
 
         <Platform />
@@ -448,8 +468,8 @@ export function Stage() {
 
         <OrbitControls target={[0, 2.45, 0]} enablePan={false} minDistance={7} maxDistance={16} minAzimuthAngle={-0.25} maxAzimuthAngle={0.25} minPolarAngle={1.25} maxPolarAngle={1.55} enableDamping />
         <EffectComposer multisampling={4}>
-          <Bloom intensity={0.7} luminanceThreshold={0.85} mipmapBlur />
-          <Vignette darkness={0.6} offset={0.3} />
+          <Bloom intensity={0.6} luminanceThreshold={0.97} mipmapBlur />
+          <Vignette darkness={0.35} offset={0.35} />
         </EffectComposer>
       </Canvas>
       </div>
