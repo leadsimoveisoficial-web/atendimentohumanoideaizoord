@@ -108,7 +108,6 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const headWorld = (head.parent ? head.parent.getWorldQuaternion(new THREE.Quaternion()) : new THREE.Quaternion()).multiply(head.quaternion);
     headMotion.next.premultiply(headWorld.clone().invert()).multiply(headWorld);
     head.quaternion.multiply(headMotion.next.normalize()).normalize();
-    if (import.meta.env.DEV) (window as unknown as { __zoordHead?: THREE.Object3D }).__zoordHead = head, (window as unknown as { __gaze?: unknown }).__gaze = { gaze, lx: headMotion.lookX, d: head.getWorldQuaternion(new THREE.Quaternion()).multiply(headWorld.clone().invert()).toArray().map((v) => v.toFixed(2)), hq: head.quaternion.toArray().map((v) => v.toFixed(3)), pw: head.parent?.getWorldQuaternion(new THREE.Quaternion()).toArray().map((v) => v.toFixed(3)) };
     headMotion.last.copy(head.quaternion);
     headMotion.inverse.copy(headMotion.next).invert();
   });
