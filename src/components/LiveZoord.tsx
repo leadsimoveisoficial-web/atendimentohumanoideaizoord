@@ -140,11 +140,6 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       {cam && (
         <video ref={videoRef} autoPlay muted playsInline className="fixed bottom-6 right-6 h-28 w-36 rounded-lg border border-border object-cover shadow-lg" />
       )}
-      {live && (caption || thinking) && (
-        <p className="max-w-xl rounded-lg bg-background/70 px-4 py-2 text-center text-sm text-foreground backdrop-blur">
-          {thinking && !caption ? "Zoord pensando…" : caption}
-        </p>
-      )}
       <div className="flex flex-wrap items-center justify-center gap-2">
         {!live ? (
           <Button variant="ghost" onClick={() => { playbackMeter.current?.resume(); call.start(); }} disabled={stopping} className="stage-chip stage-chip-red"><Mic />{stopping ? "Encerrando…" : "Falar com o Zoord"}</Button>

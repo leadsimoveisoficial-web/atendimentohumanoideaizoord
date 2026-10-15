@@ -200,6 +200,22 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       poseLayer.apply(spine, () => spine.quaternion.multiply(spineLean.next));
     }
   });
+  // Posture guard (runs last): the torso and head may never drift far from the supplied rest pose,
+  // so live speech + gestures can't twist Zoord's back toward the camera or fold him forward.
+  const restPose = useMemo(() => {
+    const m = new Map<THREE.Object3D, { q: THREE.Quaternion; max: number }>();
+    for (const [n, max] of [["Hips", 0.35], ["Spine", 0.3], ["Spine1", 0.3], ["Spine2", 0.3], ["Neck", 0.45], ["Head", 0.7]] as const) {
+      const b = scene.getObjectByName(`mixamorig:${n}`) ?? scene.getObjectByName(`mixamorig${n}`);
+      if (b) m.set(b, { q: b.quaternion.clone(), max });
+    }
+    return m;
+  }, [scene]);
+  useFrame(() => {
+    for (const [bone, { q, max }] of restPose) {
+      const a = bone.quaternion.angleTo(q);
+      if (a > max) bone.quaternion.rotateTowards(q, a - max);
+    }
+  });
   useEffect(() => {
     scene.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) o.castShadow = true;
