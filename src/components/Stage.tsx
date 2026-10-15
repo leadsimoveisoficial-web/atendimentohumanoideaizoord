@@ -50,7 +50,14 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const restWeight = useRef(1);
   const waving = anim === "Wave_One_Hand";
   const clipName = point !== null && !waving ? "Talk_with_Hands_Open" : "Talk_with_Left_Hand_on_Hip";
-  const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0 }), []);
+  const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0 }), []);
+  useEffect(() => {
+    const move = (e: PointerEvent) => setMouseGaze((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
+    const leave = () => setMouseGaze(0, 0);
+    window.addEventListener("pointermove", move);
+    document.addEventListener("pointerleave", leave);
+    return () => { window.removeEventListener("pointermove", move); document.removeEventListener("pointerleave", leave); };
+  }, []);
   const spineLean = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler() }), []);
   useFrame(({ clock }, rawDelta) => {
     poseLayer.restore();
@@ -85,7 +92,15 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const presenting = point !== null && anim !== "Wave_One_Hand";
     headMotion.strength = THREE.MathUtils.damp(headMotion.strength, listening || presenting || clock.elapsedTime < speakUntil.current ? 1 : 0, 5, dt);
     const side = presenting ? (panelPos(point).x < 0 ? -1 : 1) : 0;
-    headMotion.euler.set(Math.sin(clock.elapsedTime * 2.4) * 0.025 * headMotion.strength, (side * 0.10 + Math.sin(clock.elapsedTime * 0.9) * 0.025) * headMotion.strength, 0);
+    // Follow the customer: mouse on screen, or their movement on camera; presenting turns the gaze toward the panel.
+    const follow = presenting ? 0.35 : 1;
+    headMotion.lookX = THREE.MathUtils.damp(headMotion.lookX, gaze.x * follow, 4, dt);
+    headMotion.lookY = THREE.MathUtils.damp(headMotion.lookY, gaze.y * follow, 4, dt);
+    headMotion.euler.set(
+      Math.sin(clock.elapsedTime * 2.4) * 0.025 * headMotion.strength - headMotion.lookY * 0.22,
+      (side * 0.10 + Math.sin(clock.elapsedTime * 0.9) * 0.025) * headMotion.strength + headMotion.lookX * 0.5,
+      -headMotion.lookX * 0.06,
+    );
     headMotion.next.setFromEuler(headMotion.euler);
     head.quaternion.multiply(headMotion.next);
     headMotion.last.copy(head.quaternion);

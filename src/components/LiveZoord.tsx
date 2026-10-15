@@ -3,6 +3,7 @@ import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
 import { createPlaybackMeter } from "@/lib/voice-level";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
+import { motionCentroid, setCameraGaze } from "@/lib/gaze";
 import type { NewOrder } from "@/lib/orders";
 import { emptyReaction, reactToCustomer } from "@/lib/zoord-interaction";
 
@@ -77,6 +78,26 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   // Camera: send a small snapshot every 2s to Zoord's brain
   useEffect(() => {
     if (cam && videoRef.current && streamRef.current) videoRef.current.srcObject = streamRef.current;
+  }, [cam]);
+
+  // Follow the customer's movement on camera with Zoord's head (runs locally, nothing is sent).
+  useEffect(() => {
+    if (!cam) return;
+    const W = 32, H = 24;
+    const canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    let prev: Uint8ClampedArray | null = null;
+    const t = setInterval(() => {
+      const v = videoRef.current;
+      if (!ctx || !v || !v.videoWidth) return;
+      ctx.drawImage(v, 0, 0, W, H);
+      const next = ctx.getImageData(0, 0, W, H).data;
+      const c = prev && motionCentroid(prev, next, W, H);
+      prev = next;
+      if (c) setCameraGaze(-(c.x * 2 - 1), c.y * 2 - 1);
+    }, 120);
+    return () => clearInterval(t);
   }, [cam]);
 
   useEffect(() => {
