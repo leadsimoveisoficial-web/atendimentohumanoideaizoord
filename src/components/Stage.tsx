@@ -40,6 +40,8 @@ export function panelPos(i: number) {
 
 const _id = new THREE.Quaternion();
 
+const _q = new THREE.Quaternion();
+const _e = new THREE.Euler();
 function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; point: number | null; listening: boolean; waveId: number; onWaveEnd: () => void }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(zoord.url);
@@ -65,6 +67,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   // Speaking uses both hands (open-palm, maître-style); at rest he keeps the relaxed pose.
   const [speaking, setSpeaking] = useState(false);
   const speakingRef = useRef(false);
+  const legWeight = useRef(0);
   const clipName = (point !== null || speaking) && !waving ? "Talk_with_Hands_Open" : "Talk_with_Left_Hand_on_Hip";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0 }), []);
   useEffect(() => {
@@ -84,6 +87,20 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     if (voiceLevel.v > 0.05) speakUntil.current = clock.elapsedTime + 0.8;
     const talking = clock.elapsedTime < speakUntil.current;
     if (talking !== speakingRef.current) { speakingRef.current = talking; setSpeaking(talking); }
+    // Poised weight shift: hips sway slowly, one knee softens while the other leg carries weight.
+    legWeight.current = THREE.MathUtils.damp(legWeight.current, talking || point !== null ? 1 : 0.35, 2, dt);
+    const sway = Math.sin(clock.elapsedTime * 0.55) * legWeight.current;
+    const bone = (n: string) => scene.getObjectByName(`mixamorig:${n}`) ?? scene.getObjectByName(`mixamorig${n}`);
+    const hips = bone("Hips");
+    const spine = bone("Spine");
+    if (hips) poseLayer.apply(hips, () => hips.quaternion.multiply(_q.setFromEuler(_e.set(0, sway * 0.06, sway * 0.035))));
+    if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(_q.setFromEuler(_e.set(0, -sway * 0.04, -sway * 0.03))));
+    for (const [side, k] of [["Left", 1], ["Right", -1]] as const) {
+      const bend = Math.max(0, sway * k) * 0.12;
+      const up = bone(`${side}UpLeg`), leg = bone(`${side}Leg`);
+      if (up) poseLayer.apply(up, () => up.quaternion.multiply(_q.setFromEuler(_e.set(-bend, 0, 0))));
+      if (leg) poseLayer.apply(leg, () => leg.quaternion.multiply(_q.setFromEuler(_e.set(bend * 2, 0, 0))));
+    }
     const active = actions[clipName];
     if (active) active.paused = !talking;
     restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving ? 1 : 0, 5, dt);
