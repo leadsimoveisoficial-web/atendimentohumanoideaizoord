@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic, Square, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { sampleVoice, voiceLevel } from "@/lib/voice-level";
+import { createPlaybackMeter } from "@/lib/voice-level";
 
 /** Record the visitor, then Zoord replays it with the LED mouth driven by the recording's amplitude. */
 export function RecordRepeat() {
@@ -10,15 +10,13 @@ export function RecordRepeat() {
   const rec = useRef<MediaRecorder | null>(null);
   const url = useRef("");
   const audio = useRef<HTMLAudioElement | null>(null);
-  const ctx = useRef<AudioContext | null>(null);
-  const raf = useRef(0);
+  const meter = useRef<ReturnType<typeof createPlaybackMeter> | null>(null);
 
   useEffect(() => () => {
-    cancelAnimationFrame(raf.current);
-    voiceLevel.v = 0;
+    audio.current?.pause();
+    meter.current?.dispose();
     rec.current?.stream.getTracks().forEach((t) => t.stop());
     if (url.current) URL.revokeObjectURL(url.current);
-    void ctx.current?.close().catch(() => {});
   }, []);
 
   const record = async () => {
@@ -44,30 +42,28 @@ export function RecordRepeat() {
 
   const play = async () => {
     if (!url.current) return;
-    if (!ctx.current) ctx.current = new AudioContext();
-    await ctx.current.resume();
+    setError("");
+    audio.current?.pause();
+    meter.current?.dispose();
     const el = new Audio(url.current);
     audio.current = el;
-    const src = ctx.current.createMediaElementSource(el);
-    const analyser = ctx.current.createAnalyser();
-    analyser.fftSize = 256;
-    src.connect(analyser);
-    analyser.connect(ctx.current.destination);
-    const samples = new Float32Array(256);
-    const freq = new Float32Array(128);
-    const tick = () => {
-      sampleVoice(analyser, samples, freq);
-      raf.current = requestAnimationFrame(tick);
-    };
-    el.onended = () => {
-      cancelAnimationFrame(raf.current);
-      voiceLevel.v = 0;
-      src.disconnect();
+    const output = createPlaybackMeter(el, "recording");
+    meter.current = output;
+    const finish = () => {
+      output.dispose();
+      if (meter.current === output) meter.current = null;
       setState("ready");
     };
+    el.onended = finish;
+    el.onerror = () => { setError("Não consegui tocar a gravação. Grave novamente e tente de novo."); finish(); };
+    output.resume();
     setState("playing");
-    await el.play();
-    tick();
+    try {
+      await el.play();
+    } catch {
+      setError("Não consegui tocar o áudio. Toque em Zoord repete para tentar novamente.");
+      finish();
+    }
   };
 
   return (

@@ -24,6 +24,7 @@ describe("Zoord playback synchronization", () => {
       constructor() { construct(); }
       createMediaStreamSource = createSource;
       createAnalyser = () => analyser;
+      createGain = () => ({ gain: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() });
       resume = async () => {};
       close = close;
       addEventListener = vi.fn();
