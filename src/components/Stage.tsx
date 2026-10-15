@@ -132,7 +132,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       if (a) a.paused = false;
       a?.fadeOut(0.4);
     };
-  }, [clipName, actions, mixer, waveId]);
+  }, [clipName, actions, mixer, waveId, waving]);
   return (
     <group ref={group} position={[0, 0.3, 0]} scale={2.3}>
       <primitive object={scene} />

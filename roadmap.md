@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Replace Zoord with the uploaded Cyber Hero, adapt its built-in animations and audio mouth, and verify wave/menu gestures in the browser
+- [x] Replace Zoord with the uploaded Cyber Hero; adapt supplied presentation clips, head-local audio mouth and bounded outward wave; browser verified new asset, raised hand and unobstructed side menu without runtime errors
 
 - [x] Prepare offline Blender LED shape-key and Audio2Face-weight bake scripts; syntax checked
 - [ ] Execute Blender/Audio2Face export and import verified GLB — blocked by unavailable Blender/RTX Audio2Face service and real weight export
