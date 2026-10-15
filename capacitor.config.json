@@ -1,0 +1,12 @@
+{
+  "appId": "br.com.dakkaisushi.zoord",
+  "appName": "Zoord Dakkai",
+  "webDir": "native-shell",
+  "server": {
+    "url": "https://zoord-showcase-render.lovable.app",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "always" }
+}

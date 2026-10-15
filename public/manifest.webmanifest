@@ -1,0 +1,20 @@
+{
+  "name": "Zoord — Dakkai Sushi",
+  "short_name": "Zoord",
+  "description": "Zoord, o maître 3D do Dakkai Sushi.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-1024.png", "sizes": "1024x1024", "type": "image/png" }
+  ]
+}
