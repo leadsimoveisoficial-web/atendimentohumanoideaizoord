@@ -12,6 +12,7 @@ import {
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { gaze, setMouseGaze } from "@/lib/gaze";
 import zoord from "@/assets/zoord-cyber-hero.glb.asset.json";
 import dakkaiLogo from "@/assets/dakkai-logo.png";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
