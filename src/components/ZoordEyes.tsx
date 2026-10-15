@@ -43,7 +43,7 @@ export function ZoordEyes({ scene, y = 13.5, z = 10.5, spread = 2.7, rotationX =
     <group ref={group} name="ZoordEyes" position={[-1.7, y, z]} rotation-x={rotationX}>
       {[-1, 1].map((side, i) => (
         <mesh key={side} ref={(m) => { eyes.current[i] = m; }} userData={{ side }} position-x={side * spread}>
-          <circleGeometry args={[0.75, 24]} />
+          <circleGeometry args={[0.6, 24]} />
           <meshBasicMaterial color={color} transparent opacity={0.85} toneMapped={false} />
         </mesh>
       ))}
