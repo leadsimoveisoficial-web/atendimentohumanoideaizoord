@@ -18,7 +18,6 @@ import dakkaiLogo from "@/assets/dakkai-logo.png";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { voiceLevel } from "@/lib/voice-level";
 import { ZoordMouth } from "./ZoordMouth";
-import { ZoordEyes } from "./ZoordEyes";
 import { RecordRepeat } from "./RecordRepeat";
 import { Button } from "@/components/ui/button";
 import { OrderTicket, type TicketState } from "./OrderTicket";
@@ -41,6 +40,8 @@ export function panelPos(i: number) {
 
 const _id = new THREE.Quaternion();
 
+const _q = new THREE.Quaternion();
+const _e = new THREE.Euler();
 function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; point: number | null; listening: boolean; waveId: number; onWaveEnd: () => void }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(zoord.url);
@@ -63,7 +64,11 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const poseLayer = useMemo(() => new PoseLayer(), []);
   const restWeight = useRef(1);
   const waving = anim === "Wave_One_Hand";
-  const clipName = point !== null && !waving ? "Talk_with_Hands_Open" : "Talk_with_Left_Hand_on_Hip";
+  // Speaking uses both hands (open-palm, maître-style); at rest he keeps the relaxed pose.
+  const [speaking, setSpeaking] = useState(false);
+  const speakingRef = useRef(false);
+  const legWeight = useRef(0);
+  const clipName = (point !== null || speaking) && !waving ? "Talk_with_Hands_Open" : "Talk_with_Left_Hand_on_Hip";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0 }), []);
   useEffect(() => {
     const move = (e: PointerEvent) => setMouseGaze((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
@@ -81,6 +86,21 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     // Gesture with the supplied talking clip while Zoord's voice is audible; hold briefly across syllable gaps.
     if (voiceLevel.v > 0.05) speakUntil.current = clock.elapsedTime + 0.8;
     const talking = clock.elapsedTime < speakUntil.current;
+    if (talking !== speakingRef.current) { speakingRef.current = talking; setSpeaking(talking); }
+    // Poised weight shift: hips sway slowly, one knee softens while the other leg carries weight.
+    legWeight.current = THREE.MathUtils.damp(legWeight.current, talking || point !== null ? 1 : 0.35, 2, dt);
+    const sway = Math.sin(clock.elapsedTime * 0.55) * legWeight.current;
+    const bone = (n: string) => scene.getObjectByName(`mixamorig:${n}`) ?? scene.getObjectByName(`mixamorig${n}`);
+    const hips = bone("Hips");
+    const spine = bone("Spine");
+    if (hips) poseLayer.apply(hips, () => hips.quaternion.multiply(_q.setFromEuler(_e.set(0, sway * 0.06, sway * 0.035))));
+    if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(_q.setFromEuler(_e.set(0, -sway * 0.04, -sway * 0.03))));
+    for (const [side, k] of [["Left", 1], ["Right", -1]] as const) {
+      const bend = Math.max(0, sway * k) * 0.12;
+      const up = bone(`${side}UpLeg`), leg = bone(`${side}Leg`);
+      if (up) poseLayer.apply(up, () => up.quaternion.multiply(_q.setFromEuler(_e.set(-bend, 0, 0))));
+      if (leg) poseLayer.apply(leg, () => leg.quaternion.multiply(_q.setFromEuler(_e.set(bend * 2, 0, 0))));
+    }
     const active = actions[clipName];
     if (active) active.paused = !talking;
     restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving ? 1 : 0, 5, dt);
@@ -113,7 +133,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     headMotion.euler.set(
       Math.sin(clock.elapsedTime * 2.4) * 0.025 * headMotion.strength - headMotion.lookY * 0.22,
       (side * 0.10 + Math.sin(clock.elapsedTime * 0.9) * 0.025) * headMotion.strength + headMotion.lookX * 0.5,
-      -headMotion.lookX * 0.06,
+      -headMotion.lookX * 0.06 + (speakingRef.current ? Math.sin(clock.elapsedTime * 0.7) * 0.04 * headMotion.strength : 0), // gentle courteous head tilt while speaking
     );
     // Euler is authored in world axes (Y = turn, X = nod); express it in the head's local frame.
     headMotion.next.setFromEuler(headMotion.euler);
@@ -189,7 +209,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       a.clampWhenFinished = false;
       a.paused = false;
       a.reset().fadeIn(0.4).play();
-      a.setEffectiveTimeScale(0.85);
+      a.setEffectiveTimeScale(0.72); // unhurried, refined gestures
       // Keep the relaxed supplied pose at rest; use the full open-hand clip when presenting.
       if (clipName === "Talk_with_Left_Hand_on_Hip") a.paused = true;
     }
@@ -202,7 +222,6 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     <group ref={group} position={[0, 0.3, 0]} scale={2.3}>
       <primitive object={scene} />
       <ZoordMouth scene={scene} position={[0, 5.4, 10.9]} rotationX={-0.78} />
-      <ZoordEyes scene={scene} />
     </group>
   );
 }

@@ -48,3 +48,5 @@
 - [x] Mouth shape (round/wide) from measured voice spectrum in browser, live + menu + replay
 - [x] Use the avatar's talking-hands clip while Zoord speaks, relaxed posture when silent
 - [x] Sharper face (dpr up to 2, 4x multisampling, max anisotropic textures) + LED eyes that blink and glance
+- [x] Legs: elegant weight shift while speaking; both arms gesture (open-hand clip) while talking; maître persona in voice
+- [x] Remove blue eye glints

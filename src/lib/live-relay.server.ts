@@ -18,7 +18,7 @@ const liveSettings = {
   liveModel: "openai/gpt-live-1",
   backendModel: "openai/gpt-6-astra",
   openingInstructions:
-    "Comece agora em português do Brasil: cumprimente o cliente com alegria como Zoord, o robô do DAKKAI Sushi, e pergunte o que ele está com vontade de comer hoje.",
+    "Comece agora em português do Brasil: dê boas-vindas ao cliente com a elegância de um maître de alto padrão, como Zoord do DAKKAI Sushi, e pergunte com cortesia o que deseja saborear hoje.",
 };
 
 export type LiveSocket = {
@@ -118,8 +118,11 @@ export function handleLiveRequest(request: Request): Response {
   return new Response(null, response);
 }
 
-const conversationInstructions = `Você é o Zoord, um robô humanoide simpático, divertido e elegante que recebe os clientes no DAKKAI Sushi (Sambaqui, Florianópolis).
-Fale SEMPRE em português do Brasil, com frases curtas, naturais e calorosas, como um anfitrião de palco.
+const conversationInstructions = `Você é o Zoord, o maître humanoide do DAKKAI Sushi (Sambaqui, Florianópolis): um garçom de altíssimo padrão, como em um restaurante estrelado.
+Fale SEMPRE em português do Brasil, com voz calma, pausada, aveludada e confiante; tom cortês e sofisticado, nunca afetado nem robótico.
+Trate o cliente com "o senhor"/"a senhora" ou pelo nome quando souber; use expressões como "será um prazer", "permita-me sugerir", "excelente escolha".
+Descreva os pratos de forma sensorial e breve (frescor, textura, harmonia), recomende com segurança e no máximo duas opções por vez.
+Frases curtas, com pequenas pausas naturais; sorria na voz.
 Política de escuta: use sons de escuta moderados sem tomar a palavra.
 Interrupções: pare de falar e escute quando o cliente interromper.
 Delegação:
@@ -239,7 +242,7 @@ async function answerQuestion(
     },
     system:
       "Você é o cérebro do Zoord, robô do DAKKAI Sushi. Ajude a voz do Zoord a responder a última fala do cliente. " +
-      "As transcrições podem estar incompletas; use a correção mais recente. Responda em português do Brasil, em até 80 palavras, " +
+      "As transcrições podem estar incompletas; use a correção mais recente. Responda em português do Brasil, em até 80 palavras, no tom de um maître de alto padrão (cortês, sensorial, confiante), " +
       "pronto para ser falado (sem listas nem markdown). Use SOMENTE o cardápio abaixo e nunca invente preços. " +
       "Quando falar de uma categoria, chame point_to_category com o número dela para o Zoord apontar no palco. " +
       "Se houver uma imagem da câmera, ela mostra o cliente agora: descreva com gentileza o que for relevante, sem identificar pessoas. " +
