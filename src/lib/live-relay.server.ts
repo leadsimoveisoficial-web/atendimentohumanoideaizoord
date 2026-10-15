@@ -161,7 +161,7 @@ export type KitchenOrder = {
 };
 
 const fold = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-function buildOrder(args: { customer_name: string; table_number: string; notes?: string; items: { name: string; quantity: number }[] }): KitchenOrder {
+function buildOrder(args: { customer_name: string; table_number: string; notes?: string | undefined; items: { name: string; quantity: number }[] }): KitchenOrder {
   const all = MENU.flatMap((s) => s.items);
   const items: KitchenOrder["items"] = [];
   const unknown: string[] = [];
