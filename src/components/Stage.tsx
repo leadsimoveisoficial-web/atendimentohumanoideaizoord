@@ -8,7 +8,6 @@ import {
   Lightformer,
   Sparkles,
   useTexture,
-  Html,
 } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,11 +28,10 @@ const CYAN = "#3fe0ff";
 const BLUE = "#2f7bff";
 const RED = "#c4141f";
 
+// The menu opens as a side panel on the viewer's right: Zoord points there.
 export function panelPos(i: number) {
-  const half = Math.ceil(MENU.length / 2);
-  const left = i < half;
-  const row = left ? i : i - half;
-  return new THREE.Vector3(left ? -3.5 : 3.5, 4.9 - row * 0.94, -1.2);
+  const row = Math.min(Math.max(i, 0), MENU.length - 1);
+  return new THREE.Vector3(3.6, 4.3 - (row % 4) * 0.35, -1.0);
 }
 
 const _id = new THREE.Quaternion();
@@ -256,60 +254,6 @@ function Logo() {
   );
 }
 
-// Futuristic LED menu panels: two floating columns on the sides, Zoord stays the star in the center.
-// Left column gets the first half of the menu, right column the rest. Click opens the full menu.
-function LedPanel({ i, x, y, phase, onOpen }: { i: number; x: number; y: number; phase: number; onOpen: (i: number) => void }) {
-  const g = useRef<THREE.Group>(null);
-  const led = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime;
-    if (g.current) {
-      g.current.position.y = y + Math.sin(t * 0.8 + phase) * 0.08;
-      g.current.rotation.y = (x < 0 ? 0.42 : -0.42) + Math.sin(t * 0.4 + phase) * 0.03;
-    }
-    if (led.current) (led.current.material as THREE.MeshBasicMaterial).opacity = 0.55 + Math.sin(t * 2 + phase) * 0.25;
-  });
-  const s = MENU[i];
-  if (!s) return null;
-  const accent = i % 4 === 0 ? RED : i % 2 === 0 ? CYAN : BLUE;
-  return (
-    <group ref={g} position={[x, y, -1.2]}>
-      {/* LED edge glow */}
-      <mesh ref={led} position-z={-0.02}>
-        <planeGeometry args={[0, 0]} />
-        <meshBasicMaterial color={accent} toneMapped={false} transparent opacity={0.7} />
-      </mesh>
-      <Html transform center distanceFactor={4.5} zIndexRange={[10, 0]} style={{ pointerEvents: "auto" }}>
-        <Button variant="ghost" onClick={() => onOpen(i)} className={`menu-led ${accent === RED ? "led-red" : accent === CYAN ? "led-cyan" : "led-blue"}`}>
-          <span className="menu-page-num">{String(i + 1).padStart(2, "0")} · DAKKAI</span>
-          <h3>{s.t}</h3>
-          <ul>
-            {s.items.slice(0, 2).map((it) => (
-              <li key={it.n}><span>{it.n}</span><b>{it.p}</b></li>
-            ))}
-          </ul>
-          <em>{s.items.length} itens · toque para ver tudo</em>
-        </Button>
-      </Html>
-    </group>
-  );
-}
-
-function FlyingMenu({ onOpen }: { onOpen: (i: number) => void }) {
-  const half = Math.ceil(MENU.length / 2);
-  return (
-    <group>
-      {MENU.map((_, i) => {
-        const left = i < half;
-        const row = left ? i : i - half;
-        const x = left ? -3.5 : 3.5;
-        const y = 4.9 - row * 0.94;
-        return <LedPanel key={i} i={i} x={x} y={y} phase={i * 1.3} onOpen={onOpen} />;
-      })}
-    </group>
-  );
-}
-
 // "Cérebro" DAKKAI IA: neural sphere pulsing in red + cyan
 function Brain({ active }: { active: boolean }) {
   const ref = useRef<THREE.Group>(null);
@@ -426,7 +370,6 @@ export function Stage() {
         </Suspense>
         <Brain active={shown !== null} />
         <Beam point={shown} />
-        <FlyingMenu onOpen={openMenu} />
         <Sparkles count={80} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#ff9aa0" opacity={0.5} />
 
         <Suspense fallback={null}>
