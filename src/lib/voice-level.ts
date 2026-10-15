@@ -16,7 +16,7 @@ export function speechTimbre(freqDb: Float32Array, sampleRate: number): { round:
   let low = 0, high = 0;
   for (let i = 0; i < freqDb.length; i++) {
     const f = i * hz;
-    const p = Number.isFinite(freqDb[i]) ? Math.pow(10, freqDb[i] / 10) : 0;
+    const p = Number.isFinite(freqDb[i] ?? NaN) ? Math.pow(10, (freqDb[i] ?? 0) / 10) : 0;
     if (f >= 200 && f < 900) low += p;
     else if (f >= 1800 && f < 5000) high += p;
   }
