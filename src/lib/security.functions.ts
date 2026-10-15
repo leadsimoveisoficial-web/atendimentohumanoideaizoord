@@ -36,7 +36,7 @@ function spHour() {
 /** Analyze one camera frame with the Zoord vision brain and store the event. */
 export const analyzeCamera = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { cameraId: string; frame?: string }) => ({ cameraId: String(d.cameraId), frame: typeof d.frame === "string" && d.frame.startsWith("data:image/") && d.frame.length < 3_000_000 ? d.frame : undefined }))
+  .inputValidator((d: { cameraId: string; frame?: string | undefined }) => ({ cameraId: String(d.cameraId), frame: typeof d.frame === "string" && d.frame.startsWith("data:image/") && d.frame.length < 3_000_000 ? d.frame : undefined }))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const sb = context.supabase;
@@ -51,7 +51,7 @@ export const analyzeCamera = createServerFn({ method: "POST" })
       const type = res.headers.get("content-type") ?? "";
       if (res.ok && type.startsWith("image/")) {
         const buf = new Uint8Array(await res.arrayBuffer());
-        let bin = ""; for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+        let bin = ""; for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]!);
         image = `data:${type};base64,${btoa(bin)}`;
       }
     }
