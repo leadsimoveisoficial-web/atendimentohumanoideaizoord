@@ -102,7 +102,11 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       (side * 0.10 + Math.sin(clock.elapsedTime * 0.9) * 0.025) * headMotion.strength + headMotion.lookX * 0.5,
       -headMotion.lookX * 0.06,
     );
+    // Euler is authored in world axes (Y = turn, X = nod); express it in the head's local frame.
     headMotion.next.setFromEuler(headMotion.euler);
+    head.parent?.updateWorldMatrix(true, false);
+    const headWorld = (head.parent ? head.parent.getWorldQuaternion(new THREE.Quaternion()) : new THREE.Quaternion()).multiply(head.quaternion);
+    headMotion.next.premultiply(headWorld.clone().invert()).multiply(headWorld);
     head.quaternion.multiply(headMotion.next);
     headMotion.last.copy(head.quaternion);
     headMotion.inverse.copy(headMotion.next).invert();
