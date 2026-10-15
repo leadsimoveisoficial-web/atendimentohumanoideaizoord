@@ -17,6 +17,7 @@ import zoord from "@/assets/zoord.glb.asset.json";
 import dakkaiLogo from "@/assets/dakkai-logo.png";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { ZoordMouth } from "./ZoordMouth";
+import { RecordRepeat } from "./RecordRepeat";
 import { Button } from "@/components/ui/button";
 import { MENU, WHATSAPP, ORDER_URL } from "./menu";
 import { aimLimb } from "@/lib/zoord-gesture";
@@ -390,6 +391,7 @@ export function Stage() {
           </div>
           <p className="mb-3 text-center text-xs text-muted-foreground">{shown !== null ? `ZOORD • ${MENU[shown]?.t.toUpperCase() ?? "DAKKAI"}` : `${loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"}`}</p>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
+            <RecordRepeat />
             <Button variant="ghost" onClick={wave} className="stage-chip"><Hand />Acenar</Button>
             <Button variant="ghost" onClick={() => { setAnim("Idle_12"); voiceCommands.current?.present(null); }} className="stage-chip"><UtensilsCrossed />Apresentar cardápio</Button>
             <Button variant="ghost" onClick={() => { setAiPoint(null); setAnim("Idle_12"); }} className="stage-chip" aria-label="Voltar à postura inicial" title="Postura inicial"><RotateCcw /></Button>
