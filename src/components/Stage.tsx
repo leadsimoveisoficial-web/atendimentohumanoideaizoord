@@ -67,9 +67,9 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     waveTime.current += Math.min(rawDelta, 0.05);
     const t = waveTime.current;
     if (t >= 3.2) { onWaveEnd(); return; }
-    const arm = scene.getObjectByName("mixamorig:RightArm");
-    const fore = scene.getObjectByName("mixamorig:RightForeArm");
-    const hand = scene.getObjectByName("mixamorig:RightHand");
+    const arm = scene.getObjectByName("mixamorig:RightArm") ?? scene.getObjectByName("mixamorigRightArm");
+    const fore = scene.getObjectByName("mixamorig:RightForeArm") ?? scene.getObjectByName("mixamorigRightForeArm");
+    const hand = scene.getObjectByName("mixamorig:RightHand") ?? scene.getObjectByName("mixamorigRightHand");
     if (!arm || !fore || !hand) return;
     arm.updateWorldMatrix(true, false);
     const shoulder = arm.getWorldPosition(new THREE.Vector3());
