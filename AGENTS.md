@@ -17,7 +17,8 @@
 - Derive pointing axes from child-bone offsets and preserve animation twist; keep gesture targets outside the body at shoulder height to avoid face collisions.
 - Reserve a separate scene viewport beside or above menu details and keep one shared panel-position function for gestures and floating cards; framing stays aligned on resize.
 - Derive customer greeting gestures from incoming live transcript fragments; use a bounded procedural outward wave when the active avatar has no wave clip, preserving voice transport and avoiding looping greetings.
-- Use named morph targets on the LED overlay, driving only jawOpen from measured playback amplitude; other facial weights require a real Audio2Face result, never guessed phonemes.
+- Drive LED overlay morph targets only from measured playback audio (amplitude opens, spectral balance rounds or widens); never claim phoneme recognition — true visemes require real Audio2Face weights.
+- Animate the supplied talking clip while measured voice output is audible and pause it in silence; gestures stay tied to real playback.
 - Keep Blender preparation offline in tools/blender and preserve the supplied face, skeleton and baked necklace; this avoids destructive automatic face edits.
 - Voice category-selection events open the same nonmodal menu as clicks; this keeps spoken recommendations and visible menu details aligned.
 - Map the active avatar's supplied conversation clips to presentation and relaxed posture, with a model-specific head-local mouth anchor; this supports avatar replacement without changing the approved voice or source mesh.
