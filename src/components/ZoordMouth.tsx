@@ -21,8 +21,8 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
   useFrame(() => {
     // No second envelope: it would smear syllables and keep moving after pauses.
     const shape = mouthShape(voiceLevel.v);
-    applyAudioMouth(lips.current, voiceLevel.v);
-    applyAudioMouth(opening.current, voiceLevel.v);
+    applyAudioMouth(lips.current, voiceLevel.v, voiceLevel.round, voiceLevel.wide);
+    applyAudioMouth(opening.current, voiceLevel.v, voiceLevel.round, voiceLevel.wide);
     if (lips.current?.material instanceof THREE.MeshBasicMaterial) lips.current.material.opacity = shape.opacity;
   });
   if (!head || !ledColor || !cavityColor) return null;

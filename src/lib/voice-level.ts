@@ -51,12 +51,15 @@ export function createPlaybackMeter(audio: HTMLAudioElement) {
   let stream: MediaStream | undefined;
   let analyser: AnalyserNode | undefined;
   const samples = new Float32Array(256);
+  const freq = new Float32Array(128);
   let raf = 0;
   let disposed = false;
   const reset = () => {
     cancelAnimationFrame(raf);
     raf = 0;
     voiceLevel.v = 0;
+    voiceLevel.round = 0;
+    voiceLevel.wide = 0;
   };
   const tick = () => {
     if (disposed || !analyser || ctx?.state !== "running" || audio.paused || audio.ended || audio.muted || audio.volume === 0) {
@@ -75,8 +78,7 @@ export function createPlaybackMeter(audio: HTMLAudioElement) {
       raf = requestAnimationFrame(tick);
       return;
     }
-    analyser.getFloatTimeDomainData(samples);
-    voiceLevel.v = speechLevel(samples) * audio.volume;
+    sampleVoice(analyser, samples, freq, audio.volume);
     raf = requestAnimationFrame(tick);
   };
   const samplePlayback = () => {

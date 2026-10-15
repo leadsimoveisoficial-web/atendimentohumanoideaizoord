@@ -22,10 +22,16 @@ export function createMouthGeometry(cavity = false) {
   return geometry;
 }
 
-export function applyAudioMouth(mesh: THREE.Mesh | null, amplitude: number) {
+const clamp = (n: number) => (Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0);
+
+/** Amplitude opens; measured spectral balance rounds (dark voice) or widens (bright voice). Not phonemes. */
+export function applyAudioMouth(mesh: THREE.Mesh | null, amplitude: number, round = 0, wide = 0) {
   if (!mesh?.morphTargetInfluences) return;
-  // Only amplitude can be measured here. Other shapes await actual Audio2Face weights.
-  const safe = Number.isFinite(amplitude) ? Math.max(0, Math.min(1, amplitude)) : 0;
-  mesh.morphTargetInfluences.fill(0);
-  mesh.morphTargetInfluences[0] = safe;
+  const a = clamp(amplitude), r = clamp(round), w = clamp(wide);
+  const m = mesh.morphTargetInfluences;
+  m.fill(0);
+  m[0] = a * (1 - 0.6 * r - 0.5 * w); // jawOpen
+  m[1] = a * w * 0.6; // mouthClose: wide, flat
+  m[2] = a * r * 0.7; // mouthFunnel: rounded
+  m[3] = a * r * 0.3; // mouthPucker
 }
