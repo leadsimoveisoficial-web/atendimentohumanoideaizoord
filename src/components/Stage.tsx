@@ -42,6 +42,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const { actions, mixer } = useAnimations(animations, group);
   const w = useRef(0);
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0 }), []);
+  const spineLean = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler() }), []);
   useFrame(({ clock }, rawDelta) => {
     const head = scene.getObjectByName("mixamorig:Head") ?? scene.getObjectByName("mixamorigHead");
     if (!head) return;
@@ -79,6 +80,16 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     aimLimb(arm, fore, elbowTarget, w.current);
     aimLimb(fore, hand, target, w.current);
     hand.quaternion.slerp(_id, w.current * 0.35);
+    // Human touch: lean the chest slightly toward the panel while presenting.
+    const spine = scene.getObjectByName("mixamorig:Spine2") ?? scene.getObjectByName("mixamorigSpine2");
+    if (spine) {
+      const lean = (target.x < 0 ? -1 : 1) * 0.06 * w.current;
+      spineLean.next.setFromEuler(spineLean.euler.set(0, lean, lean * 0.4));
+      if (spine.quaternion.angleTo(spineLean.last) < 0.00001) spine.quaternion.multiply(spineLean.inverse);
+      spine.quaternion.multiply(spineLean.next);
+      spineLean.last.copy(spine.quaternion);
+      spineLean.inverse.copy(spineLean.next).invert();
+    }
   });
   useEffect(() => {
     scene.traverse((o) => {
