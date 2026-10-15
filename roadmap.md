@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Remove the floating LED menu panels; the menu now opens only as the side panel beside Zoord; browser verified zero floating cards, side menu opens with all 12 categories and no page errors.
+
 - [x] Organize Zoord posture: relaxed arms at rest, bounded menu reach and reversible gesture layers; browser verified resting, pointing, return from waving and narrow-screen visibility without page errors; five focused tests passed.
 
 - [x] Improve mouth playback synchronization: shared owner-scoped meter, processed silent stream branch and corrected forward-facing lips; recorded browser audio measured opening, round/wide changes and zero on completion, seven tests passed. Real live call remains unverified as listed below.
