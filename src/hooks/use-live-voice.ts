@@ -53,11 +53,12 @@ export function useLiveVoice(
     };
   }, []);
 
+  const retried = useRef(false);
   const start = useCallback((menu?: { category: number | null }) => {
     if (!mounted.current || controller.current) return;
     const audio = audioRef.current;
     if (!audio) {
-      setCall((previous) => ({ ...previous, error: "Voice playback is not mounted." }));
+      setCall((previous) => ({ ...previous, error: "O som da voz não está pronto nesta página." }));
       return;
     }
     let endpoint: URL;
@@ -69,6 +70,7 @@ export function useLiveVoice(
       setCall((previous) => ({ ...previous, error: "Invalid voice connection URL." }));
       return;
     }
+    let connectedOnce = false;
     const voice = createLiveVoice({
       url: endpoint.href,
       audio,
@@ -76,7 +78,9 @@ export function useLiveVoice(
       onEvent(event) {
         if (!mounted.current || controller.current !== voice) return;
         if (event.type === "app.connected") {
-          setCall((previous) => ({ ...previous, status: "connected", hasConnected: true }));
+          connectedOnce = true;
+          retried.current = false;
+          setCall((previous) => ({ ...previous, status: "connected", hasConnected: true, error: null }));
         } else if (event.type === "app.stopping") {
           setCall((previous) => ({ ...previous, status: "stopping", playbackBlocked: false }));
         } else if (event.type === "app.closed") {
@@ -88,10 +92,18 @@ export function useLiveVoice(
             playbackBlocked: false,
             finalized: event.finalized === true,
           }));
+          // Auto-retry once when the call never connected (network hiccup).
+          if (!connectedOnce && !retried.current && mounted.current) {
+            retried.current = true;
+            setCall((previous) => ({ ...previous, error: null, status: "connecting" }));
+            window.setTimeout(() => {
+              if (mounted.current && !controller.current) start(menu);
+            }, 1500);
+          }
         } else if (event.type === "app.playback.blocked" || event.type === "app.playback.resumed") {
           setCall((previous) => ({ ...previous, playbackBlocked: event.type === "app.playback.blocked" }));
         } else if (["app.error", "gateway.error", "error"].includes(event.type)) {
-          setCall((previous) => ({ ...previous, error: event.error?.message ?? "Voice request failed." }));
+          setCall((previous) => ({ ...previous, error: event.error?.message ?? "A voz falhou. Tente de novo." }));
         }
         try {
           void Promise.resolve(latest.current.onEvent?.(event)).catch((error) => {
@@ -224,16 +236,16 @@ function createLiveVoice(options: LiveOptions) {
   function reportUnexpectedClosure(reason?: string) {
     if (state === "stopping" || state === "closed") return;
     const messages: Record<string, string> = {
-      startup_timeout: "Voice startup timed out. Start a new call to retry.",
-      initial_heartbeat_timeout: "Voice media did not connect. Start a new call to retry.",
-      heartbeat_timeout: "Voice connection was lost. Start a new call to retry.",
-      gateway_shutdown: "The voice service restarted. Start a new call to reconnect.",
-      inactivity_timeout: "The voice call ended after inactivity.",
-      duration_limit: "The voice call reached its duration limit. Start a new call to continue.",
+      startup_timeout: "A voz demorou para começar. Toque em Falar com o Zoord para tentar de novo.",
+      initial_heartbeat_timeout: "O som da voz não conectou. Toque em Falar com o Zoord para tentar de novo.",
+      heartbeat_timeout: "A conexão da voz caiu. Toque em Falar com o Zoord para tentar de novo.",
+      gateway_shutdown: "O serviço de voz reiniciou. Toque em Falar com o Zoord para reconectar.",
+      inactivity_timeout: "A conversa terminou por inatividade.",
+      duration_limit: "A conversa chegou ao limite de tempo. Toque em Falar com o Zoord para continuar.",
     };
     options.onEvent({
       type: "app.error",
-      error: { message: messages[reason ?? ""] ?? "The voice call ended unexpectedly. Start a new call to retry." },
+      error: { message: messages[reason ?? ""] ?? "A conversa terminou de forma inesperada. Toque em Falar com o Zoord para tentar de novo." },
     });
   }
 
@@ -243,14 +255,14 @@ function createLiveVoice(options: LiveOptions) {
 
   function pulse() {
     if (state !== "active") return;
-    if (Date.now() - lastAck >= 5000) return fail("Voice control connection lost");
-    if (Date.now() - lastHeartbeat >= 5000) return fail("Voice media connection lost");
+    if (Date.now() - lastAck >= 5000) return fail("A conexão da voz caiu. Toque em Falar com o Zoord para tentar de novo.");
+    if (Date.now() - lastHeartbeat >= 5000) return fail("O som da voz caiu. Toque em Falar com o Zoord para tentar de novo.");
     if (!mediaReady()) return;
     try {
       send({ type: "gateway.heartbeat" });
       lastHeartbeat = Date.now();
     } catch {
-      fail("Voice control connection failed");
+      fail("A conexão da voz falhou. Toque em Falar com o Zoord para tentar de novo.");
     }
   }
 
@@ -277,7 +289,7 @@ function createLiveVoice(options: LiveOptions) {
     answerReceived = true;
     clearTimeout(deadline);
     deadline = setTimeout(
-      () => fail("Voice media did not connect within 12 seconds. Start a new call to retry."),
+      () => fail("O som da voz não conectou a tempo. Toque em Falar com o Zoord para tentar de novo."),
       12_000,
     );
     await peer.setRemoteDescription({ type: "answer", sdp: event.transport.sdp });
@@ -312,9 +324,21 @@ function createLiveVoice(options: LiveOptions) {
     state = "starting";
     window.addEventListener("pagehide", stop);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-      });
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        });
+      } catch (micError) {
+        const name = micError instanceof DOMException ? micError.name : "";
+        if (name === "NotAllowedError" || name === "SecurityError") {
+          throw new Error("Permita o acesso ao microfone no navegador para falar com o Zoord.");
+        }
+        if (name === "NotFoundError" || name === "OverconstrainedError") {
+          throw new Error("Não encontrei um microfone neste aparelho.");
+        }
+        throw new Error("Não consegui ligar o microfone. Feche outros apps que usam o microfone e tente de novo.");
+      }
       microphone = stream;
       if (!starting()) {
         stream.getTracks().forEach((track) => track.stop());
@@ -336,8 +360,8 @@ function createLiveVoice(options: LiveOptions) {
         void resumePlayback();
       });
       connection.addEventListener("connectionstatechange", () => {
-        if (connection.connectionState === "failed") fail("Voice media connection failed. Start a new call to retry.");
-        else if (connection.connectionState === "closed") fail("Voice media connection closed");
+        if (connection.connectionState === "failed") fail("O som da voz não conectou. Toque em Falar com o Zoord para tentar de novo.");
+        else if (connection.connectionState === "closed") fail("O som da voz foi encerrado. Toque em Falar com o Zoord para tentar de novo.");
         else activate();
       });
       channel = connection.createDataChannel("oai-events");
@@ -349,10 +373,10 @@ function createLiveVoice(options: LiveOptions) {
             activate();
           }
         } catch {
-          fail("Invalid voice session event");
+          fail("Recebi uma resposta inválida do serviço de voz.");
         }
       });
-      channel.addEventListener("error", () => fail("Voice media connection failed"));
+      channel.addEventListener("error", () => fail("O som da voz falhou. Toque em Falar com o Zoord para tentar de novo."));
       channel.addEventListener("close", stop);
       await connection.setLocalDescription(await connection.createOffer());
       if (!starting()) return;
@@ -361,7 +385,7 @@ function createLiveVoice(options: LiveOptions) {
       const sdp = connection.localDescription?.sdp;
       if (!sdp) throw new Error("Missing voice session offer");
       socket = new WebSocket(options.url);
-      deadline = setTimeout(() => fail("Voice session did not start"), 50_000);
+      deadline = setTimeout(() => fail("A voz não começou a tempo. Toque em Falar com o Zoord para tentar de novo."), 50_000);
       socket.onopen = () => {
         if (!starting()) return release();
         send({ type: "app.start", sdp, menu: options.menu });
@@ -370,7 +394,7 @@ function createLiveVoice(options: LiveOptions) {
         try {
           const event: LiveEvent = JSON.parse(data);
           if (event.type === "gateway.session.created") {
-            void applyAnswer(event).catch(() => fail("Voice media negotiation failed"));
+            void applyAnswer(event).catch(() => fail("A negociação do som da voz falhou. Toque em Falar com o Zoord para tentar de novo."));
           } else if (event.type === "session.started") {
             activate();
           } else if (event.type === "gateway.heartbeat.ack") {
@@ -394,10 +418,10 @@ function createLiveVoice(options: LiveOptions) {
           }
           options.onEvent(event);
         } catch {
-          fail("Invalid voice event");
+          fail("Recebi uma resposta inválida do serviço de voz.");
         }
       };
-      socket.onerror = () => fail("Voice connection failed");
+      socket.onerror = () => fail("A conexão da voz falhou. Verifique sua internet e tente de novo.");
       socket.onclose = () => {
         if (state !== "stopping" && state !== "closed") {
           options.onEvent({ type: "app.error", error: { message: "Voice control connection closed" } });
