@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Replace Zoord with the uploaded Cyber Hero, adapt its built-in animations and audio mouth, and verify wave/menu gestures in the browser
+
 - [x] Prepare offline Blender LED shape-key and Audio2Face-weight bake scripts; syntax checked
 - [ ] Execute Blender/Audio2Face export and import verified GLB — blocked by unavailable Blender/RTX Audio2Face service and real weight export
 - [x] Apply audio-driven jawOpen morph on the LED lips using the shared approved-voice playback meter; browser measured 0.46 on sound and 0 on pause, no runtime errors
