@@ -35,5 +35,5 @@
 - [ ] Real camera + call connection — browser permissions already request the real camera/mic; media connection still fails only inside the sandbox, needs testing on the user's device
 - [ ] Blender/Audio2Face export — blocked: no Blender or RTX GPU here
 - [ ] Necklace adjustment — needs artist in Blender
-- [ ] Redo posture, menu pointing and necklace in code only (no Blender) so Zoord looks human
+- [x] Redo posture and menu pointing in code (chest lean toward panel); necklace remains baked in the mesh, artist-only
 - [ ] Verify live call + camera on the user's phone over the HTTPS preview
