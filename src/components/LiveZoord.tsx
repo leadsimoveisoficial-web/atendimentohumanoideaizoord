@@ -102,7 +102,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       return;
     }
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+      const s = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: "user" } });
       streamRef.current = s;
       setCam(true);
     } catch {
