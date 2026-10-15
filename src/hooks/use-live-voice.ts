@@ -93,7 +93,7 @@ export function useLiveVoice(
             finalized: event.finalized === true,
           }));
           // Auto-retry once when the call never connected (network hiccup).
-          if (failedWhileConnecting && !retried.current && mounted.current) {
+          if (!connectedOnce && !retried.current && mounted.current) {
             retried.current = true;
             setCall((previous) => ({ ...previous, error: null, status: "connecting" }));
             window.setTimeout(() => {
@@ -103,7 +103,6 @@ export function useLiveVoice(
         } else if (event.type === "app.playback.blocked" || event.type === "app.playback.resumed") {
           setCall((previous) => ({ ...previous, playbackBlocked: event.type === "app.playback.blocked" }));
         } else if (["app.error", "gateway.error", "error"].includes(event.type)) {
-          if (!retried.current) failedWhileConnecting = true;
           setCall((previous) => ({ ...previous, error: event.error?.message ?? "A voz falhou. Tente de novo." }));
         }
         try {
