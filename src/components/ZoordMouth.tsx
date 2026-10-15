@@ -5,7 +5,7 @@ import { voiceLevel } from "@/lib/voice-level";
 import { mouthShape } from "@/lib/zoord-mouth-shape";
 import { applyAudioMouth, createMouthGeometry } from "@/lib/zoord-mouth-rig";
 
-export function ZoordMouth({ scene }: { scene: THREE.Object3D }) {
+export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.524 }: { scene: THREE.Object3D; position?: [number, number, number]; rotationX?: number }) {
   const [head, setHead] = useState<THREE.Object3D | null>(null);
   const lips = useRef<THREE.Mesh>(null);
   const opening = useRef<THREE.Mesh>(null);
@@ -27,7 +27,7 @@ export function ZoordMouth({ scene }: { scene: THREE.Object3D }) {
   });
   if (!head || !ledColor || !cavityColor) return null;
   return createPortal(
-    <group name="ZoordVoiceMouth" position={[0, 11.5, 10.3]} rotation-x={0.524}>
+    <group name="ZoordVoiceMouth" position={position} rotation-x={rotationX}>
       <mesh ref={opening} args={[geometry.cavity]}>
         <meshBasicMaterial color={cavityColor} toneMapped={false} />
       </mesh>

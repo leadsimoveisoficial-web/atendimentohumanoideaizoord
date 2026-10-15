@@ -13,7 +13,7 @@ import {
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import zoord from "@/assets/zoord.glb.asset.json";
+import zoord from "@/assets/zoord-cyber-hero.glb.asset.json";
 import dakkaiLogo from "@/assets/dakkai-logo.png";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { ZoordMouth } from "./ZoordMouth";
@@ -41,6 +41,9 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const { scene, animations } = useGLTF(zoord.url);
   const { actions, mixer } = useAnimations(animations, group);
   const w = useRef(0);
+  const waveTime = useRef(0);
+  const waving = anim === "Wave_One_Hand";
+  const clipName = point !== null && !waving ? "Talk_with_Hands_Open" : "Talk_with_Left_Hand_on_Hip";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0 }), []);
   const spineLean = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler() }), []);
   useFrame(({ clock }, rawDelta) => {
@@ -57,6 +60,24 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     head.quaternion.multiply(headMotion.next);
     headMotion.last.copy(head.quaternion);
     headMotion.inverse.copy(headMotion.next).invert();
+  });
+  // The supplied avatar has conversation clips but no wave clip: layer a single outward wave.
+  useFrame((_, rawDelta) => {
+    if (!waving) return;
+    waveTime.current += Math.min(rawDelta, 0.05);
+    const t = waveTime.current;
+    if (t >= 3.2) { onWaveEnd(); return; }
+    const arm = scene.getObjectByName("mixamorig:RightArm") ?? scene.getObjectByName("mixamorigRightArm");
+    const fore = scene.getObjectByName("mixamorig:RightForeArm") ?? scene.getObjectByName("mixamorigRightForeArm");
+    const hand = scene.getObjectByName("mixamorig:RightHand") ?? scene.getObjectByName("mixamorigRightHand");
+    if (!arm || !fore || !hand) return;
+    arm.updateWorldMatrix(true, false);
+    const shoulder = arm.getWorldPosition(new THREE.Vector3());
+    const weight = THREE.MathUtils.smoothstep(t, 0, 0.5) * (1 - THREE.MathUtils.smoothstep(t, 2.6, 3.2));
+    const elbow = shoulder.clone().add(new THREE.Vector3(-0.48, -0.12, 0.3));
+    const palm = shoulder.clone().add(new THREE.Vector3(-0.72 + Math.sin(t * 8) * 0.12, 0.55, 0.45));
+    aimLimb(arm, fore, elbow, weight);
+    aimLimb(fore, hand, palm, weight);
   });
   // Procedural pointing gesture, layered on top of the playing animation
   useFrame((_, d) => {
@@ -97,23 +118,25 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     });
   }, [scene]);
   useEffect(() => {
-    const a = actions[anim];
+    waveTime.current = 0;
+    const a = actions[clipName];
     if (a) {
-      a.setLoop(anim === "Wave_One_Hand" ? THREE.LoopOnce : THREE.LoopRepeat, anim === "Wave_One_Hand" ? 1 : Infinity);
-      a.clampWhenFinished = anim === "Wave_One_Hand";
+      a.setLoop(THREE.LoopRepeat, Infinity);
+      a.clampWhenFinished = false;
+      a.paused = false;
+      a.reset().fadeIn(0.4).play();
+      // Keep the relaxed supplied pose at rest; use the full open-hand clip when presenting.
+      if (clipName === "Talk_with_Left_Hand_on_Hip") a.paused = true;
     }
-    const finished = (event: { action: THREE.AnimationAction }) => { if (event.action === a && anim === "Wave_One_Hand") onWaveEnd(); };
-    mixer.addEventListener("finished", finished);
-    a?.reset().fadeIn(0.4).play();
     return () => {
-      mixer.removeEventListener("finished", finished);
+      if (a) a.paused = false;
       a?.fadeOut(0.4);
     };
-  }, [anim, actions, mixer, waveId, onWaveEnd]);
+  }, [clipName, actions, mixer, waveId, waving]);
   return (
     <group ref={group} position={[0, 0.3, 0]} scale={2.3}>
       <primitive object={scene} />
-      <ZoordMouth scene={scene} />
+      <ZoordMouth scene={scene} position={[0, 5.4, 10.9]} rotationX={0.72} />
     </group>
   );
 }
