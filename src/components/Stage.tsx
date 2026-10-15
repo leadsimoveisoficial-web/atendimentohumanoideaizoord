@@ -8,7 +8,6 @@ import {
   Lightformer,
   Sparkles,
   useTexture,
-  Html,
 } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,11 +28,10 @@ const CYAN = "#3fe0ff";
 const BLUE = "#2f7bff";
 const RED = "#c4141f";
 
+// The menu opens as a side panel on the viewer's right: Zoord points there.
 export function panelPos(i: number) {
-  const half = Math.ceil(MENU.length / 2);
-  const left = i < half;
-  const row = left ? i : i - half;
-  return new THREE.Vector3(left ? -3.5 : 3.5, 4.9 - row * 0.94, -1.2);
+  const row = Math.min(Math.max(i, 0), MENU.length - 1);
+  return new THREE.Vector3(3.6, 4.3 - (row % 4) * 0.35, -1.0);
 }
 
 const _id = new THREE.Quaternion();
@@ -426,7 +424,6 @@ export function Stage() {
         </Suspense>
         <Brain active={shown !== null} />
         <Beam point={shown} />
-        <FlyingMenu onOpen={openMenu} />
         <Sparkles count={80} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#ff9aa0" opacity={0.5} />
 
         <Suspense fallback={null}>
