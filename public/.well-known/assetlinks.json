@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "br.com.dakkaisushi.zoord",
+        "sha256_cert_fingerprints": ["2D:E8:60:D2:98:B4:4F:3D:00:4C:55:23:81:DF:2A:0A:EC:AC:A4:FD:EF:AF:53:B1:E8:FC:89:C9:74:2D:73:1C"]
+      }
+    }]
