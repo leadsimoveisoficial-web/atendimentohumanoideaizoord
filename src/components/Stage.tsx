@@ -407,7 +407,6 @@ function StageCamera() {
 
 export function Stage() {
   const [anim, setAnim] = useState("Idle_12");
-  const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
   const [aiPoint, setAiPoint] = useState<number | null>(null);
   const [listening, setListening] = useState(false);
@@ -467,7 +466,6 @@ export function Stage() {
 
         <Suspense fallback={null}>
           <Robot anim={anim} point={shown} listening={listening} waveId={waveId} onWaveEnd={endWave} />
-          <Loaded onLoad={() => setLoaded(true)} />
         </Suspense>
 
         <OrbitControls target={[0, 2.45, 0]} enablePan={false} minDistance={7} maxDistance={16} minAzimuthAngle={-0.25} maxAzimuthAngle={0.25} minPolarAngle={1.25} maxPolarAngle={1.55} enableDamping />
@@ -491,7 +489,6 @@ export function Stage() {
           <div className="mb-3 flex justify-center">
             <LiveZoord ref={voiceCommands} onPoint={pointToMenu} onGreeting={wave} onListening={setListening} onOrder={placeOrder} />
           </div>
-          <p className="mb-3 text-center text-xs text-muted-foreground">{shown !== null ? `ZOORD • ${MENU[shown]?.t.toUpperCase() ?? "DAKKAI"}` : `${loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"}`}</p>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
             <RecordRepeat />
             <Button variant="ghost" onClick={wave} className="stage-chip"><Hand />Acenar</Button>
@@ -519,7 +516,6 @@ export function Stage() {
                 <li key={it.n} className="flex items-start justify-between gap-4 border-b border-border pb-3">
                   <div>
                     <p className="font-semibold text-foreground">{it.n}</p>
-                    <p className="text-sm text-muted-foreground">{it.d}</p>
                   </div>
                   <span className="whitespace-nowrap font-display text-dakkai">{it.p}</span>
                 </li>
@@ -529,7 +525,6 @@ export function Stage() {
               <a href={WHATSAPP} target="_blank" rel="noreferrer" className="stage-chip stage-chip-red">Pedir no WhatsApp</a>
               <a href={ORDER_URL} target="_blank" rel="noreferrer" className="stage-chip">Cardápio digital ↗</a>
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">Preços e disponibilidade podem variar. Rod. Rafael da Rocha Pires, 1650 — Sambaqui, Florianópolis/SC</p>
           </div>
         </aside>
       )}
@@ -537,7 +532,3 @@ export function Stage() {
   );
 }
 
-function Loaded({ onLoad }: { onLoad: () => void }) {
-  useEffect(onLoad, [onLoad]);
-  return null;
-}
