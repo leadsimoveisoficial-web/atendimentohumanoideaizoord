@@ -16,7 +16,8 @@
 - Menu details use a nonmodal side panel (lower panel on narrow screens) so the robot remains visible.
 - Derive pointing axes from child-bone offsets and preserve animation twist; keep gesture targets outside the body at shoulder height to avoid face collisions.
 - Reserve a separate scene viewport beside or above menu details and keep one shared panel-position function for gestures and floating cards; framing stays aligned on resize.
-- Derive customer greeting gestures from incoming live transcript fragments and finish wave clips through mixer events; this avoids narrator-triggered waves and looping greetings without changing voice transport.
+- Derive customer greeting gestures from incoming live transcript fragments; use a bounded procedural outward wave when the active avatar has no wave clip, preserving voice transport and avoiding looping greetings.
 - Use named morph targets on the LED overlay, driving only jawOpen from measured playback amplitude; other facial weights require a real Audio2Face result, never guessed phonemes.
 - Keep Blender preparation offline in tools/blender and preserve the supplied face, skeleton and baked necklace; this avoids destructive automatic face edits.
 - Voice category-selection events open the same nonmodal menu as clicks; this keeps spoken recommendations and visible menu details aligned.
+- Map the active avatar's supplied conversation clips to presentation and relaxed posture, with a model-specific head-local mouth anchor; this supports avatar replacement without changing the approved voice or source mesh.
