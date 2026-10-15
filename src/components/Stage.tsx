@@ -346,7 +346,7 @@ export function Stage() {
   return (
     <div className="fixed inset-0 bg-background">
       <div className={`stage-scene ${open !== null ? "stage-scene-menu" : ""}`}>
-      <Canvas shadows dpr={[1, 1.5]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
+      <Canvas shadows="percentage" dpr={[1, 1.5]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
         <StageCamera />
         <color attach="background" args={["#030507"]} />
         <fog attach="fog" args={["#030507", 12, 26]} />
