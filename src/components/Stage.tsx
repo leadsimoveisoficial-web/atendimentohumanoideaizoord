@@ -532,7 +532,3 @@ export function Stage() {
   );
 }
 
-function Loaded({ onLoad }: { onLoad: () => void }) {
-  useEffect(onLoad, [onLoad]);
-  return null;
-}
