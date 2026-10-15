@@ -294,7 +294,7 @@ function Wall() {
         return (
           <group key={i} position={[x, 0, z]} rotation-y={-a}>
             <mesh position-y={4}>
-              <boxGeometry args={[1.95, 8, 0.15]} />
+              <boxGeometry args={[2.15, 9, 0.15]} />
               <meshStandardMaterial map={marble} color="#ffffff" metalness={0.05} roughness={0.8} />
             </mesh>
           </group>
@@ -312,6 +312,10 @@ function Logo() {
   useFrame(({ clock }) => ref.current && (ref.current.rotation.z = clock.elapsedTime * 0.15));
   return (
     <group position={[0, 4.1, -9]} scale={0.7}>
+      <mesh position-z={-0.1}>
+        <circleGeometry args={[2.34, 96]} />
+        <meshBasicMaterial color="#0b0e13" transparent opacity={0.88} />
+      </mesh>
       <mesh ref={ref} position-z={-0.05}>
         <ringGeometry args={[2.35, 2.42, 128]} />
         <meshBasicMaterial color={RED} toneMapped={false} transparent opacity={0.8} />
@@ -324,7 +328,7 @@ function Logo() {
   );
 }
 
-const BRAIN_POS = new THREE.Vector3(0, 7.2, -9.2);
+const BRAIN_POS = new THREE.Vector3(0, 6.55, -9.2);
 // "Cérebro" DAKKAI IA: neural sphere pulsing in red + cyan
 function Brain({ active }: { active: boolean }) {
   const ref = useRef<THREE.Group>(null);
@@ -357,7 +361,7 @@ function Brain({ active }: { active: boolean }) {
     if (core.current) core.current.scale.setScalar((active ? 0.6 : 0.45) + Math.sin(clock.elapsedTime * (active ? 9 : 2)) * (active ? 0.12 : 0.05));
   });
   return (
-    <group position={BRAIN_POS.toArray()} scale={0.85}>
+    <group position={BRAIN_POS.toArray()} scale={0.7}>
       <group ref={ref}>
         <lineSegments geometry={geo}>
           <lineBasicMaterial color={CYAN} transparent opacity={0.45} toneMapped={false} />
@@ -448,7 +452,7 @@ export function Stage() {
 
         <mesh rotation-x={-Math.PI / 2} receiveShadow>
           <planeGeometry args={[60, 60]} />
-          <MeshReflectorMaterial blur={[300, 80]} resolution={1024} mixBlur={1} mixStrength={6} roughness={0.85} depthScale={1} minDepthThreshold={0.4} maxDepthThreshold={1.4} color="#b9c3cc" metalness={0.3} mirror={0.4} />
+          <meshStandardMaterial color="#c7ced5" roughness={0.9} metalness={0} />
         </mesh>
 
         <Platform />
