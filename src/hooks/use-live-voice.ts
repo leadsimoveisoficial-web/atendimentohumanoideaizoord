@@ -53,11 +53,12 @@ export function useLiveVoice(
     };
   }, []);
 
+  const retried = useRef(false);
   const start = useCallback((menu?: { category: number | null }) => {
     if (!mounted.current || controller.current) return;
     const audio = audioRef.current;
     if (!audio) {
-      setCall((previous) => ({ ...previous, error: "Voice playback is not mounted." }));
+      setCall((previous) => ({ ...previous, error: "O som da voz não está pronto nesta página." }));
       return;
     }
     let endpoint: URL;
