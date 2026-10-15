@@ -89,7 +89,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       poseLayer.apply(fore, () => aimLimb(fore, hand, palm, restWeight.current));
     }
     // Undo our previous offset only when the mixer has not replaced the bone pose.
-    if (head.quaternion.angleTo(headMotion.last) < 0.00001) head.quaternion.multiply(headMotion.inverse);
+    if (head.quaternion.angleTo(headMotion.last) < 0.00001) head.quaternion.multiply(headMotion.inverse).normalize();
     const presenting = point !== null && anim !== "Wave_One_Hand";
     headMotion.strength = THREE.MathUtils.damp(headMotion.strength, listening || presenting || clock.elapsedTime < speakUntil.current ? 1 : 0, 5, dt);
     const side = presenting ? (panelPos(point).x < 0 ? -1 : 1) : 0;
@@ -107,8 +107,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     head.parent?.updateWorldMatrix(true, false);
     const headWorld = (head.parent ? head.parent.getWorldQuaternion(new THREE.Quaternion()) : new THREE.Quaternion()).multiply(head.quaternion);
     headMotion.next.premultiply(headWorld.clone().invert()).multiply(headWorld);
-    head.quaternion.multiply(headMotion.next);
-    if (import.meta.env.DEV) (window as unknown as { __zoordHead?: THREE.Object3D }).__zoordHead = head, (window as unknown as { __gaze?: unknown }).__gaze = { gaze, lx: headMotion.lookX, d: head.getWorldQuaternion(new THREE.Quaternion()).multiply(headWorld.clone().invert()).toArray().map((v) => v.toFixed(2)) };
+    head.quaternion.multiply(headMotion.next.normalize()).normalize();
+    if (import.meta.env.DEV) (window as unknown as { __zoordHead?: THREE.Object3D }).__zoordHead = head, (window as unknown as { __gaze?: unknown }).__gaze = { gaze, lx: headMotion.lookX, d: head.getWorldQuaternion(new THREE.Quaternion()).multiply(headWorld.clone().invert()).toArray().map((v) => v.toFixed(2)), hq: head.quaternion.toArray().map((v) => v.toFixed(3)), pw: head.parent?.getWorldQuaternion(new THREE.Quaternion()).toArray().map((v) => v.toFixed(3)) };
     headMotion.last.copy(head.quaternion);
     headMotion.inverse.copy(headMotion.next).invert();
   });
