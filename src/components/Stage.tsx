@@ -19,6 +19,9 @@ import { voiceLevel } from "@/lib/voice-level";
 import { ZoordMouth } from "./ZoordMouth";
 import { RecordRepeat } from "./RecordRepeat";
 import { Button } from "@/components/ui/button";
+import { OrderTicket, type TicketState } from "./OrderTicket";
+import { supabase } from "@/integrations/supabase/client";
+import type { NewOrder } from "@/lib/orders";
 import { MENU, WHATSAPP, ORDER_URL } from "./menu";
 import { aimLimb } from "@/lib/zoord-gesture";
 import { PoseLayer } from "@/lib/zoord-pose";
@@ -332,6 +335,15 @@ export function Stage() {
   const endWave = useCallback(() => setAnim((current) => current === "Wave_One_Hand" ? "Idle_12" : current), []);
   const shown = aiPoint ?? open;
   const voiceCommands = useRef<LiveZoordCommands | null>(null);
+  const [ticket, setTicket] = useState<TicketState | null>(null);
+  const placeOrder = useCallback(async (order: NewOrder) => {
+    setTicket({ order, status: "sending" });
+    const { error } = await supabase.from("orders").insert({
+      customer_name: order.customer_name, table_number: order.table_number, notes: order.notes,
+      items: order.items, total: order.total,
+    });
+    setTicket({ order, status: error ? "failed" : "sent" });
+  }, []);
   const pointToMenu = useCallback((i: number | null) => {
     setAiPoint(i);
     if (i !== null && MENU[i]) setOpen(i);
@@ -385,6 +397,7 @@ export function Stage() {
       </Canvas>
       </div>
 
+      {ticket && <OrderTicket ticket={ticket} onClose={() => setTicket(null)} />}
       <div className="stage-overlay pointer-events-none fixed inset-0 flex flex-col justify-between p-4 md:p-6">
         <header className="stage-header flex items-center justify-between gap-3">
           <span className="font-display text-sm tracking-[0.5em] text-foreground">DAKKAI <span className="text-dakkai">×</span> ZOORD</span>
@@ -395,7 +408,7 @@ export function Stage() {
         </header>
         <div className="stage-controls">
           <div className="mb-3 flex justify-center">
-            <LiveZoord ref={voiceCommands} onPoint={pointToMenu} onGreeting={wave} onListening={setListening} />
+            <LiveZoord ref={voiceCommands} onPoint={pointToMenu} onGreeting={wave} onListening={setListening} onOrder={placeOrder} />
           </div>
           <p className="mb-3 text-center text-xs text-muted-foreground">{shown !== null ? `ZOORD • ${MENU[shown]?.t.toUpperCase() ?? "DAKKAI"}` : `${loaded ? "DAKKAI IA • ONLINE" : "INICIANDO…"}`}</p>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
