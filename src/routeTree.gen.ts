@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CozinhaRouteImport } from './routes/cozinha'
 import { Route as AuthenticatedSegurancaRouteImport } from './routes/_authenticated/seguranca'
+import { Route as ApiZoordChatRouteImport } from './routes/api/zoord-chat'
 import { Route as ApiZoordPresentRouteImport } from './routes/api/zoord-present'
 import { Route as ApiZoordSpeakRouteImport } from './routes/api/zoord-speak'
 
@@ -41,6 +42,11 @@ const AuthenticatedSegurancaRoute = AuthenticatedSegurancaRouteImport.update({
   path: '/seguranca',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiZoordChatRoute = ApiZoordChatRouteImport.update({
+  id: '/api/zoord-chat',
+  path: '/api/zoord-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiZoordPresentRoute = ApiZoordPresentRouteImport.update({
   id: '/api/zoord-present',
   path: '/api/zoord-present',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/cozinha': typeof CozinhaRoute
   '/seguranca': typeof AuthenticatedSegurancaRoute
+  '/api/zoord-chat': typeof ApiZoordChatRoute
   '/api/zoord-present': typeof ApiZoordPresentRoute
   '/api/zoord-speak': typeof ApiZoordSpeakRoute
 }
@@ -65,6 +72,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/cozinha': typeof CozinhaRoute
   '/seguranca': typeof AuthenticatedSegurancaRoute
+  '/api/zoord-chat': typeof ApiZoordChatRoute
   '/api/zoord-present': typeof ApiZoordPresentRoute
   '/api/zoord-speak': typeof ApiZoordSpeakRoute
 }
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/cozinha': typeof CozinhaRoute
   '/_authenticated/seguranca': typeof AuthenticatedSegurancaRoute
+  '/api/zoord-chat': typeof ApiZoordChatRoute
   '/api/zoord-present': typeof ApiZoordPresentRoute
   '/api/zoord-speak': typeof ApiZoordSpeakRoute
 }
@@ -85,6 +94,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/cozinha'
     | '/seguranca'
+    | '/api/zoord-chat'
     | '/api/zoord-present'
     | '/api/zoord-speak'
   fileRoutesByTo: FileRoutesByTo
@@ -93,6 +103,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/cozinha'
     | '/seguranca'
+    | '/api/zoord-chat'
     | '/api/zoord-present'
     | '/api/zoord-speak'
   id:
@@ -102,6 +113,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/cozinha'
     | '/_authenticated/seguranca'
+    | '/api/zoord-chat'
     | '/api/zoord-present'
     | '/api/zoord-speak'
   fileRoutesById: FileRoutesById
@@ -111,6 +123,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CozinhaRoute: typeof CozinhaRoute
+  ApiZoordChatRoute: typeof ApiZoordChatRoute
   ApiZoordPresentRoute: typeof ApiZoordPresentRoute
   ApiZoordSpeakRoute: typeof ApiZoordSpeakRoute
 }
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSegurancaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/zoord-chat': {
+      id: '/api/zoord-chat'
+      path: '/api/zoord-chat'
+      fullPath: '/api/zoord-chat'
+      preLoaderRoute: typeof ApiZoordChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/zoord-present': {
       id: '/api/zoord-present'
       path: '/api/zoord-present'
@@ -185,6 +205,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CozinhaRoute: CozinhaRoute,
+  ApiZoordChatRoute: ApiZoordChatRoute,
   ApiZoordPresentRoute: ApiZoordPresentRoute,
   ApiZoordSpeakRoute: ApiZoordSpeakRoute,
 }
