@@ -64,6 +64,7 @@ if (freeSpeechSupported()) {
 }
 
 function voicesReady(): Promise<void> {
+  refreshVoices();
   if (voicesCache.length) return Promise.resolve();
   return new Promise((resolve) => {
     const done = () => {
