@@ -67,6 +67,19 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [call.error]);
 
+  // A live call stuck connecting (credits out, gateway unreachable) → free mode.
+  useEffect(() => {
+    if (freeModeRef.current || call.status !== "connecting") return;
+    const t = setTimeout(() => {
+      if (!freeModeRef.current) {
+        call.stop();
+        enterFreeMode();
+      }
+    }, 12000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [call.status]);
+
   useEffect(() => () => {
     if (listeningTimer.current) clearTimeout(listeningTimer.current);
     freeListener.current?.stop();
