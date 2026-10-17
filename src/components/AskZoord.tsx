@@ -1,17 +1,8 @@
 import { useRef, useState } from "react";
 import { MENU } from "./menu";
 import { streamSpeech } from "@/lib/stream-speech";
-
-function guessCategory(text: string) {
-  const t = text.toLowerCase();
-  let best = 0, score = -1;
-  MENU.forEach((s, i) => {
-    let sc = t.includes(s.t.toLowerCase()) ? 3 : 0;
-    s.items.forEach((it) => { if (t.includes(it.n.toLowerCase())) sc += 2; });
-    if (sc > score) { score = sc; best = i; }
-  });
-  return best;
-}
+import { speakFree, stopFreeSpeech } from "@/lib/free-speech";
+import { guessCategory } from "@/lib/menu-script";
 
 export function AskZoord({ onPoint }: { onPoint: (i: number | null) => void }) {
   const [openPanel, setOpenPanel] = useState(false);
