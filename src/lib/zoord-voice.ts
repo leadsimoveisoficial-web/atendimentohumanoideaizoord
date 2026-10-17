@@ -12,7 +12,7 @@ export async function speakZoord(text: string, options: { lang?: string; signal?
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, lang: (options.lang ?? "pt-BR").slice(0, 2) }),
-      signal,
+      signal: signal ?? null,
     });
     if (!response.ok) throw new Error(`Voz do Grok falhou (${response.status})`);
     const blob = await response.blob();

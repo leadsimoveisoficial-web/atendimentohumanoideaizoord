@@ -77,7 +77,7 @@ export function createFreeListener(options: {
         const result = event.results[i];
         const text = result?.[0]?.transcript ?? "";
         if (!text) continue;
-        if (result.isFinal) {
+        if (result?.isFinal) {
           const detected = detectLang(text, lang);
           if (detected !== lang) {
             lang = detected;
