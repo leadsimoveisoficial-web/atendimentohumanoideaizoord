@@ -28,6 +28,13 @@ function runEnvelope(token: number) {
   wordAt = performance.now();
   const loop = () => {
     if (token !== speakingToken) return;
+    if (!window.speechSynthesis.speaking || window.speechSynthesis.paused) {
+      voiceLevel.v = 0;
+      voiceLevel.round = 0;
+      voiceLevel.wide = 0;
+      envelopeRaf = requestAnimationFrame(loop);
+      return;
+    }
     const now = performance.now();
     const t = now / 1000;
     // Gate: full motion right after a word boundary, gentle between words
@@ -130,29 +137,43 @@ function speakChunk(chunk: string, voice: SpeechSynthesisVoice | undefined, lang
     utterance.onboundary = () => {
       wordAt = performance.now();
     };
-    const settle = () => {
+    let settled = false;
+    const clearMouth = () => {
+      if (token !== speakingToken) return;
+      cancelAnimationFrame(envelopeRaf);
+      voiceLevel.v = 0;
+      voiceLevel.round = 0;
+      voiceLevel.wide = 0;
+    };
+    const abort = () => {
+      if (token === speakingToken) window.speechSynthesis.cancel();
+      settle();
+    };
+    const settle = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      clearMouth();
+      signal?.removeEventListener("abort", abort);
+      utterance.onstart = null;
+      utterance.onpause = null;
+      utterance.onresume = null;
+      utterance.onboundary = null;
       utterance.onend = null;
       utterance.onerror = null;
-      resolve();
+      if (error) reject(error); else resolve();
     };
-    utterance.onend = settle;
+    utterance.onstart = () => runEnvelope(token);
+    utterance.onpause = clearMouth;
+    utterance.onresume = () => runEnvelope(token);
+    utterance.onend = () => settle();
     utterance.onerror = (event) => {
       if (event.error === "interrupted" || event.error === "canceled") settle();
-      else reject(new Error("A voz gratuita do navegador falhou."));
+      else settle(new Error("A voz gratuita do navegador falhou."));
     };
     if (signal) {
-      const abort = () => {
-        window.speechSynthesis.cancel();
-        settle();
-      };
       if (signal.aborted) return abort();
       signal.addEventListener("abort", abort, { once: true });
-      utterance.onend = () => {
-        signal.removeEventListener("abort", abort);
-        settle();
-      };
     }
-    runEnvelope(token);
     window.speechSynthesis.speak(utterance);
   });
 }
