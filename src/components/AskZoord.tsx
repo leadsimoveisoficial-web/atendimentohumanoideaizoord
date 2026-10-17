@@ -39,7 +39,13 @@ export function AskZoord({ onPoint }: { onPoint: (i: number | null) => void }) {
       setAnswer(data.text);
       onPoint(cat ?? guessCategory(data.text + " " + q));
       setStatus("speaking");
-      await streamSpeech("/api/zoord-speak", data.text, ac.signal);
+      try {
+        await streamSpeech("/api/zoord-speak", data.text, ac.signal);
+      } catch (speechError) {
+        if (ac.signal.aborted) throw speechError;
+        // Credits or network down → free browser voice.
+        await speakFree(data.text, { signal: ac.signal });
+      }
     } catch (e) {
       if (!ac.signal.aborted) setError((e as Error).message || "Não consegui falar agora.");
     } finally {
