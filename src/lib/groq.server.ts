@@ -28,7 +28,7 @@ export async function groqChat(options: {
       max_tokens: options.maxTokens ?? 400,
       temperature: 0.6,
     }),
-    signal: options.signal,
+    signal: options.signal ?? null,
   });
   if (!response.ok) {
     const body = await response.text().catch(() => "");
