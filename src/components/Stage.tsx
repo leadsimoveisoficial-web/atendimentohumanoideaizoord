@@ -13,7 +13,7 @@ import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { gaze, setMouseGaze } from "@/lib/gaze";
-import zoord from "@/assets/zoord-cyber-hero.glb.asset.json";
+import zoord from "@/assets/zoord-cyborg.glb.asset.json";
 import dakkaiLogo from "@/assets/dakkai-logo.png";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { voiceLevel } from "@/lib/voice-level";
@@ -69,7 +69,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const [speaking, setSpeaking] = useState(false);
   const speakingRef = useRef(false);
   const legWeight = useRef(0);
-  const clipName = (point !== null || speaking) && !waving ? "Talk_with_Hands_Open" : "Talk_with_Left_Hand_on_Hip";
+  const clipName = (point !== null || speaking) && !waving ? "Talk_with_Hands_Open" : "Armature|clip0|baselayer";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0 }), []);
   useEffect(() => {
     const move = (e: PointerEvent) => setMouseGaze((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
@@ -221,6 +221,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     scene.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) o.castShadow = true;
     });
+    if (import.meta.env.DEV) (window as unknown as { __zoordScene?: THREE.Object3D }).__zoordScene = scene;
   }, [scene]);
   useEffect(() => {
     waveTime.current = 0;
@@ -232,7 +233,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       a.reset().fadeIn(0.4).play();
       a.setEffectiveTimeScale(0.72); // unhurried, refined gestures
       // Keep the relaxed supplied pose at rest; use the full open-hand clip when presenting.
-      if (clipName === "Talk_with_Left_Hand_on_Hip") a.paused = true;
+      if (clipName === "Armature|clip0|baselayer") a.paused = true;
     }
     return () => {
       if (a) a.paused = false;
@@ -242,7 +243,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   return (
     <group ref={group} position={[0, 0.3, 0]} scale={2.3}>
       <primitive object={scene} />
-      <ZoordMouth scene={scene} position={[0, 5.4, 10.9]} rotationX={-0.78} />
+      <ZoordMouth scene={scene} position={[0, 3.3, 7.6]} rotationX={0} scale={3.6} />
     </group>
   );
 }
@@ -286,10 +287,10 @@ function Platform() {
 function makeMarble() {
   const c = document.createElement("canvas"); c.width = c.height = 512;
   const g = c.getContext("2d")!;
-  g.fillStyle = "#e9edf1"; g.fillRect(0, 0, 512, 512);
+  g.fillStyle = "#232a33"; g.fillRect(0, 0, 512, 512);
   for (let i = 0; i < 900; i++) {
     const x = Math.random() * 512, y = Math.random() * 512, r = 6 + Math.random() * 60;
-    const v = 200 + Math.floor(Math.random() * 55);
+    const v = 40 + Math.floor(Math.random() * 45);
     const grd = g.createRadialGradient(x, y, 0, x, y, r);
     grd.addColorStop(0, `rgba(${v},${v + 2 > 255 ? 255 : v + 2},${Math.min(255, v + 6)},0.35)`);
     grd.addColorStop(1, "rgba(255,255,255,0)");
@@ -312,7 +313,7 @@ function Wall() {
           <group key={i} position={[x, 0, z]} rotation-y={-a}>
             <mesh position-y={4}>
               <boxGeometry args={[2.15, 9, 0.15]} />
-              <meshStandardMaterial map={marble} color="#ffffff" metalness={0.05} roughness={0.8} />
+              <meshStandardMaterial map={marble} color="#9aa4ae" metalness={0.05} roughness={0.8} />
             </mesh>
           </group>
         );
@@ -455,9 +456,9 @@ export function Stage() {
       <div className={`stage-scene ${open !== null ? "stage-scene-menu" : ""}`}>
       <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
         <StageCamera />
-        <color attach="background" args={["#d9e0e6"]} />
-        <fog attach="fog" args={["#d9e0e6", 14, 30]} />
-        <ambientLight intensity={0.9} color="#cfeaff" />
+        <color attach="background" args={["#12161d"]} />
+        <fog attach="fog" args={["#12161d", 14, 30]} />
+        <ambientLight intensity={0.55} color="#cfeaff" />
         <pointLight position={[-4, 2, 2]} intensity={26} color={CYAN} castShadow shadow-mapSize={[512, 512]} />
         <pointLight position={[4, 2, 2]} intensity={26} color={BLUE} />
         <Environment resolution={256}>
@@ -468,7 +469,7 @@ export function Stage() {
 
         <mesh rotation-x={-Math.PI / 2} receiveShadow>
           <planeGeometry args={[60, 60]} />
-          <meshStandardMaterial color="#c7ced5" roughness={0.9} metalness={0} />
+          <meshStandardMaterial color="#1b212a" roughness={0.9} metalness={0} />
         </mesh>
 
         <Platform />
