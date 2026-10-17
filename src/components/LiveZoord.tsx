@@ -98,7 +98,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     const ac = new AbortController();
     freeAbort.current = ac;
     setFreeActive(true);
-    speakFree(categoryScript(category), { signal: ac.signal })
+    speakZoord(categoryScript(category), { signal: ac.signal })
       .catch(() => {})
       .finally(() => {
         if (freeAbort.current === ac) {
@@ -128,8 +128,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       freeHistory.current = [...freeHistory.current, { role: "user", content: text }, { role: "assistant", content: answer }].slice(-6);
       const category = guessCategory(answer + " " + text);
       if (category !== null) onPoint(category);
-      if (freeSpeechSupported()) await speakFree(answer, { lang, signal: ac.signal });
-      else setFreeError("Este navegador não tem voz gratuita. Tente pelo Chrome.");
+      await speakZoord(answer, { lang, signal: ac.signal });
     } catch (e) {
       if (!ac.signal.aborted) setFreeError((e as Error).message || "Não consegui responder agora.");
     } finally {
