@@ -2,7 +2,8 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
 import { createPlaybackMeter } from "@/lib/voice-level";
 import { createFreeListener, recognitionSupported, type FreeListener, type SpeechLang } from "@/lib/free-listen";
-import { speakFree, stopFreeSpeech, freeSpeechSupported } from "@/lib/free-speech";
+import { stopFreeSpeech } from "@/lib/free-speech";
+import { speakZoord } from "@/lib/zoord-voice";
 import { categoryScript, guessCategory } from "@/lib/menu-script";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";

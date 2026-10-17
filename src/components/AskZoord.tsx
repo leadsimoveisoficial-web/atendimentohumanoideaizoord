@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { MENU } from "./menu";
 import { streamSpeech } from "@/lib/stream-speech";
-import { speakFree, stopFreeSpeech } from "@/lib/free-speech";
+import { speakZoord } from "@/lib/zoord-voice";
+import { stopFreeSpeech } from "@/lib/free-speech";
 import { guessCategory } from "@/lib/menu-script";
 
 export function AskZoord({ onPoint }: { onPoint: (i: number | null) => void }) {
@@ -43,8 +44,8 @@ export function AskZoord({ onPoint }: { onPoint: (i: number | null) => void }) {
         await streamSpeech("/api/zoord-speak", data.text, ac.signal);
       } catch (speechError) {
         if (ac.signal.aborted) throw speechError;
-        // Credits or network down → free browser voice.
-        await speakFree(data.text, { signal: ac.signal });
+        // Credits or network down → Grok voice, then the free browser voice.
+        await speakZoord(data.text, { signal: ac.signal });
       }
     } catch (e) {
       if (!ac.signal.aborted) setError((e as Error).message || "Não consegui falar agora.");
