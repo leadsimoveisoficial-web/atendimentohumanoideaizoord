@@ -3,6 +3,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { MENU } from "@/components/menu";
 import { GATEWAY_URL, apiKey, createRunIdFetch } from "@/server/gateway";
+import { xaiChat, xaiKey } from "@/lib/xai.server";
 import { groqChat, groqKey } from "@/lib/groq.server";
 import { categoryScript, menuAnswerScript, FREE_FALLBACK_ANSWER } from "@/lib/menu-script";
 
@@ -41,7 +42,21 @@ export const Route = createFileRoute("/api/zoord-present")({
           ? `Apresente a categoria "${cat.t}" de forma personalizada, destacando 2 ou 3 pratos com preço.${question ? ` O visitante também disse: "${question}".` : ""}`
           : `Pergunta do visitante: "${question}"`;
 
-        // 1) Free brain first: Groq when the key exists.
+        // 1) Free brains first: Grok (xAI), then Groq, when their keys exist.
+        if (xaiKey()) {
+          try {
+            const text = await xaiChat({
+              system: INSTRUCTIONS + menuText(),
+              messages: [{ role: "user", content: prompt }],
+              signal: request.signal,
+              maxTokens: 500,
+            });
+            return Response.json({ text, source: "xai" });
+          } catch (e) {
+            if (request.signal.aborted || (e as Error)?.name === "AbortError") return new Response(null, { status: 499 });
+            // Fall through to Groq, then the gateway, then the free local script.
+          }
+        }
         if (groqKey()) {
           try {
             const text = await groqChat({

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MENU } from "@/components/menu";
+import { xaiChat, xaiKey } from "@/lib/xai.server";
 import { groqChat, groqKey } from "@/lib/groq.server";
 import { menuAnswerScript, FREE_FALLBACK_ANSWER } from "@/lib/menu-script";
 
