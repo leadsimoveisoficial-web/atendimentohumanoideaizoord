@@ -16,6 +16,7 @@ export function AskZoord({ onPoint }: { onPoint: (i: number | null) => void }) {
   const stop = () => {
     abortRef.current?.abort();
     abortRef.current = null;
+    stopFreeSpeech();
     setStatus("idle");
     onPoint(null);
   };
