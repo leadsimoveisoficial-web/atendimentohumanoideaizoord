@@ -1,6 +1,9 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
 import { createPlaybackMeter } from "@/lib/voice-level";
+import { createFreeListener, recognitionSupported, type FreeListener, type SpeechLang } from "@/lib/free-listen";
+import { speakFree, stopFreeSpeech, freeSpeechSupported } from "@/lib/free-speech";
+import { categoryScript, guessCategory } from "@/lib/menu-script";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
 import { motionCentroid, setCameraGaze } from "@/lib/gaze";
@@ -13,12 +16,21 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   const [caption, setCaption] = useState("");
   const [thinking, setThinking] = useState(false);
   const [cam, setCam] = useState(false);
+  const [freeMode, setFreeMode] = useState(false);
+  const [freeActive, setFreeActive] = useState(false);
+  const [freeError, setFreeError] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const pendingMenu = useRef<{ category: number | null } | null>(null);
   const playbackMeter = useRef<ReturnType<typeof createPlaybackMeter> | null>(null);
   const reaction = useRef(emptyReaction());
   const listeningTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const freeModeRef = useRef(false);
+  const freeConversationOn = useRef(false);
+  const freeListener = useRef<FreeListener | null>(null);
+  const freeBusy = useRef(false);
+  const freeAbort = useRef<AbortController | null>(null);
+  const freeHistory = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
 
   const call = useLiveVoice({
     onEvent: (e: LiveEvent) => {
@@ -47,9 +59,123 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   });
   const live = call.status === "connecting" || call.status === "connected";
   const stopping = call.status === "stopping";
-  useEffect(() => () => { if (listeningTimer.current) clearTimeout(listeningTimer.current); }, []);
+
+  // Out of credits → switch to the free voice automatically, no lost clicks.
+  useEffect(() => {
+    if (call.error && !freeModeRef.current && /crédito|credito|402|esgotad/i.test(call.error)) enterFreeMode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [call.error]);
+
+  useEffect(() => () => {
+    if (listeningTimer.current) clearTimeout(listeningTimer.current);
+    freeListener.current?.stop();
+    freeAbort.current?.abort();
+    stopFreeSpeech();
+  }, []);
+
+  function enterFreeMode() {
+    freeModeRef.current = true;
+    setFreeMode(true);
+    call.stop();
+  }
+
+  function stopFreeConversation() {
+    freeConversationOn.current = false;
+    freeListener.current?.stop();
+    freeListener.current = null;
+    freeAbort.current?.abort();
+    freeAbort.current = null;
+    stopFreeSpeech();
+    setFreeActive(false);
+    onListening(false);
+    onPoint(null);
+  }
+
+  function freePresent(category: number | null) {
+    stopFreeConversation();
+    onPoint(category);
+    const ac = new AbortController();
+    freeAbort.current = ac;
+    setFreeActive(true);
+    speakFree(categoryScript(category), { signal: ac.signal })
+      .catch(() => {})
+      .finally(() => {
+        if (freeAbort.current === ac) {
+          freeAbort.current = null;
+          setFreeActive(false);
+          onPoint(null);
+        }
+      });
+  }
+
+  async function answerFree(text: string, lang: SpeechLang) {
+    if (freeBusy.current) return;
+    freeBusy.current = true;
+    // Pause listening while Zoord speaks so the microphone doesn't hear itself.
+    freeListener.current?.stop();
+    const ac = new AbortController();
+    freeAbort.current = ac;
+    try {
+      const res = await fetch("/api/zoord-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, history: freeHistory.current }),
+        signal: ac.signal,
+      });
+      const data = await res.json();
+      const answer = res.ok && data.text ? String(data.text) : "Estou com um pico de energia nos circuitos, mas você pode conferir o cardápio no painel ao lado e pedir direto pelo WhatsApp!";
+      freeHistory.current = [...freeHistory.current, { role: "user", content: text }, { role: "assistant", content: answer }].slice(-6);
+      const category = guessCategory(answer + " " + text);
+      if (category !== null) onPoint(category);
+      if (freeSpeechSupported()) await speakFree(answer, { lang, signal: ac.signal });
+      else setFreeError("Este navegador não tem voz gratuita. Tente pelo Chrome.");
+    } catch (e) {
+      if (!ac.signal.aborted) setFreeError((e as Error).message || "Não consegui responder agora.");
+    } finally {
+      freeBusy.current = false;
+      onPoint(null);
+      if (freeConversationOn.current) freeListener.current?.start();
+    }
+  }
+
+  function startFreeConversation() {
+    if (freeConversationOn.current) return;
+    if (!recognitionSupported()) {
+      setFreeError("Seu navegador não tem escuta de voz gratuita. Use o Chrome, ou toque em Apresentar cardápio.");
+      return;
+    }
+    setFreeError("");
+    freeConversationOn.current = true;
+    setFreeActive(true);
+    try {
+      freeListener.current = createFreeListener({
+        lang: "pt-BR",
+        onInterim: () => {},
+        onFinal: (text, lang) => {
+          const result = reactToCustomer(reaction.current, text, Date.now(), Date.now());
+          reaction.current = result.state;
+          onListening(true);
+          if (listeningTimer.current) clearTimeout(listeningTimer.current);
+          listeningTimer.current = setTimeout(() => onListening(false), 1800);
+          if (result.wave) { onPoint(null); onGreeting(); }
+          void answerFree(text, lang);
+        },
+        onError: (message) => setFreeError(message),
+      });
+      freeListener.current.start();
+    } catch (e) {
+      freeConversationOn.current = false;
+      setFreeActive(false);
+      setFreeError((e as Error).message || "Não consegui ligar a escuta gratuita.");
+    }
+  }
+
   useImperativeHandle(ref, () => ({
     present(category) {
+      if (freeModeRef.current) {
+        freePresent(category);
+        return;
+      }
       playbackMeter.current?.resume();
       setCaption("");
       onPoint(category);
@@ -58,6 +184,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       else call.start({ category });
     },
   }), [call.status, call.sendMenu, call.start, onPoint, stopping]);
+
   useEffect(() => {
     if (call.status === "connected" && pendingMenu.current) {
       call.sendMenu(pendingMenu.current.category);
@@ -134,15 +261,36 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   };
   useEffect(() => () => streamRef.current?.getTracks().forEach((t) => t.stop()), []);
 
+  const freeListening = freeActive && !freeBusy.current;
+
   return (
     <div className="pointer-events-auto flex flex-col items-center gap-2">
       <audio ref={call.audioRef} autoPlay className="hidden" />
       {cam && (
         <video ref={videoRef} autoPlay muted playsInline className="fixed bottom-6 right-6 h-28 w-36 rounded-lg border border-border object-cover shadow-lg" />
       )}
+      {freeMode && <span className="stage-chip !cursor-default !px-2.5 !py-1 !text-[10px]">Voz grátis do navegador ativa</span>}
       <div className="flex flex-wrap items-center justify-center gap-2">
         {!live ? (
-          <Button variant="ghost" onClick={() => { playbackMeter.current?.resume(); call.start(); }} disabled={stopping} className="stage-chip stage-chip-red"><Mic />{stopping ? "Encerrando…" : "Falar com o Zoord"}</Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (freeModeRef.current) {
+                if (freeConversationOn.current) stopFreeConversation();
+                else startFreeConversation();
+              } else {
+                playbackMeter.current?.resume();
+                call.start();
+              }
+            }}
+            disabled={stopping}
+            className="stage-chip stage-chip-red"
+          >
+            <Mic />
+            {freeModeRef.current
+              ? freeListening ? "Ouvindo… (encerrar)" : "Falar com o Zoord"
+              : stopping ? "Encerrando…" : "Falar com o Zoord"}
+          </Button>
         ) : (
           <>
             <Button variant="ghost" onClick={call.stop} className="stage-chip stage-chip-active">
@@ -155,6 +303,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
         {call.playbackBlocked && <Button variant="ghost" onClick={() => { playbackMeter.current?.resume(); call.resumePlayback(); }} className="stage-chip"><Volume2 />Tocar som</Button>}
       </div>
       {call.error && <p role="alert" className="max-w-xl text-center text-xs text-dakkai">{call.error}</p>}
+      {freeError && <p role="alert" className="max-w-xl text-center text-xs text-dakkai">{freeError}</p>}
     </div>
   );
 });
