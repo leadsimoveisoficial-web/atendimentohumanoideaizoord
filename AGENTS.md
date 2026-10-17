@@ -10,6 +10,8 @@
 <!-- LOVABLE:END -->
 
 - Keep one mounted live voice controller for conversation and menu selections; this preserves the same voice and prevents overlapping narrators.
+- Zoord speech/brain fallback chain is premium gateway first, then Grok (xAI, `src/lib/xai.server.ts` + `/api/zoord-voice`), then Groq, then free browser voice/local scripts; every failure must auto-degrade, never dead-end the presentation.
+
 - Attach the procedural LED mouth to the model's head bone and drive it from actual output audio amplitude; this preserves animation alignment and audio synchronization.
 - Represent the procedural mouth as closed-at-rest lips and an audio-driven opening, not equalizer bars; this provides a readable mouth without altering the supplied face mesh or claiming phoneme recognition.
 - Keep one user-gesture-initialized, playback-gated stream analyser for live and menu audio, attaching late streams at playback time and resetting on stops; this avoids stream-arrival races without routing or duplicating speaker audio.
