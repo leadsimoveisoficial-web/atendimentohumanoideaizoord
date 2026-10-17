@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Corrigir encaixe da boca e pausas da voz gratuita; conferir com reprodução medida
+- [ ] Corrigir rotação das pernas ao apresentar Hot Roll; testar animação e pés firmes
+
 - [x] Voz grátis: free-speech, free-listen, menu-script, Groq server; LiveZoord reescrito; AskZoord fallback
 - [x] Apresentação grátis do cardápio validada (roteiro local com preços reais)
 - [x] GROQ_API_KEY salva pelo usuário (formato gsk_); valor ainda não propagou ao servidor local — validar quando propagar/publicar
