@@ -17,6 +17,7 @@ import { Route as AuthenticatedSegurancaRouteImport } from './routes/_authentica
 import { Route as ApiZoordChatRouteImport } from './routes/api/zoord-chat'
 import { Route as ApiZoordPresentRouteImport } from './routes/api/zoord-present'
 import { Route as ApiZoordSpeakRouteImport } from './routes/api/zoord-speak'
+import { Route as ApiZoordVoiceRouteImport } from './routes/api/zoord-voice'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -57,6 +58,11 @@ const ApiZoordSpeakRoute = ApiZoordSpeakRouteImport.update({
   path: '/api/zoord-speak',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiZoordVoiceRoute = ApiZoordVoiceRouteImport.update({
+  id: '/api/zoord-voice',
+  path: '/api/zoord-voice',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/api/zoord-chat': typeof ApiZoordChatRoute
   '/api/zoord-present': typeof ApiZoordPresentRoute
   '/api/zoord-speak': typeof ApiZoordSpeakRoute
+  '/api/zoord-voice': typeof ApiZoordVoiceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/api/zoord-chat': typeof ApiZoordChatRoute
   '/api/zoord-present': typeof ApiZoordPresentRoute
   '/api/zoord-speak': typeof ApiZoordSpeakRoute
+  '/api/zoord-voice': typeof ApiZoordVoiceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/api/zoord-chat': typeof ApiZoordChatRoute
   '/api/zoord-present': typeof ApiZoordPresentRoute
   '/api/zoord-speak': typeof ApiZoordSpeakRoute
+  '/api/zoord-voice': typeof ApiZoordVoiceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/api/zoord-chat'
     | '/api/zoord-present'
     | '/api/zoord-speak'
+    | '/api/zoord-voice'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/api/zoord-chat'
     | '/api/zoord-present'
     | '/api/zoord-speak'
+    | '/api/zoord-voice'
   id:
     | '__root__'
     | '/'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/api/zoord-chat'
     | '/api/zoord-present'
     | '/api/zoord-speak'
+    | '/api/zoord-voice'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -126,6 +138,7 @@ export interface RootRouteChildren {
   ApiZoordChatRoute: typeof ApiZoordChatRoute
   ApiZoordPresentRoute: typeof ApiZoordPresentRoute
   ApiZoordSpeakRoute: typeof ApiZoordSpeakRoute
+  ApiZoordVoiceRoute: typeof ApiZoordVoiceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -186,6 +199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiZoordSpeakRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/zoord-voice': {
+      id: '/api/zoord-voice'
+      path: '/api/zoord-voice'
+      fullPath: '/api/zoord-voice'
+      preLoaderRoute: typeof ApiZoordVoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -208,6 +228,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiZoordChatRoute: ApiZoordChatRoute,
   ApiZoordPresentRoute: ApiZoordPresentRoute,
   ApiZoordSpeakRoute: ApiZoordSpeakRoute,
+  ApiZoordVoiceRoute: ApiZoordVoiceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

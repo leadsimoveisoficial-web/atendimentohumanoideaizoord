@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MENU } from "@/components/menu";
+import { xaiChat, xaiKey } from "@/lib/xai.server";
 import { groqChat, groqKey } from "@/lib/groq.server";
 import { menuAnswerScript, FREE_FALLBACK_ANSWER } from "@/lib/menu-script";
 
@@ -34,6 +35,20 @@ export const Route = createFileRoute("/api/zoord-chat")({
           .map((m) => ({ role: m?.role === "assistant" ? "assistant" : "user", content: String(m?.content ?? "").slice(0, 500) }))
           .filter((m) => m.content) as { role: "user" | "assistant"; content: string }[];
 
+        if (xaiKey()) {
+          try {
+            const text = await xaiChat({
+              system: SYSTEM,
+              messages: [...history, { role: "user", content: message }],
+              signal: request.signal,
+              maxTokens: 250,
+            });
+            return Response.json({ text, source: "xai" });
+          } catch (e) {
+            if (request.signal.aborted || (e as Error)?.name === "AbortError") return new Response(null, { status: 499 });
+            // Fall through to Groq, then to the free local answer.
+          }
+        }
         if (groqKey()) {
           try {
             const text = await groqChat({

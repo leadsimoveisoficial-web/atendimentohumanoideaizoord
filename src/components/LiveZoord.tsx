@@ -2,7 +2,8 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
 import { createPlaybackMeter } from "@/lib/voice-level";
 import { createFreeListener, recognitionSupported, type FreeListener, type SpeechLang } from "@/lib/free-listen";
-import { speakFree, stopFreeSpeech, freeSpeechSupported } from "@/lib/free-speech";
+import { stopFreeSpeech } from "@/lib/free-speech";
+import { speakZoord } from "@/lib/zoord-voice";
 import { categoryScript, guessCategory } from "@/lib/menu-script";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
@@ -97,7 +98,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     const ac = new AbortController();
     freeAbort.current = ac;
     setFreeActive(true);
-    speakFree(categoryScript(category), { signal: ac.signal })
+    speakZoord(categoryScript(category), { signal: ac.signal })
       .catch(() => {})
       .finally(() => {
         if (freeAbort.current === ac) {
@@ -124,11 +125,10 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       });
       const data = await res.json();
       const answer = res.ok && data.text ? String(data.text) : "Estou com um pico de energia nos circuitos, mas você pode conferir o cardápio no painel ao lado e pedir direto pelo WhatsApp!";
-      freeHistory.current = [...freeHistory.current, { role: "user", content: text }, { role: "assistant", content: answer }].slice(-6);
+      freeHistory.current = ([...freeHistory.current, { role: "user" as const, content: text }, { role: "assistant" as const, content: answer }]).slice(-6);
       const category = guessCategory(answer + " " + text);
       if (category !== null) onPoint(category);
-      if (freeSpeechSupported()) await speakFree(answer, { lang, signal: ac.signal });
-      else setFreeError("Este navegador não tem voz gratuita. Tente pelo Chrome.");
+      await speakZoord(answer, { lang, signal: ac.signal });
     } catch (e) {
       if (!ac.signal.aborted) setFreeError((e as Error).message || "Não consegui responder agora.");
     } finally {
