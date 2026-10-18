@@ -14,12 +14,14 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
   const tongue = useRef<THREE.Mesh>(null);
   const [ledColor, setLedColor] = useState<string>();
   const [cavityColor, setCavityColor] = useState<string>();
+  const [tongueColor, setTongueColor] = useState<string>();
   const geometry = useMemo(() => ({ lips: createMouthGeometry(), cavity: createMouthGeometry(true) }), []);
   useEffect(() => () => { geometry.lips.dispose(); geometry.cavity.dispose(); }, [geometry]);
   useLayoutEffect(() => {
     setHead(scene.getObjectByName("mixamorig:Head") ?? scene.getObjectByName("mixamorigHead") ?? null);
     setLedColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-mouth-lips").trim());
     setCavityColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-mouth-cavity").trim());
+    setTongueColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-mouth-tongue").trim());
   }, [scene]);
   useFrame(() => {
     // No second envelope: it would smear syllables and keep moving after pauses.
@@ -39,7 +41,7 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
     if (tongue.current) { tongue.current.visible = show && a > 0.12; tongue.current.position.y = -h * 0.45; tongue.current.scale.set(1.15, 0.35 + a * 0.4, 1); }
     if (lips.current?.material instanceof THREE.MeshBasicMaterial) lips.current.material.opacity = shape.opacity;
   });
-  if (!head || !ledColor || !cavityColor) return null;
+  if (!head || !ledColor || !cavityColor || !tongueColor) return null;
   return createPortal(
     <group name="ZoordVoiceMouth" position={position} rotation-x={rotationX} scale={scale}>
       <mesh ref={opening} args={[geometry.cavity]}>
@@ -47,7 +49,7 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
       </mesh>
       <mesh ref={tongue} position-z={0.01}>
         <circleGeometry args={[1, 32]} />
-        <meshStandardMaterial color="var(--stage-mouth-tongue)" roughness={0.45} />
+        <meshStandardMaterial color={tongueColor} roughness={0.45} />
       </mesh>
       <group ref={upper} position-z={0.02}>
           <mesh position-x={-1.53}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
