@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Abrir conversa ao vivo e perguntas para assuntos gerais, sem forçar cardápio ou pedido; preservar voz e preços reais e verificar os caminhos disponíveis.
+
 - [x] Adicionar nomes, rádios e comandos para forró, pagode, sertanejo e hip-hop; cinco perfis de dança distintos com testes de silêncio e postura.
 - [ ] Confirmar estabilidade contínua de Forró e Hip-hop — depende das transmissões externas; Forró conectou sem amplitude medida e Hip-hop reproduziu, mas falhou nas últimas tentativas.
 - [x] Rádio gratuita: cinco estações reproduzidas no navegador, ritmo pelo áudio e pausa zerando movimento; comandos e tchau com testes.
