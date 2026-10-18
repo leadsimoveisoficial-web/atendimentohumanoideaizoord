@@ -12,6 +12,7 @@
 - Keep one mounted live voice controller for conversation and menu selections; this preserves the same voice and prevents overlapping narrators.
 - Keep radio playback in one mounted RadioPlayer with its own CORS-enabled analyser, isolated from voiceLevel; music drives bounded upper-body rhythm, never lips or planted legs.
 - Keep named dance profiles and their pure audio-reactive motion in the shared music module; radio selection and spoken requests must drive the same bounded gestures.
+- Manual genre introductions use the mounted voice controller without starting microphone capture; dance blends gently with speech and yields to listening, pointing and explicit gestures to avoid limb conflicts.
 - Zoord speech/brain fallback chain is premium gateway first, then Grok (xAI, `src/lib/xai.server.ts` + `/api/zoord-voice`), then Groq, then free browser voice/local scripts; every failure must auto-degrade, never dead-end the presentation.
 - Share conversational scope through zoord-conversation across live voice, delegated reasoning and question handlers; this prevents menu-only restrictions diverging between entry points.
 

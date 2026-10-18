@@ -1,0 +1,24 @@
+import { describe, expect, it, vi } from "vitest";
+
+const brain = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/xai.server", () => ({ xaiKey: () => "configured", xaiChat: brain }));
+vi.mock("@/lib/groq.server", () => ({ groqKey: () => "", groqChat: vi.fn() }));
+vi.mock("@tanstack/react-router", () => ({ createFileRoute: () => (config: unknown) => config }));
+import { Route } from "@/routes/api/zoord-chat";
+
+const handler = (Route as unknown as { server: { handlers: { POST: (args: { request: Request }) => Promise<Response> } } }).server.handlers.POST;
+describe("open-ended Zoord conversation", () => {
+  it("sends a general science question to the brain instead of a menu lookup", async () => {
+    brain.mockResolvedValueOnce("O céu parece azul porque a atmosfera espalha mais a luz azul.");
+    const response = await handler({ request: new Request("http://localhost/api/zoord-chat", { method: "POST", body: JSON.stringify({ message: "Por que o céu é azul?" }) }) });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ text: "O céu parece azul porque a atmosfera espalha mais a luz azul.", source: "xai" });
+    expect(brain.mock.calls.at(-1)?.[0].messages).toEqual([{ role: "user", content: "Por que o céu é azul?" }]);
+  });
+  it("keeps earlier turns available for follow-up questions", async () => {
+    const history = Array.from({ length: 8 }, (_, i) => ({ role: i % 2 ? "assistant" : "user", content: i === 0 ? "Meu nome é Ana e gosto de astronomia" : `turno ${i}` }));
+    brain.mockResolvedValueOnce("Ana, podemos falar sobre estrelas.");
+    await handler({ request: new Request("http://localhost/api/zoord-chat", { method: "POST", body: JSON.stringify({ history, message: "Lembra do assunto que eu gosto?" }) }) });
+    expect(brain.mock.calls.at(-1)?.[0].messages).toEqual([...history, { role: "user", content: "Lembra do assunto que eu gosto?" }]);
+  });
+});

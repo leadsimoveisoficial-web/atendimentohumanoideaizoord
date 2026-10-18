@@ -4,6 +4,7 @@ import { createPlaybackMeter } from "@/lib/voice-level";
 import { createFreeListener, recognitionSupported, type FreeListener, type SpeechLang } from "@/lib/free-listen";
 import { stopFreeSpeech } from "@/lib/free-speech";
 import { speakZoord } from "@/lib/zoord-voice";
+import { streamSpeech } from "@/lib/stream-speech";
 import { categoryScript, guessCategory } from "@/lib/menu-script";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
@@ -12,7 +13,7 @@ import type { NewOrder } from "@/lib/orders";
 import { emptyReaction, reactToCustomer } from "@/lib/zoord-interaction";
 import { dispatchMusic, musicCommand, type MusicCommand } from "@/lib/music";
 
-export type LiveZoordCommands = { present: (category: number | null) => void };
+export type LiveZoordCommands = { present: (category: number | null) => void; say: (text: string) => void };
 
 export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | null) => void; onGreeting: () => void; onListening: (active: boolean) => void; onOrder?: (order: NewOrder) => void }>(function LiveZoord({ onPoint, onGreeting, onListening, onOrder }, ref) {
   const [caption, setCaption] = useState("");
@@ -205,6 +206,19 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   }
 
   useImperativeHandle(ref, () => ({
+    say(text) {
+      // All manual introductions belong to this controller; never open the microphone.
+      call.stop();
+      stopFreeConversation();
+      const ac = new AbortController();
+      freeAbort.current = ac;
+      setFreeError("");
+      setFreeActive(true);
+      void streamSpeech("/api/zoord-speak", text, ac.signal)
+        .catch(async () => { if (!ac.signal.aborted) await speakZoord(text, { signal: ac.signal }); })
+        .catch(() => { if (!ac.signal.aborted) setFreeError("Não consegui falar agora. A música continua disponível."); })
+        .finally(() => { if (freeAbort.current === ac) { freeAbort.current = null; setFreeActive(false); } });
+    },
     present(category) {
       if (freeModeRef.current) {
         freePresent(category);

@@ -1,9 +1,23 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createPlaybackMeter, speechLevel, voiceLevel } from "./voice-level";
+import { createPlaybackMeter, createScheduledVoiceMeter, speechLevel, voiceLevel } from "./voice-level";
 
 afterEach(() => { vi.unstubAllGlobals(); voiceLevel.v = 0; });
 
 describe("Zoord playback synchronization", () => {
+  it("meters scheduled speech and closes the mouth when playback finishes", () => {
+    let next: FrameRequestCallback | undefined;
+    vi.stubGlobal("requestAnimationFrame", vi.fn((callback: FrameRequestCallback) => { next = callback; return 1; }));
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    let playing = true;
+    const analyser = { context: { state: "running" }, getFloatTimeDomainData: (data: Float32Array) => data.fill(0.1) } as unknown as AnalyserNode;
+    const meter = createScheduledVoiceMeter(analyser, () => playing);
+    expect(voiceLevel.v).toBeGreaterThan(0.6);
+    playing = false;
+    next?.(0);
+    expect(voiceLevel).toEqual({ v: 0, round: 0, wide: 0 });
+    meter.dispose();
+    expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
+  });
   it("closes on silence and preserves soft and loud syllables", () => {
     expect(speechLevel(new Float32Array(256))).toBe(0);
     expect(speechLevel(new Float32Array(256).fill(0.002))).toBe(0);

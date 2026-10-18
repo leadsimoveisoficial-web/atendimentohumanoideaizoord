@@ -1,4 +1,5 @@
 import { createParser } from "eventsource-parser";
+import { createScheduledVoiceMeter } from "./voice-level";
 
 export function decodePCM(pending: Uint8Array, incoming: Uint8Array) {
   const bytes = new Uint8Array(pending.length + incoming.length);
@@ -15,6 +16,11 @@ export async function streamSpeech(endpoint: string, text: string, signal?: Abor
   signal?.throwIfAborted();
   const context = new AudioContext({ sampleRate: 24000 });
   const sources = new Set<AudioBufferSourceNode>();
+  const analyser = context.createAnalyser();
+  analyser.fftSize = 1024;
+  analyser.smoothingTimeConstant = 0;
+  analyser.connect(context.destination);
+  const meter = createScheduledVoiceMeter(analyser, () => sources.size > 0);
   let playhead = 0;
   let pending = new Uint8Array(0);
   let completed = false;
@@ -56,7 +62,7 @@ export async function streamSpeech(endpoint: string, text: string, signal?: Abor
         buffer.copyToChannel(decoded.samples, 0);
         const source = context.createBufferSource();
         source.buffer = buffer;
-        source.connect(context.destination);
+        source.connect(analyser);
         sources.add(source);
         playback = new Promise<void>((resolve) => {
           source.onended = () => {
@@ -88,6 +94,8 @@ export async function streamSpeech(endpoint: string, text: string, signal?: Abor
     signal?.removeEventListener("abort", abort);
     controller.abort();
     for (const source of sources) source.stop();
+    meter.dispose();
+    analyser.disconnect();
     await context.close();
   }
 }

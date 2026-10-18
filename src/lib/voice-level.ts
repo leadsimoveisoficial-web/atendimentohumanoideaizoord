@@ -42,6 +42,27 @@ export function sampleVoice(analyser: AnalyserNode, samples: Float32Array<ArrayB
   }
 }
 
+/** Meter for scheduled PCM output, with the same ownership as live/recorded playback. */
+export function createScheduledVoiceMeter(analyser: AnalyserNode, playing: () => boolean) {
+  const owner = Symbol("Zoord scheduled speech");
+  const samples = new Float32Array(1024), freq = new Float32Array(512);
+  let raf = 0;
+  const clear = () => {
+    if (playbackOwner !== owner) return;
+    playbackOwner = undefined;
+    voiceLevel.v = 0; voiceLevel.round = 0; voiceLevel.wide = 0;
+  };
+  const tick = () => {
+    if (playing() && analyser.context.state === "running") {
+      playbackOwner = owner;
+      sampleVoice(analyser, samples, freq);
+    } else clear();
+    raf = requestAnimationFrame(tick);
+  };
+  tick();
+  return { dispose() { cancelAnimationFrame(raf); clear(); } };
+}
+
 /** Analyse the stream attached to the SAME element playing live and menu speech.
  * Lazy initialization must run from Start/menu/Play's user gesture.
  * One graph for the element's lifetime avoids duplicate audio and stream-arrival races.

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Music2, Pause, Play, X, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MUSIC_GENRES, danceStyle, musicLevel, rhythmEnergy, type MusicCommand, type MusicGenre } from "@/lib/music";
+import { MUSIC_GENRES, danceStyle, genreIntroduction, musicLevel, rhythmEnergy, type MusicCommand, type MusicGenre } from "@/lib/music";
 import { voiceLevel } from "@/lib/voice-level";
 
 const STATIONS: Record<MusicGenre, { name: string; url: string }> = {
@@ -18,7 +18,7 @@ const STATIONS: Record<MusicGenre, { name: string; url: string }> = {
   "hip-hop": { name: "100 Hip Hop and RNB FM", url: "https://streaming.shoutcast.com/100-hip-hop-and-rnb-fm" },
 };
 
-export function RadioPlayer({ listening }: { listening: boolean }) {
+export function RadioPlayer({ listening, onSpeak, onOpen, hidden }: { listening: boolean; onSpeak: (text: string) => void; onOpen: () => void; hidden: boolean }) {
   const [open, setOpen] = useState(false);
   const [genre, setGenre] = useState<MusicGenre>("br-rock");
   const [status, setStatus] = useState<"idle" | "loading" | "playing">("idle");
@@ -37,7 +37,7 @@ export function RadioPlayer({ listening }: { listening: boolean }) {
     audio.current?.pause();
     clearRhythm(); setStatus("idle");
   }
-  async function play(selected: MusicGenre = genre) {
+  async function play(selected: MusicGenre = genre, introduce = false) {
     const el = audio.current;
     if (!el) return;
     const id = ++requestId.current;
@@ -56,6 +56,7 @@ export function RadioPlayer({ listening }: { listening: boolean }) {
       await el.play();
       if (id !== requestId.current) return;
       setError(""); setStatus("playing");
+      if (introduce) onSpeak(genreIntroduction(selected));
     } catch (e) {
       if (id !== requestId.current) return;
       el.pause(); clearRhythm(); setStatus("idle");
@@ -83,7 +84,7 @@ export function RadioPlayer({ listening }: { listening: boolean }) {
       if (el) el.volume = level.current * (attention.current || voiceLevel.v > 0.03 ? 0.12 : 1);
       if (el && meter && !el.paused && el.readyState >= 3 && meter.ctx.state === "running") {
         meter.analyser.getFloatTimeDomainData(samples);
-        const energy = rhythmEnergy(samples) * (attention.current || voiceLevel.v > 0.03 ? 0 : 1);
+        const energy = rhythmEnergy(samples) * (attention.current ? 0 : 1);
         average += (energy - average) * 0.04;
         musicLevel.playing = true; musicLevel.energy = energy;
         musicLevel.pulse = Math.max(0, Math.min(1, (energy - average) * 4));
@@ -103,17 +104,17 @@ export function RadioPlayer({ listening }: { listening: boolean }) {
     <audio ref={audio} crossOrigin="anonymous" preload="none" onWaiting={clearRhythm}
       onPlaying={() => { setError(""); setStatus("playing"); }} onPause={clearRhythm} onEnded={() => { clearRhythm(); setStatus("idle"); }}
       onError={() => { clearRhythm(); setStatus("idle"); setError("Esta rádio está indisponível. Escolha outro gênero."); }} />
-    <Button variant="ghost" className={`stage-chip ${status === "playing" ? "stage-chip-active" : ""}`} onClick={() => setOpen(!open)}><Music2 />Música</Button>
-    {open && createPortal(<section aria-label="Rádio do Zoord" className="zoord-radio-panel pointer-events-auto z-40 w-[calc(100vw-32px)] max-w-sm rounded-lg border border-border bg-background/95 p-4 text-foreground backdrop-blur-xl">
+    <Button variant="ghost" className={`stage-chip ${status === "playing" ? "stage-chip-active" : ""}`} onClick={() => { onOpen(); setOpen(!open); }}><Music2 />Música e dança</Button>
+    {open && !hidden && createPortal(<section aria-label="Rádio do Zoord" className="zoord-radio-panel pointer-events-auto z-40 max-h-[55vh] overflow-y-auto w-[calc(100vw-32px)] max-w-sm rounded-lg border border-border bg-background/95 p-4 text-foreground backdrop-blur-xl">
       <header className="mb-3 flex items-center justify-between"><h2 className="font-display text-sm">Rádio • Zoord</h2><Button size="icon" variant="ghost" aria-label="Fechar rádio" onClick={() => setOpen(false)}><X /></Button></header>
-      <Select value={genre} onValueChange={(value) => { const selected = MUSIC_GENRES.find(g => g.id === value); if (!selected) return; setGenre(selected.id); if (status !== "idle") void play(selected.id); }}>
+      <Select value={genre} onValueChange={(value) => { const selected = MUSIC_GENRES.find(g => g.id === value); if (!selected) return; void play(selected.id, true); }}>
         <SelectTrigger aria-label="Gênero musical" className="w-full"><SelectValue /></SelectTrigger>
         <SelectContent>{MUSIC_GENRES.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}</SelectContent>
       </Select>
       <p className="mt-2 text-xs text-muted-foreground">{STATIONS[genre].name}</p>
       <p className="mt-1 text-xs text-glow">Dança • {danceStyle(genre).name}</p>
       <div className="mt-3 flex items-center gap-3">
-        <Button size="icon" variant="outline" aria-label={status !== "idle" ? "Pausar rádio" : "Tocar rádio"} onClick={() => status !== "idle" ? stop() : void play()}>{status !== "idle" ? <Pause /> : <Play />}</Button>
+        <Button size="icon" variant="outline" aria-label={status !== "idle" ? "Pausar rádio" : "Tocar rádio"} onClick={() => status !== "idle" ? stop() : void play(genre, true)}>{status !== "idle" ? <Pause /> : <Play />}</Button>
         <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
         <input aria-label="Volume da rádio" type="range" min="0" max="1" step="0.05" value={volume} onChange={e => setVolume(Number(e.target.value))} className="min-w-0 flex-1 accent-glow" />
         <span role="status" className="text-xs text-muted-foreground">{status === "loading" ? "Conectando…" : status === "playing" ? "Ao vivo" : "Pausada"}</span>

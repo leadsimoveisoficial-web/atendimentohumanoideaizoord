@@ -14,6 +14,8 @@ export type MusicCommand = { action: "play"; genre: MusicGenre } | { action: "st
 const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 export function musicCommand(text: string): MusicCommand | null {
   const t = normalize(text);
+  // A question about a genre is conversation, not a playback command.
+  if (/\b(o que|quem|como|por que|porque|qual a|historia|explique|what|why|who|how|que es|explica)\b/.test(t) && !/\b(toque|tocar|coloque|toca|ouvir|play|dance|dancar|pon|reproduce)\b/.test(t)) return null;
   if (/\b(parar|pare|pausar|pause|desligar|stop)\b.*\b(musica|radio|music)\b/.test(t)) return { action: "stop" };
   if (/\bforro\b/.test(t)) return { action: "play", genre: "forro" };
   if (/\b(pagode|samba)\b/.test(t)) return { action: "play", genre: "pagode" };
@@ -65,4 +67,13 @@ export function rhythmEnergy(samples: Float32Array) {
   for (const value of samples) sum += value * value;
   const rms = Math.sqrt(sum / Math.max(1, samples.length));
   return rms < 0.008 ? 0 : Math.min(1, rms * 5);
+}
+
+export function danceBlend(speaking: boolean, listening: boolean, presenting: boolean, gesturing: boolean) {
+  return listening || presenting || gesturing ? 0 : speaking ? 0.45 : 1;
+}
+
+export function genreIntroduction(genre: MusicGenre) {
+  const selected = MUSIC_GENRES.find(g => g.id === genre);
+  return `Vamos de ${selected?.name ?? "música"}! Vou acompanhar o ritmo. Pode conversar comigo enquanto ouvimos.`;
 }
