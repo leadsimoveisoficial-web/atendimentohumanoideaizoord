@@ -29,7 +29,8 @@ import { aimLimb } from "@/lib/zoord-gesture";
 import { PoseLayer } from "@/lib/zoord-pose";
 import { plantedPresentationClip } from "@/lib/zoord-presentation";
 import { RadioPlayer } from "./RadioPlayer";
-import { danceMotion, musicLevel } from "@/lib/music";
+import { danceBlend, danceMotion, musicLevel } from "@/lib/music";
+import { GesturePanel, type StageGesture } from "./GesturePanel";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
 
 const CYAN = "#3fe0ff";
@@ -72,7 +73,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   // Speaking uses both hands (open-palm, maître-style); at rest he keeps the relaxed pose.
   const [speaking, setSpeaking] = useState(false);
   const speakingRef = useRef(false);
-  const clipName = waving ? "Wave_One_Hand" : (point !== null || speaking) ? "Talk_with_Hands_Open" : "Armature|clip0|baselayer";
+  const manualPresenting = anim === "welcome";
+  const clipName = waving ? "Wave_One_Hand" : (point !== null || speaking || manualPresenting) ? "Talk_with_Hands_Open" : "Armature|clip0|baselayer";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0 }), []);
   useEffect(() => {
     const move = (e: PointerEvent) => setMouseGaze((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
@@ -93,8 +95,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     if (talking !== speakingRef.current) { speakingRef.current = talking; setSpeaking(talking); }
     // Lower-body animation tracks are excluded: feet and hips retain the supplied standing pose.
     const active = actions[clipName];
-    if (active) active.paused = !talking && !waving;
-    restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving ? 1 : 0, 5, dt);
+    if (active) active.paused = !talking && !waving && !manualPresenting;
+    restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving && !manualPresenting ? 1 : 0, 5, dt);
     // Relax both arms beside the torso instead of freezing midway through a talking gesture.
     for (const side of ["Right", "Left"]) {
       const arm = scene.getObjectByName(`mixamorig:${side}Arm`) ?? scene.getObjectByName(`mixamorig${side}Arm`);
@@ -122,7 +124,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     headMotion.lookX = THREE.MathUtils.damp(headMotion.lookX, gaze.x * follow, 4, dt);
     headMotion.lookY = THREE.MathUtils.damp(headMotion.lookY, gaze.y * follow, 4, dt);
     headMotion.euler.set(
-      Math.sin(clock.elapsedTime * 2.4) * 0.025 * headMotion.strength - headMotion.lookY * 0.22,
+      Math.sin(clock.elapsedTime * 2.4) * 0.025 * headMotion.strength - headMotion.lookY * 0.22 + (anim === "nod" ? Math.sin(clock.elapsedTime * 4) * 0.10 : 0),
       (side * 0.10 + Math.sin(clock.elapsedTime * 0.9) * 0.025) * headMotion.strength + headMotion.lookX * 0.5,
       -headMotion.lookX * 0.06 + (speakingRef.current ? Math.sin(clock.elapsedTime * 0.7) * 0.04 * headMotion.strength : 0), // gentle courteous head tilt while speaking
     );
@@ -155,8 +157,9 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   });
   // Audio-reactive upper-body rhythm; planted legs never inherit dance/root tracks.
   useFrame(({ clock }) => {
-    if (!musicLevel.playing || voiceLevel.v > 0.03 || listening || point !== null || waving) return;
-    const energy = musicLevel.energy;
+    const blend = danceBlend(speakingRef.current, listening, point !== null, waving || manualPresenting || anim === "nod");
+    if (!musicLevel.playing || blend === 0) return;
+    const energy = musicLevel.energy * blend;
     if (energy < 0.01) return;
     const pulse = musicLevel.pulse;
     const rhythm = danceMotion(musicLevel.genre, clock.elapsedTime, energy, pulse, 1);
@@ -445,6 +448,18 @@ export function Stage() {
   const endWave = useCallback(() => setAnim((current) => current === "Wave_One_Hand" ? "Idle_12" : current), []);
   const shown = aiPoint ?? open;
   const voiceCommands = useRef<LiveZoordCommands | null>(null);
+  const [controlPanel, setControlPanel] = useState<"music" | "gestures" | null>(null);
+  const gestureTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (gestureTimer.current) clearTimeout(gestureTimer.current); }, []);
+  const performGesture = (gesture: StageGesture) => {
+    if (gestureTimer.current) clearTimeout(gestureTimer.current);
+    setAiPoint(null);
+    if (gesture === "wave") { setOpen(null); wave(); return; }
+    if (gesture === "point") { setOpen(open ?? 0); setAiPoint(open ?? 0); setAnim("Idle_12"); return; }
+    setOpen(null);
+    setAnim(gesture === "rest" ? "Idle_12" : gesture);
+    if (gesture !== "rest") gestureTimer.current = setTimeout(() => setAnim("Idle_12"), 3200);
+  };
   const [ticket, setTicket] = useState<TicketState | null>(null);
   const placeOrder = useCallback(async (order: NewOrder) => {
     setTicket({ order, status: "sending" });
@@ -523,9 +538,9 @@ export function Stage() {
             <LiveZoord ref={voiceCommands} onPoint={pointToMenu} onGreeting={wave} onListening={setListening} onOrder={placeOrder} />
           </div>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
-            <RadioPlayer listening={listening} />
+            <RadioPlayer key={controlPanel === "gestures" ? "music-closed" : "music"} listening={listening} onOpen={() => setControlPanel("music")} onSpeak={(text) => voiceCommands.current?.say(text)} />
             <RecordRepeat />
-            <Button variant="ghost" onClick={wave} className="stage-chip"><Hand />Acenar</Button>
+            <GesturePanel key={controlPanel === "music" ? "gestures-closed" : "gestures"} onOpen={() => setControlPanel("gestures")} onGesture={performGesture} />
             <Button variant="ghost" onClick={() => { setAnim("Idle_12"); voiceCommands.current?.present(null); }} className="stage-chip"><UtensilsCrossed />Apresentar cardápio</Button>
             <Button variant="ghost" onClick={() => { setAiPoint(null); setAnim("Idle_12"); }} className="stage-chip" aria-label="Voltar à postura inicial" title="Postura inicial"><RotateCcw /></Button>
           </nav>
