@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Primeira etapa ZOORD SECURITY: reaproveitar painel restrito, cadastro Tapo C200, status verdadeiro e eventos ao vivo, preservando palco/voz/IA.
+- [x] Primeira etapa ZOORD SECURITY: painel restrito reaproveitado, cadastro Tapo C200, status por imagem recebida e eventos ao vivo; palco/voz/IA preservados. 14 testes aprovados e acesso sem login bloqueado.
+- [ ] Validar cadastro e eventos na conta do responsável — sessão de teste indisponível; entrar pelo preview para conferir gravação/leitura autenticadas.
 - [ ] Testar uma Tapo C200 real — aguarda câmera e ponte local protegida; não expor portas ou credenciais.
 
 - [x] Abrir conversa e perguntas para assuntos gerais sem forçar cardápio; contexto preservado, modelos/voz mantidos e testes de encaminhamento aprovados.
