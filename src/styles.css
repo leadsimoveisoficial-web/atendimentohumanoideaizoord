@@ -190,6 +190,7 @@ body { font-family: var(--font-sans); }
   width: 340px;
 }
 @media (max-width: 767px) {
+  .zoord-radio-panel { bottom: 212px; }
   .stage-header { align-items: flex-start; flex-wrap: wrap; }
   .stage-header > span { font-size: 10px; }
   .stage-header .stage-chip { font-size: 9px; padding: 6px 9px; }

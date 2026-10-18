@@ -135,13 +135,12 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     headMotion.last.copy(head.quaternion);
     headMotion.inverse.copy(headMotion.next).invert();
   });
-  // Play the supplied wave; use the bounded procedural fallback only if the clip is absent.
+  // Preserve the supplied wave and add a bounded outward reach for a readable greeting.
   useFrame((_, rawDelta) => {
     if (!waving) return;
     waveTime.current += Math.min(rawDelta, 0.05);
     const t = waveTime.current;
     if (t >= 3.2) { onWaveEnd(); return; }
-    if (actions["Wave_One_Hand"]) return;
     const arm = scene.getObjectByName("mixamorig:RightArm") ?? scene.getObjectByName("mixamorigRightArm");
     const fore = scene.getObjectByName("mixamorig:RightForeArm") ?? scene.getObjectByName("mixamorigRightForeArm");
     const hand = scene.getObjectByName("mixamorig:RightHand") ?? scene.getObjectByName("mixamorigRightHand");
