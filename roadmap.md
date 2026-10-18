@@ -1,10 +1,12 @@
 # Roadmap
 
-- [ ] Abrir conversa ao vivo e perguntas para assuntos gerais, sem forçar cardápio ou pedido; preservar voz e preços reais e verificar os caminhos disponíveis.
+- [x] Abrir conversa e perguntas para assuntos gerais sem forçar cardápio; contexto preservado, modelos/voz mantidos e testes de encaminhamento aprovados.
+- [ ] Conferir conversa geral com IA real — acesso atual aos provedores depende de créditos; testes locais não substituem chamada real.
 - [x] Fonte musical definida: usuário escolheu manter rádios gratuitas por enquanto, sem nova API paga.
-- [ ] Painel de gêneros: escolher estilo e mudar música, movimento e fala juntos.
-- [ ] Painel de gestos: executar movimento na apresentação sem abrir microfone.
-- [ ] Testar cada perfil de dança, alinhamento corporal e boca dirigida somente pela voz.
+- [x] Painel de gêneros: seleção muda rádio, perfil e introdução falada pelo controlador compartilhado; cinco rádios conectaram na verificação.
+- [x] Painel de gestos: aceno, boas-vindas, concordar, apontar e repouso; verificado com zero acessos ao microfone.
+- [x] Perfis limitados e dança durante fala com testes; boca de áudio PCM corrigida e conferida com áudio de teste, sem atribuir fonemas.
+- [ ] Ouvir introduções com a voz aprovada em aparelho real — teste visual usou áudio local, sem contornar bloqueios de créditos.
 
 - [x] Adicionar nomes, rádios e comandos para forró, pagode, sertanejo e hip-hop; cinco perfis de dança distintos com testes de silêncio e postura.
 - [ ] Confirmar estabilidade contínua de Forró e Hip-hop — depende das transmissões externas; Forró conectou sem amplitude medida e Hip-hop reproduziu, mas falhou nas últimas tentativas.
