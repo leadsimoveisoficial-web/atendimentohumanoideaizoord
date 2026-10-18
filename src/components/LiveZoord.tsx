@@ -159,8 +159,8 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       });
       const data = await res.json();
       const answer = res.ok && data.text ? String(data.text) : "Estou com um pico de energia nos circuitos, mas você pode conferir o cardápio no painel ao lado e pedir direto pelo WhatsApp!";
-      freeHistory.current = ([...freeHistory.current, { role: "user" as const, content: text }, { role: "assistant" as const, content: answer }]).slice(-6);
-      const category = guessCategory(answer + " " + text);
+      freeHistory.current = [...freeHistory.current, { role: "user" as const, content: text }, { role: "assistant" as const, content: answer }];
+      const category = guessCategory(text);
       if (category !== null) onPoint(category);
       await speakZoord(answer, { lang, signal: ac.signal });
     } catch (e) {

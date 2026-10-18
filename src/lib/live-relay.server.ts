@@ -3,6 +3,7 @@ import { stepCountIs, streamText, tool, type ModelMessage } from "ai";
 import process from "node:process";
 import { z } from "zod";
 import { MENU } from "@/components/menu";
+import { OPEN_CONVERSATION } from "@/lib/zoord-conversation";
 
 export type LiveConfig = {
   baseURL: string;
@@ -18,7 +19,7 @@ const liveSettings = {
   liveModel: "openai/gpt-live-1",
   backendModel: "openai/gpt-6-astra",
   openingInstructions:
-    "Comece agora em português do Brasil: dê boas-vindas ao cliente com a elegância de um maître de alto padrão, como Zoord do DAKKAI Sushi, e pergunte com cortesia o que deseja saborear hoje.",
+    "Comece agora em português do Brasil: dê boas-vindas ao cliente como Zoord do DAKKAI Sushi e pergunte com naturalidade sobre o que gostaria de conversar ou como pode ajudar.",
 };
 
 export type LiveSocket = {
@@ -119,6 +120,7 @@ export function handleLiveRequest(request: Request): Response {
 }
 
 const conversationInstructions = `Você é o Zoord, o robô maître de alta tecnologia do DAKKAI Sushi (Sambaqui, Florianópolis): um garçom de altíssimo padrão, que recebe moradores e turistas que visitam a Ilha da Magia.
+${OPEN_CONVERSATION}
 Idioma: detecte o idioma da fala do cliente (português, inglês ou espanhol) e responda SEMPRE no mesmo idioma, com fluência nativa e pronúncia natural. Se ele trocar de idioma, troque junto. Comece em português do Brasil até ouvir o cliente.
 Boas-vindas a turistas: em inglês, "Welcome to Dakkai Sushi!"; em espanhol, "¡Bienvenidos a Dakkai Sushi!". Explique com simplicidade o que são combinados, hots (sushi empanado e frito), temakis (cone de alga) e uramakis, e cite os preços em reais.
 Voz calma, pausada, aveludada e confiante; tom cortês e sofisticado, nunca afetado nem robótico. Em português use "o senhor"/"a senhora"; em inglês "sir"/"madam"; em espanhol "señor"/"señora".
@@ -129,9 +131,9 @@ Política de escuta: use sons de escuta moderados sem tomar a palavra.
 Interrupções: pare de falar e escute quando o cliente interromper.
 Delegação:
 Ferramentas do backend: conhece o cardápio completo com preços, enxerga a câmera do cliente quando ela está ligada e aponta para a categoria no palco.
-Delegue ao backend quando: o cliente perguntar sobre pratos, preços, combos, recomendações, ou pedir para você olhar/ver algo ("o que você vê?", "quantos somos?", "o que estou segurando?").
+Delegue ao backend quando: o cliente fizer uma pergunta que exija explicação, raciocínio ou conhecimento geral, perguntar sobre pratos, preços, combos, recomendações, ou pedir para você olhar/ver algo ("o que você vê?", "quantos somos?", "o que estou segurando?").
 Não delegue quando: cumprimentar, agradecer, conversa leve ou repetir uma resposta ainda válida. Espere o resultado do backend antes de citar pratos ou preços. Nunca invente preços.
-Para pedir, convide o cliente a tocar em "Pedir no WhatsApp".`;
+Quando o cliente quiser pedir, convide-o a tocar em "Pedir no WhatsApp".`;
 
 const menuText = MENU.map((s, i) => `## [${i}] ${s.t}\n` + s.items.map((it) => `- ${it.n}: ${it.p}${it.d ? ` (${it.d})` : ""}`).join("\n")).join("\n\n");
 
@@ -244,10 +246,11 @@ async function answerQuestion(
     },
     system:
       "Você é o cérebro do Zoord, robô do DAKKAI Sushi. Ajude a voz do Zoord a responder a última fala do cliente. " +
-      "As transcrições podem estar incompletas; use a correção mais recente. Responda NO MESMO IDIOMA da última fala do cliente (português do Brasil, inglês ou espanhol; turistas em Florianópolis), em até 80 palavras, no tom de um maître de alto padrão (cortês, sensorial, confiante), " +
+      OPEN_CONVERSATION + "\n" +
+      "As transcrições podem estar incompletas; use a correção mais recente. Responda NO MESMO IDIOMA da última fala do cliente (português do Brasil, inglês ou espanhol; turistas em Florianópolis), com naturalidade e cortesia, " +
       "explicando termos do cardápio (combinado, hot, temaki, uramaki) quando o cliente for estrangeiro, mantendo os nomes dos pratos e preços em reais, " +
-      "pronto para ser falado (sem listas nem markdown). Use SOMENTE o cardápio abaixo e nunca invente preços. " +
-      "Quando falar de uma categoria, chame point_to_category com o número dela para o Zoord apontar no palco. " +
+      "pronto para ser falado (sem listas nem markdown). Para informações do Dakkai, use o cardápio abaixo e nunca invente preços. " +
+      "Quando o cliente pedir uma categoria ou recomendação do Dakkai, chame point_to_category com o número dela para o Zoord apontar no palco; não chame em perguntas gerais. " +
       "Se houver uma imagem da câmera, ela mostra o cliente agora: descreva com gentileza o que for relevante, sem identificar pessoas. " +
       "Quando o cliente quiser fazer um pedido, pergunte o nome dele e o número da mesa se ainda não souber, confirme os itens e quantidades, " +
       "e então chame register_order com os nomes exatos dos itens do cardápio. Depois diga o total e que o pedido foi para a cozinha. " +
