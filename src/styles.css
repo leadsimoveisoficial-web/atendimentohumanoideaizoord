@@ -182,6 +182,7 @@ body { font-family: var(--font-sans); }
 .stage-scene-menu { right: 360px; }
 .stage-chip svg { width: 15px; height: 15px; flex-shrink: 0; }
 .stage-controls { position: relative; max-width: 780px; margin-inline: auto; width: 100%; }
+.zoord-radio-panel { position: fixed; bottom: 172px; left: 50%; transform: translateX(-50%); }
 .zoord-side-menu {
   top: 82px;
   right: 12px;
