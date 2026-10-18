@@ -58,9 +58,9 @@ export function danceMotion(genre: MusicGenre, time: number, energy: number, pul
     roll: amount === 0 ? 0 : sway * style.sway * amount * 1.8,
     nod: beat * style.nod * amount * 1.6,
     reach: style.reach,
-    lift: (beat + (Math.sin(time * style.speed + side * Math.PI / 2) + 1) * 0.25) * style.lift * amount * 1.7,
+    lift: (beat + (Math.sin(time * style.speed + side * Math.PI / 2) + 1) * 0.25) * style.lift * amount * 1.1,
     forward: style.forward,
-    weight: Math.min(1, amount * 0.9),
+    weight: amount * 0.65,
   };
 }
 export function rhythmEnergy(samples: Float32Array) {
