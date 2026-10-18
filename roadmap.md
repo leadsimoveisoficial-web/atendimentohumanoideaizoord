@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Remover linha azul da boca e encaixar a abertura nos lábios originais.
+
 - [x] Corrigir encaixe da boca e pausas da voz gratuita; conferido com reprodução medida
 - [x] Corrigir rotação das pernas ao apresentar Hot Roll; pernas sem rotação/translação durante teste com áudio
 

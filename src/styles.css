@@ -152,6 +152,9 @@
   --stage-led-blue: #2f7bff;
   --stage-led-red: #c4141f;
   --stage-mouth-cavity: #2a0306;
+  --stage-mouth-lips: #51434c;
+  --stage-mouth-tongue: #b3121f;
+  --stage-mouth-teeth: #e4dfd8;
   --glass-highlight: oklch(0.96 0.01 220 / 0.08);
   --dakkai: oklch(0.52 0.2 27);
 }
