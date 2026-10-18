@@ -17,7 +17,7 @@ export function SecurityCameraTile({ cam, register, onStatus }: {
   const [retry, setRetry] = useState(0);
   const [tick, setTick] = useState(0);
   const [status, setStatus] = useState<CameraStatus>("pending");
-  const raw = cam.stream_url || cam.snapshot_url;
+  const raw = cameraKind(cam.stream_url) === "rtsp" && cam.snapshot_url ? cam.snapshot_url : cam.stream_url || cam.snapshot_url;
   const kind = cameraKind(raw);
   let url = "";
   try { if (kind !== "rtsp") url = validateCameraUrl(raw); } catch { /* legacy insecure links are not loaded */ }
@@ -25,10 +25,12 @@ export function SecurityCameraTile({ cam, register, onStatus }: {
   useEffect(() => { onStatus(cam.id, status); }, [cam.id, status, onStatus]);
   useEffect(() => {
     setStatus(!url ? "pending" : kind === "external" ? "external" : "connecting");
-    if (!url || kind === "external") return;
+  }, [url, kind, retry]);
+  useEffect(() => {
+    if (status !== "connecting") return;
     const timer = window.setTimeout(() => setStatus(s => s === "connecting" ? "unavailable" : s), 15000);
     return () => window.clearTimeout(timer);
-  }, [url, kind, retry]);
+  }, [status]);
   useEffect(() => {
     if (kind !== "hls" || !url || !videoRef.current) return;
     const video = videoRef.current;

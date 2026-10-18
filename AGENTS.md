@@ -33,5 +33,6 @@
 - Gate browser-speech mouth cues on utterance start, pause, resume and end; this fallback cannot expose a measured audio waveform.
 - Restore procedural limb layers before each frame without overwriting fresh mixer poses, and bound presentation reach by actual limb lengths; this prevents stuck arms and unnatural overextension when talking clips pause.
 - Native packaging (capacitor.config.json, electron/main.cjs, native-shell/) wraps the published URL instead of a static bundle; the app depends on server functions, AI and realtime orders that cannot run offline from a file:// bundle.
-- Security mode lives under the _authenticated gate with admin-only RLS via user_roles/has_role; the first account becomes owner and promotes managers, and the public stage only reads the security_mode_active() boolean so camera data never reaches visitors.
+- Security stays isolated under _authenticated with admin-only RLS and existing camera/event/settings tables; first account promotes managers, while the public stage reads only security_mode_active() to protect camera data and preserve stage/voice/AI.
+- Store credential-free local RTSP as pending bridge metadata; browser media requires HTTPS and is live only after receipt, preventing exposed passwords and false surveillance status.
 - Camera AI analysis runs from the open security panel (client interval) through an admin-checked server function; no unattended cron, so credits stop when no panel is open.
