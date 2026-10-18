@@ -52,7 +52,7 @@ export function danceMotion(genre: MusicGenre, time: number, energy: number, pul
   const beat = Math.max(0, Math.min(1, pulse));
   const sway = Math.sin(time * style.speed);
   return {
-    roll: sway * style.sway * amount,
+    roll: amount === 0 ? 0 : sway * style.sway * amount,
     nod: beat * style.nod * amount,
     reach: style.reach,
     lift: (beat + (Math.sin(time * style.speed + side * Math.PI / 2) + 1) * 0.25) * style.lift * amount,
