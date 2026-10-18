@@ -18,7 +18,7 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
   useEffect(() => () => { geometry.lips.dispose(); geometry.cavity.dispose(); }, [geometry]);
   useLayoutEffect(() => {
     setHead(scene.getObjectByName("mixamorig:Head") ?? scene.getObjectByName("mixamorigHead") ?? null);
-    setLedColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-led-cyan").trim());
+    setLedColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-mouth-lips").trim());
     setCavityColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-mouth-cavity").trim());
   }, [scene]);
   useFrame(() => {
@@ -31,6 +31,9 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
     const a = Math.max(0, Math.min(1, voiceLevel.v));
     const h = 0.1 + a * (1.05 - 0.4 * voiceLevel.round);
     const show = a > 0.04;
+    // Preserve the supplied closed lips in silence; no second luminous line below them.
+    if (lips.current) lips.current.visible = show;
+    if (opening.current) opening.current.visible = show;
     if (upper.current) { upper.current.visible = show; upper.current.position.y = h * 0.78; }
     if (lower.current) { lower.current.visible = show && a > 0.18; lower.current.position.y = -h * 0.82; }
     if (tongue.current) { tongue.current.visible = show && a > 0.12; tongue.current.position.y = -h * 0.45; tongue.current.scale.set(1.15, 0.35 + a * 0.4, 1); }
@@ -44,7 +47,7 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
       </mesh>
       <mesh ref={tongue} position-z={0.01}>
         <circleGeometry args={[1, 32]} />
-        <meshStandardMaterial color="#b3121f" roughness={0.45} />
+        <meshStandardMaterial color="var(--stage-mouth-tongue)" roughness={0.45} />
       </mesh>
       <group ref={upper} position-z={0.02}>
           <mesh position-x={-1.53}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
