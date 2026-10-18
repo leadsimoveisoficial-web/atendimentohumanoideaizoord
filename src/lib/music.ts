@@ -35,6 +35,7 @@ export function dispatchMusic(command: MusicCommand) {
 
 // Separate from speech: radio must never open the mouth.
 export const musicLevel: { energy: number; pulse: number; playing: boolean; genre: MusicGenre } = { energy: 0, pulse: 0, playing: false, genre: "br-rock" };
+if (typeof window !== "undefined") (window as unknown as { __musicLevel: typeof musicLevel }).__musicLevel = musicLevel;
 
 // Stylized upper-body gestures, not full choreography: keep the standing rig planted.
 const DANCE_STYLES = {
