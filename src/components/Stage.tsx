@@ -96,7 +96,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     // Lower-body animation tracks are excluded: feet and hips retain the supplied standing pose.
     const active = actions[clipName];
     if (active) active.paused = !talking && !waving && !manualPresenting;
-    restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving && !manualPresenting ? 1 : 0, 5, dt);
+    // While the radio plays, the dance owns the arms — the relaxed pose would otherwise pin them down.
+    restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving && !manualPresenting && !musicLevel.playing ? 1 : 0, 5, dt);
     // Relax both arms beside the torso instead of freezing midway through a talking gesture.
     for (const side of ["Right", "Left"]) {
       const arm = scene.getObjectByName(`mixamorig:${side}Arm`) ?? scene.getObjectByName(`mixamorig${side}Arm`);

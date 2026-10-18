@@ -35,6 +35,7 @@ export function dispatchMusic(command: MusicCommand) {
 
 // Separate from speech: radio must never open the mouth.
 export const musicLevel: { energy: number; pulse: number; playing: boolean; genre: MusicGenre } = { energy: 0, pulse: 0, playing: false, genre: "br-rock" };
+if (typeof window !== "undefined") (window as unknown as { __musicLevel: typeof musicLevel }).__musicLevel = musicLevel;
 
 // Stylized upper-body gestures, not full choreography: keep the standing rig planted.
 const DANCE_STYLES = {
@@ -54,10 +55,10 @@ export function danceMotion(genre: MusicGenre, time: number, energy: number, pul
   const beat = Math.max(0, Math.min(1, pulse));
   const sway = Math.sin(time * style.speed);
   return {
-    roll: amount === 0 ? 0 : sway * style.sway * amount,
-    nod: beat * style.nod * amount,
+    roll: amount === 0 ? 0 : sway * style.sway * amount * 1.8,
+    nod: beat * style.nod * amount * 1.6,
     reach: style.reach,
-    lift: (beat + (Math.sin(time * style.speed + side * Math.PI / 2) + 1) * 0.25) * style.lift * amount,
+    lift: (beat + (Math.sin(time * style.speed + side * Math.PI / 2) + 1) * 0.25) * style.lift * amount * 1.1,
     forward: style.forward,
     weight: amount * 0.65,
   };
