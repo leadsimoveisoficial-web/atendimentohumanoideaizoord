@@ -8,10 +8,10 @@ export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>) => ({ redirect: typeof s["redirect"] === "string" && s["redirect"].startsWith("/") ? s["redirect"] : "/seguranca" }),
   head: () => ({
     meta: [
-      { title: "Entrar — Segurança Dakkai" },
-      { name: "description", content: "Acesso restrito ao painel de segurança do Dakkai Sushi." },
-      { property: "og:title", content: "Entrar — Segurança Dakkai" },
-      { property: "og:description", content: "Acesso restrito ao painel de segurança do Dakkai Sushi." },
+      { title: "Entrar — ZOORD SECURITY" },
+      { name: "description", content: "Acesso restrito ao painel de câmeras e eventos Zoord Security." },
+      { property: "og:title", content: "Entrar — ZOORD SECURITY" },
+      { property: "og:description", content: "Entre na sua conta autorizada para acessar câmeras e eventos do Zoord Security." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -45,15 +45,15 @@ function AuthPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground">
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-6">
-        <h1 className="font-display text-lg tracking-widest">SEGURANÇA DAKKAI</h1>
+      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-lg border border-glow/30 bg-background p-6">
+        <h1 className="font-display text-lg text-glow">ZOORD SECURITY</h1>
         <p className="text-sm text-muted-foreground">Acesso apenas para o dono e gerentes.</p>
         <Input type="email" required placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
         <Input type="password" required minLength={8} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} />
         <Button type="submit" disabled={busy} className="w-full">{mode === "in" ? "Entrar" : "Criar conta"}</Button>
-        <button type="button" onClick={() => setMode(mode === "in" ? "up" : "in")} className="w-full text-xs text-muted-foreground underline">
+        <Button type="button" variant="link" onClick={() => setMode(mode === "in" ? "up" : "in")} className="w-full text-xs text-muted-foreground underline">
           {mode === "in" ? "Primeiro acesso? Criar conta" : "Já tenho conta"}
-        </button>
+        </Button>
         {msg && <p className="text-sm text-primary">{msg}</p>}
       </form>
     </main>
