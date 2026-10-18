@@ -59,7 +59,7 @@ export function menuAnswerScript(question: string): string | null {
 }
 
 export const FREE_FALLBACK_ANSWER =
-  "Neste momento minha inteligência está em pausa, mas o cardápio completo está no painel ao lado, com todos os preços. Toque em Pedir no WhatsApp e a nossa equipe resolve tudo para você.";
+  "Podemos conversar sobre outros assuntos também. Neste momento minha conexão com a inteligência está indisponível, então não consigo responder a essa pergunta com confiança. Ainda posso apresentar o cardápio com os dados salvos.";
 
 /** Rough category guess from free text, for the pointing gesture. */
 export function guessCategory(text: string): number | null {
