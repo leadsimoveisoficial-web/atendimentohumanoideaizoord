@@ -146,7 +146,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       const command = handleMusic(text);
       if (command) {
         await speakZoord(command.action === "choose"
-          ? "Que gênero gostaria de ouvir? Rock nacional clássico, blues e jazz, eletrônico, hits do momento ou rock internacional?"
+          ? "Que estilo gostaria de ouvir? Forró, pagode, sertanejo, eletrônico, hip-hop, rock nacional clássico, blues e jazz, hits do momento ou rock internacional?"
           : command.action === "stop" ? "Rádio pausada, à sua disposição."
           : "Selecionei a rádio. Se o navegador pedir, toque no botão de tocar música.", { lang, signal: ac.signal });
         return;

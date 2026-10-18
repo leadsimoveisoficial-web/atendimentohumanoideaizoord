@@ -29,7 +29,7 @@ import { aimLimb } from "@/lib/zoord-gesture";
 import { PoseLayer } from "@/lib/zoord-pose";
 import { plantedPresentationClip } from "@/lib/zoord-presentation";
 import { RadioPlayer } from "./RadioPlayer";
-import { musicLevel } from "@/lib/music";
+import { danceMotion, musicLevel } from "@/lib/music";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
 
 const CYAN = "#3fe0ff";
@@ -159,8 +159,9 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const energy = musicLevel.energy;
     if (energy < 0.01) return;
     const pulse = musicLevel.pulse;
+    const rhythm = danceMotion(musicLevel.genre, clock.elapsedTime, energy, pulse, 1);
     const spine = scene.getObjectByName("mixamorig:Spine2") ?? scene.getObjectByName("mixamorigSpine2");
-    if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(pulse * 0.045, 0, Math.sin(clock.elapsedTime * 2) * energy * 0.04))));
+    if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(rhythm.nod, 0, rhythm.roll))));
     for (const side of ["Right", "Left"]) {
       const arm = scene.getObjectByName(`mixamorig:${side}Arm`) ?? scene.getObjectByName(`mixamorig${side}Arm`);
       const fore = scene.getObjectByName(`mixamorig:${side}ForeArm`) ?? scene.getObjectByName(`mixamorig${side}ForeArm`);
@@ -171,10 +172,11 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       const scale = arm.getWorldScale(new THREE.Vector3()).length() / Math.sqrt(3);
       const upper = fore.position.length() * scale, lower = hand.position.length() * scale;
       const sign = side === "Right" ? -1 : 1;
-      const elbow = shoulder.clone().add(new THREE.Vector3(sign * upper * 0.4, -upper * 0.82, upper * 0.15));
-      const palm = elbow.clone().add(new THREE.Vector3(sign * lower * 0.28, -lower * 0.65 + pulse * lower * 0.2, lower * 0.4));
-      poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, energy * 0.65));
-      poseLayer.apply(fore, () => aimLimb(fore, hand, palm, energy * 0.65));
+      const motion = danceMotion(musicLevel.genre, clock.elapsedTime, energy, pulse, sign);
+      const elbow = shoulder.clone().add(new THREE.Vector3(sign * upper * motion.reach, -upper * 0.82, upper * 0.15));
+      const palm = elbow.clone().add(new THREE.Vector3(sign * lower * 0.28, -lower * 0.65 + motion.lift * lower, lower * motion.forward));
+      poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, motion.weight));
+      poseLayer.apply(fore, () => aimLimb(fore, hand, palm, motion.weight));
     }
   });
   // Procedural pointing gesture, layered on top of the playing animation
