@@ -27,6 +27,7 @@ import type { NewOrder } from "@/lib/orders";
 import { MENU, WHATSAPP, ORDER_URL } from "./menu";
 import { aimLimb } from "@/lib/zoord-gesture";
 import { PoseLayer } from "@/lib/zoord-pose";
+import { plantedPresentationClip } from "@/lib/zoord-presentation";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
 
 const CYAN = "#3fe0ff";
@@ -58,7 +59,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       if (mat.map) mat.map.colorSpace = THREE.SRGBColorSpace;
     });
   }, [scene, maxAniso]);
-  const { actions, mixer } = useAnimations(animations, group);
+  const stationaryAnimations = useMemo(() => animations.map(plantedPresentationClip), [animations]);
+  const { actions, mixer } = useAnimations(stationaryAnimations, group);
   const w = useRef(0);
   const waveTime = useRef(0);
   const speakUntil = useRef(0);
@@ -68,7 +70,6 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   // Speaking uses both hands (open-palm, maître-style); at rest he keeps the relaxed pose.
   const [speaking, setSpeaking] = useState(false);
   const speakingRef = useRef(false);
-  const legWeight = useRef(0);
   const clipName = (point !== null || speaking) && !waving ? "Talk_with_Hands_Open" : "Armature|clip0|baselayer";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0 }), []);
   useEffect(() => {
@@ -88,24 +89,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     if (voiceLevel.v > 0.05) speakUntil.current = clock.elapsedTime + 0.8;
     const talking = clock.elapsedTime < speakUntil.current;
     if (talking !== speakingRef.current) { speakingRef.current = talking; setSpeaking(talking); }
-    // Feet stay planted. Only while explaining the menu does the body shift weight: the torso turns toward
-    // the panel and one knee softens, so the legs follow the upper body like a person presenting.
-    legWeight.current = THREE.MathUtils.damp(legWeight.current, point !== null && !waving ? 1 : 0, 2.5, dt);
-    if (legWeight.current > 0.001) {
-      const bone = (n: string) => scene.getObjectByName(`mixamorig:${n}`) ?? scene.getObjectByName(`mixamorig${n}`);
-      const toward = point !== null && panelPos(point).x < 0 ? -1 : 1;
-      const breathe = Math.sin(clock.elapsedTime * 0.6) * 0.3;
-      const shift = legWeight.current * (0.7 + breathe * 0.3);
-      const spine = bone("Spine");
-      if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(_q.setFromEuler(_e.set(0, toward * 0.08 * shift, -toward * 0.025 * shift))));
-      // Soften the knee on the side away from the panel; thigh and shin bends cancel so the foot stays put.
-      const side = toward > 0 ? "Left" : "Right";
-      const bend = 0.09 * shift;
-      const up = bone(`${side}UpLeg`), leg = bone(`${side}Leg`), foot = bone(`${side}Foot`);
-      if (up) poseLayer.apply(up, () => up.quaternion.multiply(_q.setFromEuler(_e.set(-bend, 0, 0))));
-      if (leg) poseLayer.apply(leg, () => leg.quaternion.multiply(_q.setFromEuler(_e.set(bend * 2, 0, 0))));
-      if (foot) poseLayer.apply(foot, () => foot.quaternion.multiply(_q.setFromEuler(_e.set(-bend, 0, 0))));
-    }
+    // Lower-body animation tracks are excluded: feet and hips retain the supplied standing pose.
     const active = actions[clipName];
     if (active) active.paused = !talking;
     restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving ? 1 : 0, 5, dt);
@@ -243,7 +227,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   return (
     <group ref={group} position={[0, 0.3, 0]} scale={2.3}>
       <primitive object={scene} />
-      <ZoordMouth scene={scene} position={[0, 3.3, 7.6]} rotationX={0} scale={3.6} />
+      <ZoordMouth scene={scene} position={[-0.5, 4.5, 10.6]} rotationX={0} scale={1} />
     </group>
   );
 }

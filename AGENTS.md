@@ -25,6 +25,8 @@
 - Keep Blender preparation offline in tools/blender and preserve the supplied face, skeleton and baked necklace; this avoids destructive automatic face edits.
 - Voice category-selection events open the same nonmodal menu as clicks; this keeps spoken recommendations and visible menu details aligned.
 - Map the active avatar's supplied conversation clips to presentation and relaxed posture, with a model-specific head-local mouth anchor; this supports avatar replacement without changing the approved voice or source mesh.
+- Filter root, hip and leg tracks from stage presentation clips; stationary service gestures must not inherit locomotion or twist the planted lower body.
+- Gate browser-speech mouth cues on utterance start, pause, resume and end; this fallback cannot expose a measured audio waveform.
 - Restore procedural limb layers before each frame without overwriting fresh mixer poses, and bound presentation reach by actual limb lengths; this prevents stuck arms and unnatural overextension when talking clips pause.
 - Native packaging (capacitor.config.json, electron/main.cjs, native-shell/) wraps the published URL instead of a static bundle; the app depends on server functions, AI and realtime orders that cannot run offline from a file:// bundle.
 - Security mode lives under the _authenticated gate with admin-only RLS via user_roles/has_role; the first account becomes owner and promotes managers, and the public stage only reads the security_mode_active() boolean so camera data never reaches visitors.
