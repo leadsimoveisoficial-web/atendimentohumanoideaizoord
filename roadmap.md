@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Rádio gratuita: cinco estações reproduzidas no navegador, ritmo pelo áudio e pausa zerando movimento; comandos e tchau com testes.
+- [ ] Validar pedidos musicais e tchau por microfone real — requer aparelho com voz/escuta disponíveis.
+
 - [x] Remover linha azul da boca e encaixar a abertura nos lábios originais.
 
 - [x] Corrigir encaixe da boca e pausas da voz gratuita; conferido com reprodução medida

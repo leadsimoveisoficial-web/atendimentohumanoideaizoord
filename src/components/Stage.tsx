@@ -28,6 +28,8 @@ import { MENU, WHATSAPP, ORDER_URL } from "./menu";
 import { aimLimb } from "@/lib/zoord-gesture";
 import { PoseLayer } from "@/lib/zoord-pose";
 import { plantedPresentationClip } from "@/lib/zoord-presentation";
+import { RadioPlayer } from "./RadioPlayer";
+import { musicLevel } from "@/lib/music";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
 
 const CYAN = "#3fe0ff";
@@ -70,7 +72,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   // Speaking uses both hands (open-palm, maître-style); at rest he keeps the relaxed pose.
   const [speaking, setSpeaking] = useState(false);
   const speakingRef = useRef(false);
-  const clipName = (point !== null || speaking) && !waving ? "Talk_with_Hands_Open" : "Armature|clip0|baselayer";
+  const clipName = waving ? "Wave_One_Hand" : (point !== null || speaking) ? "Talk_with_Hands_Open" : "Armature|clip0|baselayer";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0 }), []);
   useEffect(() => {
     const move = (e: PointerEvent) => setMouseGaze((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
@@ -91,7 +93,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     if (talking !== speakingRef.current) { speakingRef.current = talking; setSpeaking(talking); }
     // Lower-body animation tracks are excluded: feet and hips retain the supplied standing pose.
     const active = actions[clipName];
-    if (active) active.paused = !talking;
+    if (active) active.paused = !talking && !waving;
     restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving ? 1 : 0, 5, dt);
     // Relax both arms beside the torso instead of freezing midway through a talking gesture.
     for (const side of ["Right", "Left"]) {
@@ -133,7 +135,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     headMotion.last.copy(head.quaternion);
     headMotion.inverse.copy(headMotion.next).invert();
   });
-  // The supplied avatar has conversation clips but no wave clip: layer a single outward wave.
+  // Preserve the supplied wave and add a bounded outward reach for a readable greeting.
   useFrame((_, rawDelta) => {
     if (!waving) return;
     waveTime.current += Math.min(rawDelta, 0.05);
@@ -150,6 +152,30 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const palm = shoulder.clone().add(new THREE.Vector3(-0.72 + Math.sin(t * 8) * 0.12, 0.55, 0.45));
     poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, weight));
     poseLayer.apply(fore, () => aimLimb(fore, hand, palm, weight));
+  });
+  // Audio-reactive upper-body rhythm; planted legs never inherit dance/root tracks.
+  useFrame(({ clock }) => {
+    if (!musicLevel.playing || voiceLevel.v > 0.03 || listening || point !== null || waving) return;
+    const energy = musicLevel.energy;
+    if (energy < 0.01) return;
+    const pulse = musicLevel.pulse;
+    const spine = scene.getObjectByName("mixamorig:Spine2") ?? scene.getObjectByName("mixamorigSpine2");
+    if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(pulse * 0.045, 0, Math.sin(clock.elapsedTime * 2) * energy * 0.04))));
+    for (const side of ["Right", "Left"]) {
+      const arm = scene.getObjectByName(`mixamorig:${side}Arm`) ?? scene.getObjectByName(`mixamorig${side}Arm`);
+      const fore = scene.getObjectByName(`mixamorig:${side}ForeArm`) ?? scene.getObjectByName(`mixamorig${side}ForeArm`);
+      const hand = scene.getObjectByName(`mixamorig:${side}Hand`) ?? scene.getObjectByName(`mixamorig${side}Hand`);
+      if (!arm || !fore || !hand) continue;
+      arm.updateWorldMatrix(true, true);
+      const shoulder = arm.getWorldPosition(new THREE.Vector3());
+      const scale = arm.getWorldScale(new THREE.Vector3()).length() / Math.sqrt(3);
+      const upper = fore.position.length() * scale, lower = hand.position.length() * scale;
+      const sign = side === "Right" ? -1 : 1;
+      const elbow = shoulder.clone().add(new THREE.Vector3(sign * upper * 0.4, -upper * 0.82, upper * 0.15));
+      const palm = elbow.clone().add(new THREE.Vector3(sign * lower * 0.28, -lower * 0.65 + pulse * lower * 0.2, lower * 0.4));
+      poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, energy * 0.65));
+      poseLayer.apply(fore, () => aimLimb(fore, hand, palm, energy * 0.65));
+    }
   });
   // Procedural pointing gesture, layered on top of the playing animation
   useFrame((_, d) => {
@@ -211,8 +237,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     waveTime.current = 0;
     const a = actions[clipName];
     if (a) {
-      a.setLoop(THREE.LoopRepeat, Infinity);
-      a.clampWhenFinished = false;
+      a.setLoop(waving ? THREE.LoopOnce : THREE.LoopRepeat, waving ? 1 : Infinity);
+      a.clampWhenFinished = waving;
       a.paused = false;
       a.reset().fadeIn(0.4).play();
       a.setEffectiveTimeScale(0.72); // unhurried, refined gestures
@@ -495,6 +521,7 @@ export function Stage() {
             <LiveZoord ref={voiceCommands} onPoint={pointToMenu} onGreeting={wave} onListening={setListening} onOrder={placeOrder} />
           </div>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
+            <RadioPlayer listening={listening} />
             <RecordRepeat />
             <Button variant="ghost" onClick={wave} className="stage-chip"><Hand />Acenar</Button>
             <Button variant="ghost" onClick={() => { setAnim("Idle_12"); voiceCommands.current?.present(null); }} className="stage-chip"><UtensilsCrossed />Apresentar cardápio</Button>

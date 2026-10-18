@@ -6,9 +6,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "DAKKAI Sushi × Zoord — Cardápio 3D" },
-      { name: "description", content: "Palco 3D do DAKKAI Sushi com o robô Zoord e o cardápio completo voando, com preços." },
+      { name: "description", content: "Conheça Zoord, o maître do Dakkai Sushi: cardápio com preços, atendimento por voz e rádios por gênero." },
       { property: "og:title", content: "DAKKAI Sushi × Zoord — Cardápio 3D" },
-      { property: "og:description", content: "Palco 3D do DAKKAI Sushi com o robô Zoord e o cardápio completo voando, com preços." },
+      { property: "og:description", content: "Conheça Zoord, o maître do Dakkai Sushi: cardápio com preços, atendimento por voz e rádios por gênero." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

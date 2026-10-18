@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { emptyReaction, reactToCustomer } from "./zoord-interaction";
 
 describe("customer greeting reactions", () => {
+  it("waves when the customer requests goodbye", () => {
+    expect(reactToCustomer(emptyReaction(), "Zoord, dá um tchau", 0, 500).wave).toBe(true);
+    expect(reactToCustomer(emptyReaction(), "goodbye", 0, 500).wave).toBe(true);
+  });
   it("recognizes greetings but not partial words", () => {
     for (const greeting of ["Oi!", "Olá", "Bom dia", "Boa tarde", "Boa noite"]) {
       expect(reactToCustomer(emptyReaction(), greeting, 0, 500).wave).toBe(true);

@@ -10,6 +10,7 @@ import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react"
 import { motionCentroid, setCameraGaze } from "@/lib/gaze";
 import type { NewOrder } from "@/lib/orders";
 import { emptyReaction, reactToCustomer } from "@/lib/zoord-interaction";
+import { dispatchMusic, musicCommand, type MusicCommand } from "@/lib/music";
 
 export type LiveZoordCommands = { present: (category: number | null) => void };
 
@@ -32,6 +33,13 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   const freeBusy = useRef(false);
   const freeAbort = useRef<AbortController | null>(null);
   const freeHistory = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
+  const lastMusic = useRef("");
+
+  function handleMusic(text: string): MusicCommand | null {
+    const command = musicCommand(text);
+    if (command) dispatchMusic(command);
+    return command;
+  }
 
   const call = useLiveVoice({
     onEvent: (e: LiveEvent) => {
@@ -45,7 +53,12 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       if (e.type === "session.input_transcript.delta" && typeof e["delta"] === "string") {
         setCaption("");
         const result = reactToCustomer(reaction.current, e["delta"], typeof e["start_ms"] === "number" ? e["start_ms"] : reaction.current.endMs, typeof e["end_ms"] === "number" ? e["end_ms"] : reaction.current.endMs);
+        const newTurn = typeof e["start_ms"] === "number" && e["start_ms"] - reaction.current.endMs > 1800;
         reaction.current = result.state;
+        const command = musicCommand(result.state.text);
+        const signature = JSON.stringify(command);
+        if (newTurn) lastMusic.current = "";
+        if (command && signature !== lastMusic.current) { dispatchMusic(command); lastMusic.current = signature; }
         onListening(true);
         if (listeningTimer.current) clearTimeout(listeningTimer.current);
         listeningTimer.current = setTimeout(() => onListening(false), 1800);
@@ -55,7 +68,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
         if (listeningTimer.current) clearTimeout(listeningTimer.current);
         onListening(false);
       }
-      if (e.type === "app.closed") { reaction.current = emptyReaction(); setThinking(false); setCaption(""); onPoint(null); }
+      if (e.type === "app.closed") { reaction.current = emptyReaction(); lastMusic.current = ""; setThinking(false); setCaption(""); onPoint(null); }
     },
   });
   const live = call.status === "connecting" || call.status === "connected";
@@ -130,6 +143,14 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     const ac = new AbortController();
     freeAbort.current = ac;
     try {
+      const command = handleMusic(text);
+      if (command) {
+        await speakZoord(command.action === "choose"
+          ? "Que gênero gostaria de ouvir? Rock nacional clássico, blues e jazz, eletrônico, hits do momento ou rock internacional?"
+          : command.action === "stop" ? "Rádio pausada, à sua disposição."
+          : "Selecionei a rádio. Se o navegador pedir, toque no botão de tocar música.", { lang, signal: ac.signal });
+        return;
+      }
       const res = await fetch("/api/zoord-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
