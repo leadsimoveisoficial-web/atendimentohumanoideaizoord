@@ -18,7 +18,7 @@ const STATIONS: Record<MusicGenre, { name: string; url: string }> = {
   "hip-hop": { name: "100 Hip Hop and RNB FM", url: "https://streaming.shoutcast.com/100-hip-hop-and-rnb-fm" },
 };
 
-export function RadioPlayer({ listening, onSpeak, onOpen }: { listening: boolean; onSpeak: (text: string) => void; onOpen: () => void }) {
+export function RadioPlayer({ listening, onSpeak, onOpen, hidden }: { listening: boolean; onSpeak: (text: string) => void; onOpen: () => void; hidden: boolean }) {
   const [open, setOpen] = useState(false);
   const [genre, setGenre] = useState<MusicGenre>("br-rock");
   const [status, setStatus] = useState<"idle" | "loading" | "playing">("idle");
@@ -105,7 +105,7 @@ export function RadioPlayer({ listening, onSpeak, onOpen }: { listening: boolean
       onPlaying={() => { setError(""); setStatus("playing"); }} onPause={clearRhythm} onEnded={() => { clearRhythm(); setStatus("idle"); }}
       onError={() => { clearRhythm(); setStatus("idle"); setError("Esta rádio está indisponível. Escolha outro gênero."); }} />
     <Button variant="ghost" className={`stage-chip ${status === "playing" ? "stage-chip-active" : ""}`} onClick={() => { onOpen(); setOpen(!open); }}><Music2 />Música e dança</Button>
-    {open && createPortal(<section aria-label="Rádio do Zoord" className="zoord-radio-panel pointer-events-auto z-40 max-h-[55vh] overflow-y-auto w-[calc(100vw-32px)] max-w-sm rounded-lg border border-border bg-background/95 p-4 text-foreground backdrop-blur-xl">
+    {open && !hidden && createPortal(<section aria-label="Rádio do Zoord" className="zoord-radio-panel pointer-events-auto z-40 max-h-[55vh] overflow-y-auto w-[calc(100vw-32px)] max-w-sm rounded-lg border border-border bg-background/95 p-4 text-foreground backdrop-blur-xl">
       <header className="mb-3 flex items-center justify-between"><h2 className="font-display text-sm">Rádio • Zoord</h2><Button size="icon" variant="ghost" aria-label="Fechar rádio" onClick={() => setOpen(false)}><X /></Button></header>
       <Select value={genre} onValueChange={(value) => { const selected = MUSIC_GENRES.find(g => g.id === value); if (!selected) return; void play(selected.id, true); }}>
         <SelectTrigger aria-label="Gênero musical" className="w-full"><SelectValue /></SelectTrigger>

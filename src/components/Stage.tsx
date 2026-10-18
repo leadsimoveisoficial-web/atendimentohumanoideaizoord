@@ -538,9 +538,9 @@ export function Stage() {
             <LiveZoord ref={voiceCommands} onPoint={pointToMenu} onGreeting={wave} onListening={setListening} onOrder={placeOrder} />
           </div>
           <nav className="pointer-events-auto mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
-            <RadioPlayer key={controlPanel === "gestures" ? "music-closed" : "music"} listening={listening} onOpen={() => setControlPanel("music")} onSpeak={(text) => voiceCommands.current?.say(text)} />
+            <RadioPlayer hidden={controlPanel === "gestures"} listening={listening} onOpen={() => setControlPanel("music")} onSpeak={(text) => voiceCommands.current?.say(text)} />
             <RecordRepeat />
-            <GesturePanel key={controlPanel === "music" ? "gestures-closed" : "gestures"} onOpen={() => setControlPanel("gestures")} onGesture={performGesture} />
+            <GesturePanel hidden={controlPanel === "music"} onOpen={() => setControlPanel("gestures")} onGesture={performGesture} />
             <Button variant="ghost" onClick={() => { setAnim("Idle_12"); voiceCommands.current?.present(null); }} className="stage-chip"><UtensilsCrossed />Apresentar cardápio</Button>
             <Button variant="ghost" onClick={() => { setAiPoint(null); setAnim("Idle_12"); }} className="stage-chip" aria-label="Voltar à postura inicial" title="Postura inicial"><RotateCcw /></Button>
           </nav>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { musicCommand, rhythmEnergy, danceMotion, danceStyle } from "./music";
+import { musicCommand, rhythmEnergy, danceMotion, danceStyle, danceBlend, MUSIC_GENRES } from "./music";
 describe("free radio requests", () => {
   it.each([
     ["Rock nacional clássico", "br-rock"], ["blues jazz", "jazz"],
@@ -13,11 +13,27 @@ describe("free radio requests", () => {
   it("stops when asked to stop music", () => expect(musicCommand("pare a música")).toEqual({ action: "stop" }));
   it("offers genre choice for an unspecified request", () => expect(musicCommand("quero ouvir música")).toEqual({ action: "choose" }));
   it("does not turn menu requests into music", () => expect(musicCommand("quero Hot Roll")).toBeNull());
+  it.each(["O que é hip-hop?", "Explique a história do forró", "What is jazz?", "Qué es rock?"])("keeps general question %s in conversation", text => expect(musicCommand(text)).toBeNull());
   it("has no rhythm in silence", () => expect(rhythmEnergy(new Float32Array(32))).toBe(0));
   it("responds to measured music amplitude", () => expect(rhythmEnergy(new Float32Array(32).fill(0.1))).toBeCloseTo(0.5));
 });
 
 describe("named audio-driven dance styles", () => {
+  it.each(MUSIC_GENRES.map(g => g.id))("bounds simultaneous dance and speech for %s", genre => {
+    expect(danceBlend(true, false, false, false)).toBe(0.45);
+    for (let t = 0; t < 10; t += 0.2) {
+      const m = danceMotion(genre, t, 1 * danceBlend(true, false, false, false), 1, 1);
+      expect(m.weight).toBeGreaterThan(0);
+      expect(m.weight).toBeLessThanOrEqual(0.3);
+      expect(Math.abs(m.roll)).toBeLessThanOrEqual(0.06);
+      expect(m.lift).toBeLessThanOrEqual(0.25);
+    }
+  });
+  it("yields to listening, pointing and manual gestures", () => {
+    expect(danceBlend(true, true, false, false)).toBe(0);
+    expect(danceBlend(true, false, true, false)).toBe(0);
+    expect(danceBlend(true, false, false, true)).toBe(0);
+  });
   it.each(["forro", "pagode", "sertanejo", "electronic", "hip-hop"] as const)("stays still without sound for %s", (genre) => {
     const motion = danceMotion(genre, 1, 0, 0, 1);
     expect([motion.roll, motion.nod, motion.lift, motion.weight]).toEqual([0, 0, 0, 0]);
