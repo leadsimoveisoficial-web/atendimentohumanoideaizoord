@@ -99,7 +99,7 @@ export function RadioPlayer({ listening }: { listening: boolean }) {
       onPlaying={() => { setError(""); setStatus("playing"); }} onPause={clearRhythm} onEnded={() => { clearRhythm(); setStatus("idle"); }}
       onError={() => { clearRhythm(); setStatus("idle"); setError("Esta rádio está indisponível. Escolha outro gênero."); }} />
     <Button variant="ghost" className={`stage-chip ${status === "playing" ? "stage-chip-active" : ""}`} onClick={() => setOpen(!open)}><Music2 />Música</Button>
-    {open && <section aria-label="Rádio do Zoord" className="pointer-events-auto absolute bottom-full left-1/2 mb-3 w-[calc(100vw-32px)] max-w-sm -translate-x-1/2 rounded-lg border border-border bg-background/95 p-4 text-foreground backdrop-blur-xl">
+    {open && <section aria-label="Rádio do Zoord" className="pointer-events-auto fixed bottom-[170px] left-1/2 z-40 w-[calc(100vw-32px)] max-w-sm -translate-x-1/2 rounded-lg border border-border bg-background/95 p-4 text-foreground backdrop-blur-xl">
       <header className="mb-3 flex items-center justify-between"><h2 className="font-display text-sm">Rádio • Zoord</h2><Button size="icon" variant="ghost" aria-label="Fechar rádio" onClick={() => setOpen(false)}><X /></Button></header>
       <Select value={genre} onValueChange={(value) => { const selected = MUSIC_GENRES.find(g => g.id === value); if (!selected) return; setGenre(selected.id); if (status !== "idle") void play(selected.id); }}>
         <SelectTrigger aria-label="Gênero musical"><SelectValue /></SelectTrigger>
