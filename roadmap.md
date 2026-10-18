@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Rádio gratuita por gênero, comandos falados, movimento pelo áudio e aceno de despedida.
+
 - [x] Remover linha azul da boca e encaixar a abertura nos lábios originais.
 
 - [x] Corrigir encaixe da boca e pausas da voz gratuita; conferido com reprodução medida
