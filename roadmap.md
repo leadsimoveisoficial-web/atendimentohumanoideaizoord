@@ -1,5 +1,6 @@
 # Roadmap
 
+- [ ] Adicionar forró, pagode, sertanejo e hip-hop às rádios e diferenciar os cinco estilos de dança pedidos.
 - [x] Rádio gratuita: cinco estações reproduzidas no navegador, ritmo pelo áudio e pausa zerando movimento; comandos e tchau com testes.
 - [ ] Validar pedidos musicais e tchau por microfone real — requer aparelho com voz/escuta disponíveis.
 
