@@ -12,9 +12,9 @@ const STATIONS: Record<MusicGenre, { name: string; url: string }> = {
   electronic: { name: "181.FM — Energy 98 (dance / eletrônico)", url: "https://listen.181fm.com/181-energy98_128k.mp3" },
   hits: { name: "181.FM — The Beat", url: "https://listen.181fm.com/181-beat_128k.mp3" },
   rock: { name: "181.FM — The Eagle (classic rock)", url: "https://listen.181fm.com/181-eagle_128k.mp3" },
-  forro: { name: "Rádio Forró — forró e sertanejo", url: "https://stm5.painelcast.com:7600/stream" },
-  pagode: { name: "Hunter.FM — Pagode", url: "https://live.hunter.fm/pagode_normal" },
-  sertanejo: { name: "Hunter.FM — Sertanejo", url: "https://live.hunter.fm/sertanejo_normal" },
+  forro: { name: "Riacho FM — forró e sertanejo", url: "https://stm23.srvaudio.com.br:10974/stream" },
+  pagode: { name: "Pagode pra Valer — pagode e samba", url: "https://stm15.xcast.com.br:12534/;" },
+  sertanejo: { name: "Sertaneja 106.7 — sertanejo", url: "https://sc4s.cdn.upx.com:8067/stream" },
   "hip-hop": { name: "100 Hip Hop and RNB FM", url: "https://streaming.shoutcast.com/100-hip-hop-and-rnb-fm" },
 };
 
