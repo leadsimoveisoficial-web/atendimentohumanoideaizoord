@@ -55,12 +55,12 @@ export function danceMotion(genre: MusicGenre, time: number, energy: number, pul
   const beat = Math.max(0, Math.min(1, pulse));
   const sway = Math.sin(time * style.speed);
   return {
-    roll: amount === 0 ? 0 : sway * style.sway * amount,
-    nod: beat * style.nod * amount,
+    roll: amount === 0 ? 0 : sway * style.sway * amount * 1.8,
+    nod: beat * style.nod * amount * 1.6,
     reach: style.reach,
-    lift: (beat + (Math.sin(time * style.speed + side * Math.PI / 2) + 1) * 0.25) * style.lift * amount,
+    lift: (beat + (Math.sin(time * style.speed + side * Math.PI / 2) + 1) * 0.25) * style.lift * amount * 1.7,
     forward: style.forward,
-    weight: amount * 0.65,
+    weight: Math.min(1, amount * 0.9),
   };
 }
 export function rhythmEnergy(samples: Float32Array) {
