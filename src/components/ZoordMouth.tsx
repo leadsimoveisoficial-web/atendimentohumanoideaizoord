@@ -15,6 +15,7 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
   const [ledColor, setLedColor] = useState<string>();
   const [cavityColor, setCavityColor] = useState<string>();
   const [tongueColor, setTongueColor] = useState<string>();
+  const [teethColor, setTeethColor] = useState<string>();
   const geometry = useMemo(() => ({ lips: createMouthGeometry(), cavity: createMouthGeometry(true) }), []);
   useEffect(() => () => { geometry.lips.dispose(); geometry.cavity.dispose(); }, [geometry]);
   useLayoutEffect(() => {
@@ -22,6 +23,7 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
     setLedColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-mouth-lips").trim());
     setCavityColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-mouth-cavity").trim());
     setTongueColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-mouth-tongue").trim());
+    setTeethColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-mouth-teeth").trim());
   }, [scene]);
   useFrame(() => {
     // No second envelope: it would smear syllables and keep moving after pauses.
@@ -41,7 +43,7 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
     if (tongue.current) { tongue.current.visible = show && a > 0.12; tongue.current.position.y = -h * 0.45; tongue.current.scale.set(1.15, 0.35 + a * 0.4, 1); }
     if (lips.current?.material instanceof THREE.MeshBasicMaterial) lips.current.material.opacity = shape.opacity;
   });
-  if (!head || !ledColor || !cavityColor || !tongueColor) return null;
+  if (!head || !ledColor || !cavityColor || !tongueColor || !teethColor) return null;
   return createPortal(
     <group name="ZoordVoiceMouth" position={position} rotation-x={rotationX} scale={scale}>
       <mesh ref={opening} args={[geometry.cavity]}>
@@ -52,28 +54,28 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
         <meshStandardMaterial color={tongueColor} roughness={0.45} />
       </mesh>
       <group ref={upper} position-z={0.02}>
-          <mesh position-x={-1.53}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={-1.19}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={-0.85}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={-0.51}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={-0.17}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={0.17}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={0.51}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={0.85}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={1.19}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={1.53}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
+          <mesh position-x={-1.53}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={-1.19}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={-0.85}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={-0.51}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={-0.17}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={0.17}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={0.51}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={0.85}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={1.19}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={1.53}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
       </group>
       <group ref={lower} position-z={0.02} scale-x={0.85}>
-          <mesh position-x={-1.53}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={-1.19}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={-0.85}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={-0.51}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={-0.17}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={0.17}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={0.51}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={0.85}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={1.19}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
-          <mesh position-x={1.53}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshStandardMaterial color="#f4f1ea" roughness={0.35} /></mesh>
+          <mesh position-x={-1.53}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={-1.19}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={-0.85}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={-0.51}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={-0.17}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={0.17}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={0.51}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={0.85}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={1.19}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
+          <mesh position-x={1.53}><boxGeometry args={[0.3, 0.28, 0.04]} /><meshBasicMaterial color={teethColor} toneMapped={false} /></mesh>
       </group>
       <mesh ref={lips} position-z={0.04} args={[geometry.lips]}>
         <meshBasicMaterial color={ledColor} transparent opacity={0.65} toneMapped={false} />
