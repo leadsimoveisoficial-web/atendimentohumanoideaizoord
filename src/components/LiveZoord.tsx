@@ -212,6 +212,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       stopFreeConversation();
       const ac = new AbortController();
       freeAbort.current = ac;
+      setFreeError("");
       setFreeActive(true);
       void streamSpeech("/api/zoord-speak", text, ac.signal)
         .catch(async () => { if (!ac.signal.aborted) await speakZoord(text, { signal: ac.signal }); })
