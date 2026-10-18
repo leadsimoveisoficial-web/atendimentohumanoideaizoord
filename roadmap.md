@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Corrigir encaixe da boca e pausas da voz gratuita; conferir com reprodução medida
-- [ ] Corrigir rotação das pernas ao apresentar Hot Roll; testar animação e pés firmes
+- [x] Corrigir encaixe da boca e pausas da voz gratuita; conferido com reprodução medida
+- [x] Corrigir rotação das pernas ao apresentar Hot Roll; pernas sem rotação/translação durante teste com áudio
 
 - [x] Voz grátis: free-speech, free-listen, menu-script, Groq server; LiveZoord reescrito; AskZoord fallback
 - [x] Apresentação grátis do cardápio validada (roteiro local com preços reais)
