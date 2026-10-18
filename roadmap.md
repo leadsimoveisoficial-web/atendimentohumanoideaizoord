@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Primeira etapa ZOORD SECURITY: reaproveitar painel restrito, cadastro Tapo C200, status verdadeiro e eventos ao vivo, preservando palco/voz/IA.
+- [ ] Testar uma Tapo C200 real — aguarda câmera e ponte local protegida; não expor portas ou credenciais.
+
 - [x] Abrir conversa e perguntas para assuntos gerais sem forçar cardápio; contexto preservado, modelos/voz mantidos e testes de encaminhamento aprovados.
 - [ ] Conferir conversa geral com IA real — acesso atual aos provedores depende de créditos; testes locais não substituem chamada real.
 - [x] Fonte musical definida: usuário escolheu manter rádios gratuitas por enquanto, sem nova API paga.
