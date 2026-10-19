@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Stage } from "@/components/Stage";
+import restaurant from "@/assets/dakkai-restaurant-4k.glb.asset.json";
 
 export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
+    links: [{ rel: "preload", as: "fetch", href: restaurant.url, crossOrigin: "anonymous" }],
     meta: [
       { title: "DAKKAI Sushi × Zoord — Cardápio 3D" },
       { name: "description", content: "Conheça Zoord, o maître do Dakkai Sushi: cardápio com preços, atendimento por voz e rádios por gênero." },

@@ -57,5 +57,5 @@ export function DakkaiRestaurant() {
       });
     };
   }, [object]);
-  return <group><primitive object={object} dispose={null} /><RestaurantLeds restaurant={object} /></group>;
+  return <group><primitive object={object} dispose={null} /><RestaurantLeds /></group>;
 }

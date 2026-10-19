@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Corrigir abertura do restaurante: eliminar cálculo pesado dos LEDs, antecipar download 4K e conferir cena/controles em telas ampla e estreita.
+
 - [x] Substituir o fundo cinza externo por universo preto com galáxias; conferido em tela 4K e estreita.
 
 - [x] Preservar texturas originais no cenário de 31 MB (fonte de 86 MB), limitar renderização à largura 4K e remover reconstrução do feixe a cada quadro; sem alterar voz/gestos. Desempenho em aparelhos reais não medido.
