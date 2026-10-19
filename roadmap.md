@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Adicionar LEDs azuis e vermelhos animados pelo chão e acender o contorno do palco.
+
 - [x] Substituir o fundo pelo último restaurante enviado, otimizado para 9,2 MB, e verificar visibilidade do Zoord.
 - [x] Centralizar Zoord no círculo, logo na parede quadrada atrás do caixa e cérebro alto e visível.
 
