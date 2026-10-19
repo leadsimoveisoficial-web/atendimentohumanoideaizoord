@@ -4,6 +4,7 @@ import { Music2, Pause, Play, X, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MUSIC_GENRES, danceStyle, genreIntroduction, musicLevel, rhythmEnergy, type MusicCommand, type MusicGenre } from "@/lib/music";
+import { useAccount } from "./UserAccount";
 import { voiceLevel } from "@/lib/voice-level";
 
 const STATIONS: Record<MusicGenre, { name: string; url: string }> = {
@@ -19,11 +20,18 @@ const STATIONS: Record<MusicGenre, { name: string; url: string }> = {
 };
 
 export function RadioPlayer({ listening, onSpeak, onOpen, hidden }: { listening: boolean; onSpeak: (text: string) => void; onOpen: () => void; hidden: boolean }) {
+  const { user, profile, save } = useAccount();
   const [open, setOpen] = useState(false);
   const [genre, setGenre] = useState<MusicGenre>("br-rock");
   const [status, setStatus] = useState<"idle" | "loading" | "playing">("idle");
   const [error, setError] = useState("");
   const [volume, setVolume] = useState(0.35);
+  useEffect(() => {
+    const selected = MUSIC_GENRES.find(item => item.id === profile?.music_genre);
+    if (selected) setGenre(selected.id);
+    setVolume(Number(profile?.music_volume ?? 0.35));
+  }, [profile?.music_genre, profile?.music_volume]);
+  const remember = (selected: MusicGenre) => { if (user && profile) void save({ music_genre: selected, music_volume: volume }).catch(() => setError("Não foi possível salvar suas preferências.")); };
   const audio = useRef<HTMLAudioElement>(null);
   const graph = useRef<{ ctx: AudioContext; analyser: AnalyserNode; source: MediaElementAudioSourceNode } | null>(null);
   const requestId = useRef(0);
@@ -42,6 +50,7 @@ export function RadioPlayer({ listening, onSpeak, onOpen, hidden }: { listening:
     if (!el) return;
     const id = ++requestId.current;
     setOpen(true); setGenre(selected); musicLevel.genre = selected; setError(""); setStatus("loading"); clearRhythm();
+    remember(selected);
     try {
       if (!graph.current) {
         const ctx = new AudioContext();
@@ -116,7 +125,7 @@ export function RadioPlayer({ listening, onSpeak, onOpen, hidden }: { listening:
       <div className="mt-3 flex items-center gap-3">
         <Button size="icon" variant="outline" aria-label={status !== "idle" ? "Pausar rádio" : "Tocar rádio"} onClick={() => status !== "idle" ? stop() : void play(genre, true)}>{status !== "idle" ? <Pause /> : <Play />}</Button>
         <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <input aria-label="Volume da rádio" type="range" min="0" max="1" step="0.05" value={volume} onChange={e => setVolume(Number(e.target.value))} className="min-w-0 flex-1 accent-glow" />
+        <input aria-label="Volume da rádio" type="range" min="0" max="1" step="0.05" value={volume} onChange={e => setVolume(Number(e.target.value))} onPointerUp={() => remember(genre)} onKeyUp={() => remember(genre)} className="min-w-0 flex-1 accent-glow" />
         <span role="status" className="text-xs text-muted-foreground">{status === "loading" ? "Conectando…" : status === "playing" ? "Ao vivo" : "Pausada"}</span>
       </div>
       {error && <p role="alert" className="mt-3 text-xs text-dakkai">{error}</p>}

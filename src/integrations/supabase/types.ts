@@ -47,6 +47,30 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          display_name: string
+          id: string
+          music_genre: string
+          music_volume: number
+          updated_at: string
+        }
+        Insert: {
+          display_name?: string
+          id: string
+          music_genre?: string
+          music_volume?: number
+          updated_at?: string
+        }
+        Update: {
+          display_name?: string
+          id?: string
+          music_genre?: string
+          music_volume?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       security_cameras: {
         Row: {
           created_at: string

@@ -30,6 +30,7 @@ import { RadioPlayer } from "./RadioPlayer";
 import { danceBlend, danceMotion, musicLevel } from "@/lib/music";
 import { GesturePanel, type StageGesture } from "./GesturePanel";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
+import { UserAccount } from "./UserAccount";
 import { DakkaiRestaurant } from "./DakkaiRestaurant";
 
 const CYAN = "#3fe0ff";
@@ -523,6 +524,7 @@ export function Stage() {
             <SecurityBadge />
           </span>
           <div className="pointer-events-auto flex items-center gap-3">
+            <UserAccount />
             <Button variant="ghost" onClick={() => setOpen(0)} className="stage-chip"><UtensilsCrossed />Cardápio</Button>
             <a href={WHATSAPP} target="_blank" rel="noreferrer" className="stage-chip stage-chip-red">Pedir no WhatsApp</a>
           </div>
