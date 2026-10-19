@@ -1,10 +1,10 @@
 # Roadmap
 
-- [ ] Substituir o fundo cinza externo por universo preto com galáxias.
+- [x] Substituir o fundo cinza externo por universo preto com galáxias; conferido em tela 4K e estreita.
 
-- [ ] Reduzir transferência e processamento sem mudar a aparência, voz ou funções existentes.
+- [x] Preservar texturas originais no cenário de 31 MB (fonte de 86 MB), limitar renderização à largura 4K e remover reconstrução do feixe a cada quadro; sem alterar voz/gestos. Desempenho em aparelhos reais não medido.
 
-- [ ] Restaurar texturas originais sem perdas e aprimorar a renderização do palco para telas 4K.
+- [x] Restaurar imagens originais sem nova compressão com perdas; textura 4096×4096 confirmada, renderização 3840 pixels conferida e quatro testes aprovados.
 
 - [x] Adicionar LEDs azuis e vermelhos animados pelo chão e acender o contorno do palco; visual conferido e testes de postura/apresentação aprovados.
 
