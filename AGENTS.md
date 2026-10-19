@@ -14,7 +14,7 @@
 - Share named, pure audio-reactive dance profiles in the music module so radio and spoken requests drive identical bounded gestures.
 - Manual genre introductions use the mounted voice controller without starting microphone capture; dance blends gently with speech and yields to listening, pointing and explicit gestures to avoid limb conflicts.
 - Zoord speech/brain fallback chain is premium gateway first, then Grok (xAI, `src/lib/xai.server.ts` + `/api/zoord-voice`), then Groq, then free browser voice/local scripts; every failure must auto-degrade, never dead-end the presentation.
-- Share conversational scope through zoord-conversation across live voice, delegated reasoning and question handlers; this prevents menu-only restrictions diverging between entry points.
+- Share conversational and gastronomic policy through zoord-conversation across live voice, delegated reasoning and question handlers; gate menu price context and local quotations with requestsMenuPrice so presentations do not volunteer financial values.
 
 - Attach the procedural LED mouth to the model's head bone and drive it from actual output audio amplitude; this preserves animation alignment and audio synchronization.
 - Represent the procedural mouth as closed-at-rest lips and an audio-driven opening, not equalizer bars; this provides a readable mouth without altering the supplied face mesh or claiming phoneme recognition.

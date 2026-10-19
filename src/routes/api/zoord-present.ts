@@ -5,11 +5,11 @@ import { MENU } from "@/components/menu";
 import { GATEWAY_URL, apiKey, createRunIdFetch } from "@/server/gateway";
 import { xaiChat, xaiKey } from "@/lib/xai.server";
 import { groqChat, groqKey } from "@/lib/groq.server";
-import { categoryScript, menuAnswerScript, FREE_FALLBACK_ANSWER } from "@/lib/menu-script";
+import { categoryScript, menuAnswerScript, FREE_FALLBACK_ANSWER, requestsMenuPrice } from "@/lib/menu-script";
 import { OPEN_CONVERSATION } from "@/lib/zoord-conversation";
 
-const menuText = () =>
-  MENU.map((s) => `## ${s.t}\n` + s.items.map((i) => `- ${i.n}: ${i.p}${i.d ? ` (${i.d})` : ""}`).join("\n")).join("\n\n");
+const menuText = (includePrices: boolean) =>
+  MENU.map((s) => `## ${s.t}\n` + s.items.map((i) => `- ${i.n}${includePrices ? `: ${i.p}` : ""}${i.d ? ` (${i.d})` : ""}`).join("\n")).join("\n\n");
 
 const INSTRUCTIONS = `Você é o Zoord, robô humanoide e inteligência do DAKKAI Sushi (Sambaqui, Florianópolis).
 ${OPEN_CONVERSATION}
@@ -17,7 +17,7 @@ Detecte o idioma do visitante (português, inglês ou espanhol) e responda SEMPR
 Em inglês dê boas-vindas com "Welcome to Dakkai Sushi!"; em espanhol, "¡Bienvenidos a Dakkai Sushi!".
 Fale com tom caloroso, natural e animado, como um apresentador num palco.
 Responda com frases naturais, prontas para serem faladas em voz alta: sem markdown, sem listas, sem emojis.
-Fale preços por extenso de forma natural (ex.: "quarenta e nove e noventa").
+Somente quando o cliente perguntar explicitamente o preço, fale o valor por extenso de forma natural (ex.: "quarenta e nove e noventa").
 Explique termos do cardápio (combinado, hot, temaki, uramaki) quando o visitante for estrangeiro.
 Ao apresentar pratos do Dakkai, use somente o cardápio abaixo. Se um prato solicitado não estiver no cardápio, diga com gentileza que não temos e sugira algo parecido. Essa regra não restringe conversas gerais.
 Convide a pedir pelo WhatsApp somente quando houver intenção de pedido.
@@ -41,14 +41,14 @@ export const Route = createFileRoute("/api/zoord-present")({
         if (!question && !cat) return Response.json({ error: "Escolha uma categoria ou faça uma pergunta" }, { status: 400 });
 
         const prompt = cat
-          ? `Apresente a categoria "${cat.t}" de forma personalizada, destacando 2 ou 3 pratos com preço.${question ? ` O visitante também disse: "${question}".` : ""}`
+          ? `Apresente a categoria "${cat.t}" de forma personalizada, destacando ingredientes e texturas de 2 ou 3 pratos, com explicações culturais pertinentes. Não mencione valores sem uma pergunta explícita de preço.${question ? ` O visitante também disse: "${question}".` : ""}`
           : `Pergunta do visitante: "${question}"`;
 
         // 1) Free brains first: Grok (xAI), then Groq, when their keys exist.
         if (xaiKey()) {
           try {
             const text = await xaiChat({
-              system: INSTRUCTIONS + menuText(),
+              system: INSTRUCTIONS + menuText(requestsMenuPrice(question)),
               messages: [{ role: "user", content: prompt }],
               signal: request.signal,
               maxTokens: 500,
@@ -62,7 +62,7 @@ export const Route = createFileRoute("/api/zoord-present")({
         if (groqKey()) {
           try {
             const text = await groqChat({
-              system: INSTRUCTIONS + menuText(),
+              system: INSTRUCTIONS + menuText(requestsMenuPrice(question)),
               messages: [{ role: "user", content: prompt }],
               signal: request.signal,
               maxTokens: 450,
@@ -87,7 +87,7 @@ export const Route = createFileRoute("/api/zoord-present")({
           try {
             const result = streamText({
               model: provider.responses("openai/gpt-6-astra"),
-              instructions: INSTRUCTIONS + menuText(),
+              instructions: INSTRUCTIONS + menuText(requestsMenuPrice(question)),
               messages: [{ role: "user", content: prompt }],
               abortSignal: request.signal,
               onError: () => {},

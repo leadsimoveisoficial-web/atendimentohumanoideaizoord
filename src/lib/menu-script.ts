@@ -17,17 +17,17 @@ export function categoryScript(category: number | null): string {
   parts.push(
     category === null
       ? "Com enorme prazer, apresento o nosso cardápio."
-      : `Com enorme prazer, apresento a categoria ${sections[0]!.t}.`,
+      : `Com enorme prazer, apresento a categoria ${sections[0]?.t}.`,
   );
   for (const s of sections) {
-    parts.push(`${s.t}: ` + s.items.map((it) => `${it.n}, ${it.p}`).join("; ") + ".");
+    parts.push(`${s.t}: ` + s.items.map((it) => `${it.n}${it.d ? `, ${it.d.replace(/\.{3}|…/g, "")}` : ""}`).join("; ") + ".");
   }
-  parts.push("Para fechar o seu pedido, toque em Pedir no WhatsApp. Será um prazer servir você.");
+  parts.push("Prefere sabores delicados, preparos grelhados ou uma textura crocante? Será um prazer ajudar na sua escolha.");
   return parts.join(" ");
 }
 
 /** Best-effort menu lookup for a question; null when nothing in the menu matches. */
-export function menuMatch(question: string): { section: string; items: { n: string; p: string }[] } | null {
+export function menuMatch(question: string): { section: string; items: { n: string; p: string; d: string }[] } | null {
   const words = fold(question).split(" ").filter((w) => w.length > 2 && !STOP.has(w));
   if (!words.length) return null;
   const scored = MENU.map((s) => {
@@ -44,7 +44,7 @@ export function menuMatch(question: string): { section: string; items: { n: stri
       .sort((a, b) => b.itemScore - a.itemScore)
       .slice(0, 4);
     score += items.reduce((acc, { itemScore }) => acc + itemScore, 0);
-    return { s, items: items.map(({ it }) => ({ n: it.n, p: it.p })), score };
+    return { s, items: items.map(({ it }) => ({ n: it.n, p: it.p, d: it.d })), score };
   })
     .sort((a, b) => b.score - a.score)[0];
   if (!scored || scored.score < 2 || !scored.items.length) return null;
@@ -54,8 +54,16 @@ export function menuMatch(question: string): { section: string; items: { n: stri
 export function menuAnswerScript(question: string): string | null {
   const match = menuMatch(question);
   if (!match) return null;
-  const list = match.items.map((it) => `${it.n}, ${it.p}`).join("; ");
-  return `Encontrei em ${match.section}: ${list}. Para fechar o seu pedido, toque em Pedir no WhatsApp.`;
+  const list = match.items.map((it) => `${it.n}${requestsMenuPrice(question) ? `, ${it.p}` : it.d ? `, ${it.d.replace(/\.{3}|…/g, "")}` : ""}`).join("; ");
+  return `Encontrei em ${match.section}: ${list}.`;
+}
+
+/** Only explicit financial questions authorize quoting verified menu prices. */
+export function requestsMenuPrice(question: string): boolean {
+  const text = fold(question);
+  if (/\b(?:sem|nao (?:fale|cite|mencione)|without|do not mention|sin|no menciones)\b.*\b(?:precos?|valores?|prices?|costs?|precios?)\b/.test(text)) return false;
+  return /\b(?:precos?|valores?|custo|custa|custam|price|prices|cost|costs|precio|precios|cuesta|cuestan)\b/.test(text)
+    || /\b(?:quanto (?:e|fica|pago|vou pagar)|how much|cuanto (?:vale|es|sale))\b/.test(text);
 }
 
 export const FREE_FALLBACK_ANSWER =
