@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Substituir o fundo cinza externo por universo preto com galáxias.
+
 - [ ] Reduzir transferência e processamento sem mudar a aparência, voz ou funções existentes.
 
 - [ ] Restaurar texturas originais sem perdas e aprimorar a renderização do palco para telas 4K.
