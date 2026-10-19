@@ -11,7 +11,7 @@
 
 - Keep one mounted live voice controller for conversation and menu selections; this preserves the same voice and prevents overlapping narrators.
 - Keep radio playback in one mounted RadioPlayer with its own CORS-enabled analyser, isolated from voiceLevel; music drives bounded upper-body rhythm, never lips or planted legs.
-- Keep named dance profiles and their pure audio-reactive motion in the shared music module; radio selection and spoken requests must drive the same bounded gestures.
+- Share named, pure audio-reactive dance profiles in the music module so radio and spoken requests drive identical bounded gestures.
 - Manual genre introductions use the mounted voice controller without starting microphone capture; dance blends gently with speech and yields to listening, pointing and explicit gestures to avoid limb conflicts.
 - Zoord speech/brain fallback chain is premium gateway first, then Grok (xAI, `src/lib/xai.server.ts` + `/api/zoord-voice`), then Groq, then free browser voice/local scripts; every failure must auto-degrade, never dead-end the presentation.
 - Share conversational scope through zoord-conversation across live voice, delegated reasoning and question handlers; this prevents menu-only restrictions diverging between entry points.
@@ -26,7 +26,7 @@
 - Derive customer greeting gestures from incoming live transcript fragments; use a bounded procedural outward wave when the active avatar has no wave clip, preserving voice transport and avoiding looping greetings.
 - Drive LED overlay morph targets only from measured playback audio (amplitude opens, spectral balance rounds or widens); never claim phoneme recognition — true visemes require real Audio2Face weights.
 - Animate the supplied talking clip while measured voice output is audible and pause it in silence; gestures stay tied to real playback.
-- Keep Blender preparation offline in tools/blender and preserve the supplied face, skeleton and baked necklace; this avoids destructive automatic face edits.
+- Prepare Blender offline in tools/blender; preserve face, skeleton and baked necklace to avoid destructive edits.
 - Voice category-selection events open the same nonmodal menu as clicks; this keeps spoken recommendations and visible menu details aligned.
 - Map the active avatar's supplied conversation clips to presentation and relaxed posture, with a model-specific head-local mouth anchor; this supports avatar replacement without changing the approved voice or source mesh.
 - Filter root, hip and leg tracks from stage presentation clips; stationary service gestures must not inherit locomotion or twist the planted lower body.
@@ -36,5 +36,5 @@
 - Security stays isolated under _authenticated with admin-only RLS and existing camera/event/settings tables; first account promotes managers, while the public stage reads only security_mode_active() to protect camera data and preserve stage/voice/AI.
 - Store credential-free local RTSP as pending bridge metadata; browser media requires HTTPS and is live only after receipt, preventing exposed passwords and false surveillance status.
 - Camera AI analysis runs from the open security panel (client interval) through an admin-checked server function; no unattended cron, so credits stop when no panel is open.
-- Isolate scenery/backdrop in Suspense; align dais to feet. Instance LEDs; honor reduced motion. Cap render width at 4K.
+- Isolate scenery in Suspense; preload 4K asset and bake LED floor samples to avoid dense-mesh raycasts. Re-bake on scenery changes. Align feet; instance LEDs; honor reduced motion; cap width at 4K.
 - Share identity/profile state in one account provider; owner-only profiles never hold roles or auto-start saved music.

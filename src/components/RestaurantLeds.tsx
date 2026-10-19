@@ -1,26 +1,15 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { RESTAURANT_FLOOR_PIXELS } from "@/lib/restaurant-floor";
 
-const COUNT = 240;
-export function RestaurantLeds({ restaurant }: { restaurant: THREE.Object3D }) {
+const COUNT = RESTAURANT_FLOOR_PIXELS.length;
+export function RestaurantLeds() {
   const mesh = useRef<THREE.InstancedMesh>(null);
   const time = useRef(0);
   const reduced = useRef(false);
   const dummy = useMemo(() => new THREE.Object3D(), []);
-  const pixels = useMemo(() => {
-    restaurant.updateWorldMatrix(true, true);
-    const ray = new THREE.Raycaster();
-    return Array.from({ length: COUNT }, (_, i) => {
-      const angle = i * 2.399963;
-      const radius = 0.8 + Math.sqrt(i / COUNT) * 6;
-      const x = Math.cos(angle) * radius;
-      const z = Math.sin(angle) * radius * 0.7 + 0.5;
-      ray.set(new THREE.Vector3(x, 1, z), new THREE.Vector3(0, -1, 0));
-      const hit = ray.intersectObject(restaurant, true)[0];
-      return { x, z, y: hit ? hit.point.y + 0.018 : -1.02, angle, valid: !!hit };
-    });
-  }, [restaurant]);
+  const pixels = RESTAURANT_FLOOR_PIXELS;
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => { reduced.current = preference.matches; };

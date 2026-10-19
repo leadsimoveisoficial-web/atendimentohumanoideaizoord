@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Eliminar 240 interseções com a malha de 1,17 milhão de triângulos na abertura; antecipar download 4K. Restaurante, Zoord e cardápio conferidos em 630×571 e 1280×1800, sem erros; cinco testes aprovados. Arquivo 4K ainda depende da conexão e desempenho físico não medido.
+
 - [x] Substituir o fundo cinza externo por universo preto com galáxias; conferido em tela 4K e estreita.
 
 - [x] Preservar texturas originais no cenário de 31 MB (fonte de 86 MB), limitar renderização à largura 4K e remover reconstrução do feixe a cada quadro; sem alterar voz/gestos. Desempenho em aparelhos reais não medido.
