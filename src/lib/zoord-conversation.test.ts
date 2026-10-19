@@ -8,6 +8,16 @@ import { Route } from "@/routes/api/zoord-chat";
 
 const handler = (Route as unknown as { server: { handlers: { POST: (args: { request: Request }) => Promise<Response> } } }).server.handlers.POST;
 describe("open-ended Zoord conversation", () => {
+  it("does not give the brain financial menu values for a dish presentation", async () => {
+    brain.mockResolvedValueOnce("O Ebi Holl combina camarão empanado na panko e lâminas de salmão.");
+    await handler({ request: new Request("http://localhost/api/zoord-chat", { method: "POST", body: JSON.stringify({ message: "Apresente o Ebi Holl" }) }) });
+    expect(brain.mock.calls.at(-1)?.[0].system).not.toMatch(/R\$|49,00/);
+  });
+  it("provides verified financial menu values when the customer asks the price", async () => {
+    brain.mockResolvedValueOnce("O Ebi Holl custa quarenta e nove reais.");
+    await handler({ request: new Request("http://localhost/api/zoord-chat", { method: "POST", body: JSON.stringify({ message: "Qual o preço do Ebi Holl?" }) }) });
+    expect(brain.mock.calls.at(-1)?.[0].system).toContain("Ebi Holl: R$ 49,00");
+  });
   it("sends a general science question to the brain instead of a menu lookup", async () => {
     brain.mockResolvedValueOnce("O céu parece azul porque a atmosfera espalha mais a luz azul.");
     const response = await handler({ request: new Request("http://localhost/api/zoord-chat", { method: "POST", body: JSON.stringify({ message: "Por que o céu é azul?" }) }) });
