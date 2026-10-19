@@ -3,10 +3,8 @@ import {
   OrbitControls,
   useGLTF,
   useAnimations,
-  MeshReflectorMaterial,
   Environment,
   Lightformer,
-  Sparkles,
   useTexture,
 } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
@@ -32,6 +30,7 @@ import { RadioPlayer } from "./RadioPlayer";
 import { danceBlend, danceMotion, musicLevel } from "@/lib/music";
 import { GesturePanel, type StageGesture } from "./GesturePanel";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
+import { DakkaiRestaurant } from "./DakkaiRestaurant";
 
 const CYAN = "#3fe0ff";
 const BLUE = "#2f7bff";
@@ -299,10 +298,11 @@ function Platform() {
   );
 }
 
-// Soft white/grey mottled texture (procedural, no extra download).
+// Dark stone links the presentation area to the supplied restaurant.
 function makeMarble() {
   const c = document.createElement("canvas"); c.width = c.height = 512;
-  const g = c.getContext("2d")!;
+  const g = c.getContext("2d");
+  if (!g) return new THREE.Texture();
   g.fillStyle = "#232a33"; g.fillRect(0, 0, 512, 512);
   for (let i = 0; i < 900; i++) {
     const x = Math.random() * 512, y = Math.random() * 512, r = 6 + Math.random() * 60;
@@ -316,25 +316,14 @@ function makeMarble() {
   return t;
 }
 
-function Wall() {
-  const panels = useMemo(() => Array.from({ length: 15 }, (_, i) => (i - 7) * 0.17), []);
+function RestaurantFloor() {
   const marble = useMemo(makeMarble, []);
+  useEffect(() => { marble.repeat.set(6, 6); return () => marble.dispose(); }, [marble]);
   return (
-    <group>
-      {panels.map((a, i) => {
-        const R = 12;
-        const x = Math.sin(a) * R;
-        const z = -Math.cos(a) * R;
-        return (
-          <group key={i} position={[x, 0, z]} rotation-y={-a}>
-            <mesh position-y={4}>
-              <boxGeometry args={[2.15, 9, 0.15]} />
-              <meshStandardMaterial map={marble} color="#9aa4ae" metalness={0.05} roughness={0.8} />
-            </mesh>
-          </group>
-        );
-      })}
-    </group>
+    <mesh rotation-x={-Math.PI / 2} position-y={-0.015} receiveShadow>
+      <planeGeometry args={[80, 80]} />
+      <meshStandardMaterial map={marble} color={"var(--stage-floor)"} roughness={0.82} metalness={0.12} />
+    </mesh>
   );
 }
 
@@ -485,7 +474,7 @@ export function Stage() {
       <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
         <StageCamera />
         <color attach="background" args={["#12161d"]} />
-        <fog attach="fog" args={["#12161d", 14, 30]} />
+        <fog attach="fog" args={["#12161d", 28, 65]} />
         <ambientLight intensity={0.55} color="#cfeaff" />
         <pointLight position={[-4, 2, 2]} intensity={26} color={CYAN} castShadow shadow-mapSize={[512, 512]} />
         <pointLight position={[4, 2, 2]} intensity={26} color={BLUE} />
@@ -495,20 +484,19 @@ export function Stage() {
           <Lightformer intensity={1.5} color={BLUE} position={[5, 1, -1]} rotation-y={-Math.PI / 2} scale={[20, 0.5, 1]} />
         </Environment>
 
-        <mesh rotation-x={-Math.PI / 2} receiveShadow>
-          <planeGeometry args={[60, 60]} />
-          <meshStandardMaterial color="#1b212a" roughness={0.9} metalness={0} />
-        </mesh>
-
+        <RestaurantFloor />
         <Platform />
-        <Wall />
+        <Suspense fallback={null}>
+          <DakkaiRestaurant />
+        </Suspense>
+        <pointLight position={[-8, 7, -10]} intensity={95} color={CYAN} distance={30} decay={1.5} />
+        <pointLight position={[8, 6, -14]} intensity={85} color={BLUE} distance={30} decay={1.5} />
         <pointLight position={[0, 4, -8]} intensity={18} color={RED} distance={12} />
         <Suspense fallback={null}>
           <Logo />
         </Suspense>
         <Brain active={shown !== null} />
         <Beam point={shown} />
-        <Sparkles count={80} scale={[14, 7, 10]} position={[0, 3.5, -2]} size={1.6} speed={0.25} color="#ff9aa0" opacity={0.5} />
 
         <Suspense fallback={null}>
           <Robot anim={anim} point={shown} listening={listening} waveId={waveId} onWaveEnd={endWave} />
@@ -516,7 +504,7 @@ export function Stage() {
 
         <OrbitControls target={[0, 2.45, 0]} enablePan={false} minDistance={7} maxDistance={16} minAzimuthAngle={-0.25} maxAzimuthAngle={0.25} minPolarAngle={1.25} maxPolarAngle={1.55} enableDamping />
         <EffectComposer multisampling={4}>
-          <Bloom intensity={0.6} luminanceThreshold={0.97} mipmapBlur />
+          <Bloom intensity={0.35} luminanceThreshold={0.97} mipmapBlur />
           <Vignette darkness={0.35} offset={0.35} />
         </EffectComposer>
       </Canvas>

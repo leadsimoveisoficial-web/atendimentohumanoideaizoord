@@ -1,0 +1,56 @@
+import { useGLTF } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
+import { useEffect, useMemo } from "react";
+import * as THREE from "three";
+import restaurant from "@/assets/dakkai-restaurant.glb.asset.json";
+
+/** The restaurant is a separate static backdrop; Zoord's rig stays untouched. */
+export function DakkaiRestaurant() {
+  const { scene } = useGLTF(restaurant.url);
+  const anisotropy = useThree((state) => Math.min(8, state.gl.capabilities.getMaxAnisotropy()));
+  const object = useMemo(() => {
+    const clone = scene.clone(true);
+    const bounds = new THREE.Box3().setFromObject(clone);
+    const size = bounds.getSize(new THREE.Vector3());
+    const factor = 24 / Math.max(size.x, size.z, 0.001);
+    clone.scale.setScalar(factor);
+    clone.updateWorldMatrix(true, true);
+    const scaled = new THREE.Box3().setFromObject(clone);
+    const center = scaled.getCenter(new THREE.Vector3());
+    // Keep all architecture behind the avatar's planted presentation area.
+    clone.position.set(-center.x, -scaled.min.y, -3.8 - scaled.max.z);
+    clone.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      child.receiveShadow = true;
+      child.castShadow = false;
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      child.material = materials.map((source) => {
+        const material = source.clone();
+        if (material instanceof THREE.MeshStandardMaterial) {
+          material.roughness = Math.max(material.roughness, 0.65);
+          material.metalness = Math.min(material.metalness, 0.25);
+          if (material.map) material.map.colorSpace = THREE.SRGBColorSpace;
+          for (const texture of [material.map, material.normalMap, material.roughnessMap]) {
+            if (texture) texture.anisotropy = anisotropy;
+          }
+        }
+        return material;
+      });
+      if (!Array.isArray(scene.getObjectByName(child.name)?.userData.material)) {
+        if (materials.length === 1) child.material = child.material[0];
+      }
+    });
+    return clone;
+  }, [scene, anisotropy]);
+  useEffect(() => {
+    if (import.meta.env.DEV) (window as unknown as { __dakkaiRestaurant?: THREE.Object3D }).__dakkaiRestaurant = object;
+    return () => {
+      object.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach((material) => material.dispose());
+      });
+    };
+  }, [object]);
+  return <primitive object={object} dispose={null} />;
+}

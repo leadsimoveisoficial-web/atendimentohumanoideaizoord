@@ -36,3 +36,4 @@
 - Security stays isolated under _authenticated with admin-only RLS and existing camera/event/settings tables; first account promotes managers, while the public stage reads only security_mode_active() to protect camera data and preserve stage/voice/AI.
 - Store credential-free local RTSP as pending bridge metadata; browser media requires HTTPS and is live only after receipt, preventing exposed passwords and false surveillance status.
 - Camera AI analysis runs from the open security panel (client interval) through an admin-checked server function; no unattended cron, so credits stop when no panel is open.
+- Keep uploaded restaurant architecture in a separate normalized, optimized static backdrop with its own Suspense boundary; preserve the independent Zoord rig and voice controller when changing scenery.
