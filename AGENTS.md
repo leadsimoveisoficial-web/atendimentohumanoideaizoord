@@ -36,5 +36,5 @@
 - Security stays isolated under _authenticated with admin-only RLS and existing camera/event/settings tables; first account promotes managers, while the public stage reads only security_mode_active() to protect camera data and preserve stage/voice/AI.
 - Store credential-free local RTSP as pending bridge metadata; browser media requires HTTPS and is live only after receipt, preventing exposed passwords and false surveillance status.
 - Camera AI analysis runs from the open security panel (client interval) through an admin-checked server function; no unattended cron, so credits stop when no panel is open.
-- Isolate scenery in Suspense; align its measured dais to planted feet without changing rig or voice.
+- Isolate scenery in Suspense; align dais to feet. Surface-sample instanced LEDs with reduced-motion support; preserve rig.
 - Share identity/profile state in one account provider; owner-only profiles never hold roles or auto-start saved music.

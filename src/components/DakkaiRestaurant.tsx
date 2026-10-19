@@ -2,7 +2,8 @@ import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import restaurant from "@/assets/dakkai-restaurant.glb.asset.json";
+import restaurant from "@/assets/dakkai-restaurant-current.glb.asset.json";
+import { RestaurantLeds } from "./RestaurantLeds";
 
 /** The restaurant is a separate static backdrop; Zoord's rig stays untouched. */
 export function DakkaiRestaurant() {
@@ -17,8 +18,8 @@ export function DakkaiRestaurant() {
     clone.updateWorldMatrix(true, true);
     const scaled = new THREE.Box3().setFromObject(clone);
     const center = scaled.getCenter(new THREE.Vector3());
-    // Align the measured wooden dais top to the unchanged avatar feet at y=0.3.
-    clone.position.set(-center.x - 2, -scaled.min.y - 2.19597, 4.2 - scaled.max.z);
+    // Center the latest model's circular dais under the unchanged feet at y=0.3.
+    clone.position.set(-center.x - 1.7, -scaled.min.y - 1.81072, 5.2 - scaled.max.z);
     clone.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
       child.receiveShadow = true;
@@ -50,5 +51,5 @@ export function DakkaiRestaurant() {
       });
     };
   }, [object]);
-  return <primitive object={object} dispose={null} />;
+  return <group><primitive object={object} dispose={null} /><RestaurantLeds restaurant={object} /></group>;
 }

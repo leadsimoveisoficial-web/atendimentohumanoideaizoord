@@ -1,5 +1,10 @@
 # Roadmap
 
+- [x] Adicionar LEDs azuis e vermelhos animados pelo chão e acender o contorno do palco; visual conferido e testes de postura/apresentação aprovados.
+
+- [x] Substituir o fundo pelo último restaurante enviado, otimizado para 9,2 MB, e verificar visibilidade do Zoord.
+- [x] Centralizar Zoord no círculo, logo na parede quadrada atrás do caixa e cérebro alto e visível.
+
 - [x] Zoord dentro do restaurante no piso circular original com LEDs, cérebro acima e logo Dakkai lateral; pés alinhados ao piso (0,300), telas ampla/estreita conferidas, quatro testes aprovados e sem erros.
 - [x] Integrar restaurante 3D enviado ao palco Dakkai, otimizado de 73 MB para 4,7 MB; avatar e cardápio lateral conferidos sem erros.
 - [x] Cadastro/login com e-mail, Google e Lovable; nome e preferências privados salvos; gravação, recarga e saída verificadas em conta real.
