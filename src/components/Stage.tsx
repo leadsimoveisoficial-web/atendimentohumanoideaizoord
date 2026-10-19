@@ -271,7 +271,7 @@ function Logo() {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => ref.current && (ref.current.rotation.z = clock.elapsedTime * 0.15));
   return (
-    <group name="DakkaiFloatingLogo" position={[-5.49, 4.24, -9.7]} scale={0.286}>
+    <group name="DakkaiFloatingLogo" position={[-2.4, 2.7, 1.2]} scale={0.4}>
       <mesh position-z={-0.1}>
         <circleGeometry args={[2.34, 96]} />
         <meshBasicMaterial color="#0b0e13" transparent opacity={0.88} />
@@ -288,7 +288,7 @@ function Logo() {
   );
 }
 
-const BRAIN_POS = new THREE.Vector3(0, 5.6, 0);
+const BRAIN_POS = new THREE.Vector3(0, 4.5, 0.9);
 // "Cérebro" DAKKAI IA: neural sphere pulsing in red + cyan
 function Brain({ active }: { active: boolean }) {
   const ref = useRef<THREE.Group>(null);
