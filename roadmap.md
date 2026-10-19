@@ -1,5 +1,6 @@
 # Roadmap
 
+- [ ] Posicionar Zoord dentro do restaurante no piso circular de madeira com LEDs, cérebro acima e logo Dakkai flutuante lateral, sem logo atrás; conferir o enquadramento.
 - [x] Integrar restaurante 3D enviado ao palco Dakkai, otimizado de 73 MB para 4,7 MB; avatar e cardápio lateral conferidos sem erros.
 - [x] Cadastro/login com e-mail, Google e Lovable; nome e preferências privados salvos; gravação, recarga e saída verificadas em conta real.
 
