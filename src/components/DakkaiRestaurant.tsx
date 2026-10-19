@@ -12,7 +12,7 @@ export function DakkaiRestaurant() {
     const clone = scene.clone(true);
     const bounds = new THREE.Box3().setFromObject(clone);
     const size = bounds.getSize(new THREE.Vector3());
-    const factor = 24 / Math.max(size.x, size.z, 0.001);
+    const factor = 19 / Math.max(size.x, size.z, 0.001);
     clone.scale.setScalar(factor);
     clone.updateWorldMatrix(true, true);
     const scaled = new THREE.Box3().setFromObject(clone);
@@ -24,7 +24,7 @@ export function DakkaiRestaurant() {
       child.receiveShadow = true;
       child.castShadow = false;
       const materials = Array.isArray(child.material) ? child.material : [child.material];
-      child.material = materials.map((source) => {
+      const clonedMaterials = materials.map((source) => {
         const material = source.clone();
         if (material instanceof THREE.MeshStandardMaterial) {
           material.roughness = Math.max(material.roughness, 0.65);
@@ -36,9 +36,7 @@ export function DakkaiRestaurant() {
         }
         return material;
       });
-      if (!Array.isArray(scene.getObjectByName(child.name)?.userData.material)) {
-        if (materials.length === 1) child.material = child.material[0];
-      }
+      child.material = Array.isArray(child.material) ? clonedMaterials : (clonedMaterials[0] ?? child.material);
     });
     return clone;
   }, [scene, anisotropy]);

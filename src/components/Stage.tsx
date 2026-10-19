@@ -318,11 +318,16 @@ function makeMarble() {
 
 function RestaurantFloor() {
   const marble = useMemo(makeMarble, []);
+  const material = useRef<THREE.MeshStandardMaterial>(null);
   useEffect(() => { marble.repeat.set(6, 6); return () => marble.dispose(); }, [marble]);
+  useEffect(() => {
+    const color = getComputedStyle(document.documentElement).getPropertyValue("--stage-floor").trim();
+    if (color && material.current) material.current.color.set(color);
+  }, []);
   return (
     <mesh rotation-x={-Math.PI / 2} position-y={-0.015} receiveShadow>
       <planeGeometry args={[80, 80]} />
-      <meshStandardMaterial map={marble} color={"var(--stage-floor)"} roughness={0.82} metalness={0.12} />
+      <meshStandardMaterial ref={material} map={marble} roughness={0.82} metalness={0.12} />
     </mesh>
   );
 }
