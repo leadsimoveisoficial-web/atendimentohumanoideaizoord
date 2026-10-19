@@ -9,6 +9,7 @@ import { Input } from "./ui/input";
 import { UserRound, LogOut, Save, X } from "lucide-react";
 import { MUSIC_GENRES } from "@/lib/music";
 import { profilePreferences } from "@/lib/profile";
+import { safeRedirect } from "@/lib/profile";
 
 type Profile = Tables<"profiles">;
 type Account = { user: User | null; profile: Profile | null; save: (patch: Partial<Pick<Profile, "display_name" | "music_genre" | "music_volume">>) => Promise<void> };
@@ -28,6 +29,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       if (!active) return;
       setUser(next); setProfile(null);
       if (!next) return;
+      const returnTo = sessionStorage.getItem("zoord:login-return");
+      if (returnTo) { sessionStorage.removeItem("zoord:login-return"); void router.navigate({ to: safeRedirect(returnTo), replace: true }); }
       const { data } = await supabase.from("profiles").select("*").eq("id", next.id).single();
       if (active && version === revision.current) setProfile(data);
     };
@@ -44,9 +47,10 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const save: Account["save"] = async (patch) => {
     if (!user) throw new Error("Entre para salvar suas preferências.");
     const id = user.id;
+    const version = revision.current;
     const { data, error } = await supabase.from("profiles").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id).select().single();
     if (error) throw new Error("Não foi possível salvar. Tente novamente.");
-    if (revision.current && data) setProfile(data);
+    if (revision.current === version && data) setProfile(data);
   };
   return <AccountContext.Provider value={{ user, profile, save }}>{children}</AccountContext.Provider>;
 }

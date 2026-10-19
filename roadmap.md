@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Integrar restaurante 3D enviado ao palco Dakkai, com Zoord em destaque; conferir enquadramento e cardápio sem alterar voz ou segurança.
-- [ ] Adicionar cadastro/login e dados persistentes por usuário — esclarecer quais dados pessoais devem ser salvos antes de alterar contas.
+- [x] Integrar restaurante 3D enviado ao palco Dakkai, otimizado de 73 MB para 4,7 MB; avatar e cardápio lateral conferidos sem erros.
+- [x] Cadastro/login com e-mail, Google e Lovable; nome e preferências privados salvos; gravação, recarga e saída verificadas em conta real.
 
 - [x] Primeira etapa ZOORD SECURITY: painel restrito reaproveitado, cadastro Tapo C200, status por imagem recebida e eventos ao vivo; palco/voz/IA preservados. 14 testes aprovados e acesso sem login bloqueado.
 - [ ] Validar cadastro e eventos na conta do responsável — sessão de teste indisponível; entrar pelo preview para conferir gravação/leitura autenticadas.
