@@ -2,13 +2,13 @@ import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import restaurant from "@/assets/dakkai-restaurant-current.glb.asset.json";
+import restaurant from "@/assets/dakkai-restaurant-4k.glb.asset.json";
 import { RestaurantLeds } from "./RestaurantLeds";
 
 /** The restaurant is a separate static backdrop; Zoord's rig stays untouched. */
 export function DakkaiRestaurant() {
   const { scene } = useGLTF(restaurant.url);
-  const anisotropy = useThree((state) => Math.min(8, state.gl.capabilities.getMaxAnisotropy()));
+  const anisotropy = useThree((state) => state.gl.capabilities.getMaxAnisotropy());
   const object = useMemo(() => {
     const clone = scene.clone(true);
     const bounds = new THREE.Box3().setFromObject(clone);
@@ -32,7 +32,13 @@ export function DakkaiRestaurant() {
           material.metalness = Math.min(material.metalness, 0.25);
           if (material.map) material.map.colorSpace = THREE.SRGBColorSpace;
           for (const texture of [material.map, material.normalMap, material.roughnessMap]) {
-            if (texture) texture.anisotropy = anisotropy;
+            if (texture) {
+              texture.anisotropy = anisotropy;
+              texture.minFilter = THREE.LinearMipmapLinearFilter;
+              texture.magFilter = THREE.LinearFilter;
+              texture.generateMipmaps = true;
+              texture.needsUpdate = true;
+            }
           }
         }
         return material;
