@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Adicionar página de preços e checkout para compra ou assinatura, testáveis no preview; aguarda confirmação do produto e ativação de pagamentos.
+
 - [x] Aplicar anfitrião gastronômico detalhado e preços somente sob pergunta explícita na conversa, apresentações e roteiro local; preservar voz e painel.
 - [ ] Validar nova personalidade em conversa real — provedores anteriormente sem créditos; não contornar bloqueios de acesso.
 
