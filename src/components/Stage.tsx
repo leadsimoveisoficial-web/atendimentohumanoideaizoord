@@ -264,75 +264,6 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   );
 }
 
-function Ring({ r, y = 0.31, w = 0.03, color = CYAN, speed = 0 }: { r: number; y?: number; w?: number; color?: string; speed?: number }) {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame((_, d) => ref.current && (ref.current.rotation.z += d * speed));
-  return (
-    <mesh ref={ref} rotation-x={-Math.PI / 2} position-y={y}>
-      <ringGeometry args={[r, r + w, 128]} />
-      <meshBasicMaterial color={color} toneMapped={false} side={THREE.DoubleSide} />
-    </mesh>
-  );
-}
-
-function Platform() {
-  return (
-    <group>
-      <mesh position-y={0.15} receiveShadow castShadow>
-        <cylinderGeometry args={[2.6, 2.8, 0.3, 6]} />
-        <meshStandardMaterial color="#0b0e13" metalness={0.9} roughness={0.25} />
-      </mesh>
-      <mesh position-y={0.302} rotation-x={-Math.PI / 2} receiveShadow>
-        <circleGeometry args={[2.3, 64]} />
-        <meshStandardMaterial color="#05070a" metalness={1} roughness={0.15} />
-      </mesh>
-      <Ring r={2.3} w={0.04} />
-      <Ring r={1.6} w={0.012} color={BLUE} />
-      {/* hex edge glow */}
-      <mesh position-y={0.05}>
-        <cylinderGeometry args={[2.82, 2.82, 0.03, 6, 1, true]} />
-        <meshBasicMaterial color={CYAN} toneMapped={false} />
-      </mesh>
-      <Ring r={3.6} y={0.01} w={0.02} color={BLUE} speed={0} />
-      <Ring r={5.2} y={0.01} w={0.015} color={CYAN} />
-    </group>
-  );
-}
-
-// Dark stone links the presentation area to the supplied restaurant.
-function makeMarble() {
-  const c = document.createElement("canvas"); c.width = c.height = 512;
-  const g = c.getContext("2d");
-  if (!g) return new THREE.Texture();
-  g.fillStyle = "#232a33"; g.fillRect(0, 0, 512, 512);
-  for (let i = 0; i < 900; i++) {
-    const x = Math.random() * 512, y = Math.random() * 512, r = 6 + Math.random() * 60;
-    const v = 40 + Math.floor(Math.random() * 45);
-    const grd = g.createRadialGradient(x, y, 0, x, y, r);
-    grd.addColorStop(0, `rgba(${v},${v + 2 > 255 ? 255 : v + 2},${Math.min(255, v + 6)},0.35)`);
-    grd.addColorStop(1, "rgba(255,255,255,0)");
-    g.fillStyle = grd; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
-  }
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  return t;
-}
-
-function RestaurantFloor() {
-  const marble = useMemo(makeMarble, []);
-  const material = useRef<THREE.MeshStandardMaterial>(null);
-  useEffect(() => { marble.repeat.set(6, 6); return () => marble.dispose(); }, [marble]);
-  useEffect(() => {
-    const color = getComputedStyle(document.documentElement).getPropertyValue("--stage-floor").trim();
-    if (color && material.current) material.current.color.set(color);
-  }, []);
-  return (
-    <mesh rotation-x={-Math.PI / 2} position-y={-0.015} receiveShadow>
-      <planeGeometry args={[80, 80]} />
-      <meshStandardMaterial ref={material} map={marble} roughness={0.82} metalness={0.12} />
-    </mesh>
-  );
-}
-
 function Logo() {
   const tex = useTexture(dakkaiLogo);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -340,7 +271,7 @@ function Logo() {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => ref.current && (ref.current.rotation.z = clock.elapsedTime * 0.15));
   return (
-    <group position={[0, 4.1, -9]} scale={0.7}>
+    <group name="DakkaiFloatingLogo" position={[-2.7, 3, -0.5]} scale={0.5}>
       <mesh position-z={-0.1}>
         <circleGeometry args={[2.34, 96]} />
         <meshBasicMaterial color="#0b0e13" transparent opacity={0.88} />
@@ -357,7 +288,7 @@ function Logo() {
   );
 }
 
-const BRAIN_POS = new THREE.Vector3(0, 6.55, -9.2);
+const BRAIN_POS = new THREE.Vector3(0, 5.6, 0);
 // "Cérebro" DAKKAI IA: neural sphere pulsing in red + cyan
 function Brain({ active }: { active: boolean }) {
   const ref = useRef<THREE.Group>(null);
@@ -390,7 +321,7 @@ function Brain({ active }: { active: boolean }) {
     if (core.current) core.current.scale.setScalar((active ? 0.6 : 0.45) + Math.sin(clock.elapsedTime * (active ? 9 : 2)) * (active ? 0.12 : 0.05));
   });
   return (
-    <group position={BRAIN_POS.toArray()} scale={0.7}>
+    <group name="ZoordBrain" position={BRAIN_POS.toArray()} scale={0.45}>
       <group ref={ref}>
         <lineSegments geometry={geo}>
           <lineBasicMaterial color={CYAN} transparent opacity={0.45} toneMapped={false} />
@@ -428,7 +359,9 @@ function Beam({ point }: { point: number | null }) {
 function StageCamera() {
   const { camera, size } = useThree();
   useEffect(() => {
-    camera.position.set(0, 3.1, size.width < 800 ? 10.5 : 8.5);
+    const aspect = size.width / Math.max(size.height, 1);
+    const distance = Math.max(10.5, 4.6 / (Math.tan(THREE.MathUtils.degToRad(20)) * aspect));
+    camera.position.set(0, 3.1, distance);
     camera.lookAt(0, 2.45, 0);
   }, [camera, size.width, size.height]);
   return null;
@@ -490,8 +423,6 @@ export function Stage() {
           <Lightformer intensity={1.5} color={BLUE} position={[5, 1, -1]} rotation-y={-Math.PI / 2} scale={[20, 0.5, 1]} />
         </Environment>
 
-        <RestaurantFloor />
-        <Platform />
         <Suspense fallback={null}>
           <DakkaiRestaurant />
         </Suspense>
@@ -508,7 +439,7 @@ export function Stage() {
           <Robot anim={anim} point={shown} listening={listening} waveId={waveId} onWaveEnd={endWave} />
         </Suspense>
 
-        <OrbitControls target={[0, 2.45, 0]} enablePan={false} minDistance={7} maxDistance={16} minAzimuthAngle={-0.25} maxAzimuthAngle={0.25} minPolarAngle={1.25} maxPolarAngle={1.55} enableDamping />
+        <OrbitControls target={[0, 2.45, 0]} enablePan={false} minDistance={7} maxDistance={28} minAzimuthAngle={-0.25} maxAzimuthAngle={0.25} minPolarAngle={1.25} maxPolarAngle={1.55} enableDamping />
         <EffectComposer multisampling={4}>
           <Bloom intensity={0.35} luminanceThreshold={0.97} mipmapBlur />
           <Vignette darkness={0.35} offset={0.35} />
