@@ -271,7 +271,7 @@ function Logo() {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => ref.current && (ref.current.rotation.z = clock.elapsedTime * 0.15));
   return (
-    <group name="DakkaiFloatingLogo" position={[-2.7, 3, -0.5]} scale={0.5}>
+    <group name="DakkaiFloatingLogo" position={[-5.49, 4.24, -9.7]} scale={0.286}>
       <mesh position-z={-0.1}>
         <circleGeometry args={[2.34, 96]} />
         <meshBasicMaterial color="#0b0e13" transparent opacity={0.88} />
