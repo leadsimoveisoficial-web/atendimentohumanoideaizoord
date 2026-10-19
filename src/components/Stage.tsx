@@ -32,6 +32,7 @@ import { GesturePanel, type StageGesture } from "./GesturePanel";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
 import { UserAccount } from "./UserAccount";
 import { DakkaiRestaurant } from "./DakkaiRestaurant";
+import { UniverseBackdrop } from "./UniverseBackdrop";
 
 const CYAN = "#3fe0ff";
 const BLUE = "#2f7bff";
@@ -343,13 +344,15 @@ function Beam({ point }: { point: number | null }) {
   const geo = useMemo(() => new THREE.BufferGeometry(), []);
   const mat = useMemo(() => new THREE.LineBasicMaterial({ color: RED, transparent: true, toneMapped: false }), []);
   const obj = useMemo(() => new THREE.Line(geo, mat), [geo, mat]);
-  useFrame(({ clock }) => {
+  useEffect(() => {
     if (point === null) return;
     const end = panelPos(point);
     const start = BRAIN_POS.clone();
     const mid = start.clone().lerp(end, 0.5).add(new THREE.Vector3(0, 1.5, 0));
     const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
     geo.setFromPoints(curve.getPoints(40));
+  }, [point, geo]);
+  useFrame(({ clock }) => {
     mat.opacity = 0.55 + Math.sin(clock.elapsedTime * 10) * 0.35;
   });
   if (point === null) return null;
@@ -357,13 +360,14 @@ function Beam({ point }: { point: number | null }) {
 }
 
 function StageCamera() {
-  const { camera, size } = useThree();
+  const { camera, size, setDpr } = useThree();
   useEffect(() => {
+    setDpr(Math.min(2, window.devicePixelRatio || 1, 3840 / Math.max(size.width, 1)));
     const aspect = size.width / Math.max(size.height, 1);
     const distance = Math.max(10.5, 4.6 / (Math.tan(THREE.MathUtils.degToRad(20)) * aspect));
     camera.position.set(0, 3.1, distance);
     camera.lookAt(0, 2.45, 0);
-  }, [camera, size.width, size.height]);
+  }, [camera, size.width, size.height, setDpr]);
   return null;
 }
 
@@ -410,10 +414,11 @@ export function Stage() {
   return (
     <div className="fixed inset-0 bg-background">
       <div className={`stage-scene ${open !== null ? "stage-scene-menu" : ""}`}>
-      <Canvas shadows="percentage" dpr={[1.5, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
+      <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
         <StageCamera />
-        <color attach="background" args={["#12161d"]} />
-        <fog attach="fog" args={["#12161d", 28, 65]} />
+        <color attach="background" args={["#000000"]} />
+        <Suspense fallback={null}><UniverseBackdrop /></Suspense>
+        <fog attach="fog" args={["#000000", 28, 65]} />
         <ambientLight intensity={0.55} color="#cfeaff" />
         <pointLight position={[-4, 2, 2]} intensity={26} color={CYAN} castShadow shadow-mapSize={[1024, 1024]} />
         <pointLight position={[4, 2, 2]} intensity={26} color={BLUE} />
