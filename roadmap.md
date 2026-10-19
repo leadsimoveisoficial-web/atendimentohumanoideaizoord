@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Reduzir transferência e processamento sem mudar a aparência, voz ou funções existentes.
+
 - [ ] Restaurar texturas originais sem perdas e aprimorar a renderização do palco para telas 4K.
 
 - [x] Adicionar LEDs azuis e vermelhos animados pelo chão e acender o contorno do palco; visual conferido e testes de postura/apresentação aprovados.
