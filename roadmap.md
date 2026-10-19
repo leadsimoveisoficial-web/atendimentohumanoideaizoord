@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Restaurar texturas originais sem perdas e aprimorar a renderização do palco para telas 4K.
+
 - [x] Adicionar LEDs azuis e vermelhos animados pelo chão e acender o contorno do palco; visual conferido e testes de postura/apresentação aprovados.
 
 - [x] Substituir o fundo pelo último restaurante enviado, otimizado para 9,2 MB, e verificar visibilidade do Zoord.
