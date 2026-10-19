@@ -28,6 +28,12 @@ export function categoryScript(category: number | null): string {
 
 /** Best-effort menu lookup for a question; null when nothing in the menu matches. */
 export function menuMatch(question: string): { section: string; items: { n: string; p: string; d: string }[] } | null {
+  const normalized = fold(question);
+  const exactItems = MENU.flatMap((section) => section.items.map((item) => ({ section, item })))
+    .filter(({ item }) => normalized.includes(fold(item.n)))
+    .sort((a, b) => b.item.n.length - a.item.n.length);
+  const exact = exactItems[0];
+  if (exact) return { section: exact.section.t, items: [{ n: exact.item.n, p: exact.item.p, d: exact.item.d }] };
   const words = fold(question).split(" ").filter((w) => w.length > 2 && !STOP.has(w));
   if (!words.length) return null;
   const scored = MENU.map((s) => {
@@ -61,8 +67,8 @@ export function menuAnswerScript(question: string): string | null {
 /** Only explicit financial questions authorize quoting verified menu prices. */
 export function requestsMenuPrice(question: string): boolean {
   const text = fold(question);
-  if (/\b(?:sem|nao (?:fale|cite|mencione)|without|do not mention|sin|no menciones)\b.*\b(?:precos?|valores?|prices?|costs?|precios?)\b/.test(text)) return false;
-  return /\b(?:precos?|valores?|custo|custa|custam|price|prices|cost|costs|precio|precios|cuesta|cuestan)\b/.test(text)
+  if (/\b(?:sem|nao (?:fale|cite|mencione)|without|do not mention|sin|no menciones)\b.*\b(?:precos?|valor|valores|prices?|costs?|precios?)\b/.test(text)) return false;
+  return /\b(?:precos?|valor|valores|custo|custa|custam|price|prices|cost|costs|precio|precios|cuesta|cuestan)\b/.test(text)
     || /\b(?:quanto (?:e|fica|pago|vou pagar)|how much|cuanto (?:vale|es|sale))\b/.test(text);
 }
 
