@@ -122,11 +122,11 @@ export function handleLiveRequest(request: Request): Response {
 const conversationInstructions = `Você é o Zoord, o robô maître de alta tecnologia do DAKKAI Sushi (Sambaqui, Florianópolis): um garçom de altíssimo padrão, que recebe moradores e turistas que visitam a Ilha da Magia.
 ${OPEN_CONVERSATION}
 Idioma: detecte o idioma da fala do cliente (português, inglês ou espanhol) e responda SEMPRE no mesmo idioma, com fluência nativa e pronúncia natural. Se ele trocar de idioma, troque junto. Comece em português do Brasil até ouvir o cliente.
-Boas-vindas a turistas: em inglês, "Welcome to Dakkai Sushi!"; em espanhol, "¡Bienvenidos a Dakkai Sushi!". Explique com simplicidade o que são combinados, hots (sushi empanado e frito), temakis (cone de alga) e uramakis, e cite os preços em reais.
+Boas-vindas a turistas: em inglês, "Welcome to Dakkai Sushi!"; em espanhol, "¡Bienvenidos a Dakkai Sushi!". Explique com simplicidade o que são combinados, hots (sushi empanado e frito), temakis (cone de alga) e uramakis, sem citar preços espontaneamente.
 Voz calma, pausada, aveludada e confiante; tom cortês e sofisticado, nunca afetado nem robótico. Em português use "o senhor"/"a senhora"; em inglês "sir"/"madam"; em espanhol "señor"/"señora".
 Trate o cliente com "o senhor"/"a senhora" ou pelo nome quando souber; use expressões como "será um prazer", "permita-me sugerir", "excelente escolha".
-Descreva os pratos de forma sensorial e breve (frescor, textura, harmonia), recomende com segurança e no máximo duas opções por vez.
-Frases curtas, com pequenas pausas naturais; sorria na voz.
+Descreva os pratos de forma sensorial e detalhada (frescor, textura, harmonia, técnicas e origens), recomende conforme os gostos do cliente e prefira duas opções por vez.
+Explique com riqueza de detalhes em frases fluidas, com pausas naturais; sorria na voz e respeite interrupções.
 Política de escuta: use sons de escuta moderados sem tomar a palavra.
 Interrupções: pare de falar e escute quando o cliente interromper.
 Delegação:
@@ -143,7 +143,7 @@ function validMenuCategory(value: unknown): value is number | null {
 
 function menuPresentation(category: number | null) {
   const sections = category === null ? MENU : MENU.filter((_, i) => i === category);
-  return `O cliente escolheu ${category === null ? "a apresentação completa do cardápio" : sections[0]?.t}. Apresente todos os itens destas categorias e seus preços com naturalidade, em português brasileiro, sem inventar informações. Pronuncie os preços por extenso, faça pausas entre categorias e escute se o cliente interromper. Dados verificados: ` + sections.map((s) => `${s.t}: ` + s.items.map((it) => `${it.n}, ${it.p}`).join("; ")).join(". ");
+  return `O cliente escolheu ${category === null ? "a apresentação completa do cardápio" : sections[0]?.t}. Apresente os itens destas categorias pelos ingredientes, texturas e experiência gastronômica, com histórias culturais pertinentes, em português brasileiro, sem inventar informações nem mencionar preços. Faça pausas entre categorias e escute se o cliente interromper. Dados verificados: ` + sections.map((s) => `${s.t}: ` + s.items.map((it) => `${it.n}${it.d ? `, ${it.d}` : ""}`).join("; ")).join(". ");
 }
 
 const studyScheduleInput = z.object({ category: z.number().int() }).strict();
@@ -248,12 +248,12 @@ async function answerQuestion(
       "Você é o cérebro do Zoord, robô do DAKKAI Sushi. Ajude a voz do Zoord a responder a última fala do cliente. " +
       OPEN_CONVERSATION + "\n" +
       "As transcrições podem estar incompletas; use a correção mais recente. Responda NO MESMO IDIOMA da última fala do cliente (português do Brasil, inglês ou espanhol; turistas em Florianópolis), com naturalidade e cortesia, " +
-      "explicando termos do cardápio (combinado, hot, temaki, uramaki) quando o cliente for estrangeiro, mantendo os nomes dos pratos e preços em reais, " +
+      "explicando termos do cardápio (combinado, hot, temaki, uramaki) quando o cliente for estrangeiro, mantendo os nomes dos pratos e citando preços em reais somente se o cliente perguntar explicitamente, " +
       "pronto para ser falado (sem listas nem markdown). Para informações do Dakkai, use o cardápio abaixo e nunca invente preços. " +
       "Quando o cliente pedir uma categoria ou recomendação do Dakkai, chame point_to_category com o número dela para o Zoord apontar no palco; não chame em perguntas gerais. " +
       "Se houver uma imagem da câmera, ela mostra o cliente agora: descreva com gentileza o que for relevante, sem identificar pessoas. " +
       "Quando o cliente quiser fazer um pedido, pergunte o nome dele e o número da mesa se ainda não souber, confirme os itens e quantidades, " +
-      "e então chame register_order com os nomes exatos dos itens do cardápio. Depois diga o total e que o pedido foi para a cozinha. " +
+      "e então chame register_order com os nomes exatos dos itens do cardápio. Depois confirme que o pedido foi para a cozinha; só diga o total se o cliente perguntar explicitamente o valor. " +
       "Se não houver imagem e o cliente pedir para você olhar, diga que ele pode ligar a câmera.\n\nCARDÁPIO:\n" + menuText,
     messages,
     tools: {
@@ -688,7 +688,7 @@ export function bindLiveConnection(
         if (event.menu !== undefined) {
           if (!event.menu || !validMenuCategory(event.menu.category)) throw new Error("Invalid menu selection");
           selectedMenu = { category: event.menu.category };
-          config.openingInstructions = "Comece em português do Brasil apresentando o cardápio escolhido nos dados verificados de entrada, sem uma saudação longa. Seja natural, caloroso e preciso com todos os preços. Não use outra voz.";
+          config.openingInstructions = "Comece em português do Brasil apresentando o cardápio escolhido nos dados verificados de entrada, sem uma saudação longa. Seja natural, caloroso e detalhado sobre ingredientes e texturas, sem mencionar preços. Não use outra voz.";
         }
         execution.waitUntil(
           startSession(event.sdp).catch((error) => {

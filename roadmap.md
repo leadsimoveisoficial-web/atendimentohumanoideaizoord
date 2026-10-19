@@ -1,5 +1,10 @@
 # Roadmap
 
+- [ ] Adicionar página de preços e checkout para compra ou assinatura, testáveis no preview; aguarda confirmação do produto e ativação de pagamentos.
+
+- [x] Aplicar anfitrião gastronômico detalhado e preços somente sob pergunta explícita na conversa, apresentações e roteiro local; preservar voz e painel.
+- [ ] Validar nova personalidade em conversa real — provedores anteriormente sem créditos; não contornar bloqueios de acesso.
+
 - [x] Eliminar 240 interseções com a malha de 1,17 milhão de triângulos na abertura; antecipar download 4K. Restaurante, Zoord e cardápio conferidos em 630×571 e 1280×1800, sem erros; cinco testes aprovados. Arquivo 4K ainda depende da conexão e desempenho físico não medido.
 
 - [x] Substituir o fundo cinza externo por universo preto com galáxias; conferido em tela 4K e estreita.
