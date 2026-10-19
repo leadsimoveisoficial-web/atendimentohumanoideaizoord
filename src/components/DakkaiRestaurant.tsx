@@ -17,8 +17,8 @@ export function DakkaiRestaurant() {
     clone.updateWorldMatrix(true, true);
     const scaled = new THREE.Box3().setFromObject(clone);
     const center = scaled.getCenter(new THREE.Vector3());
-    // Keep all architecture behind the avatar's planted presentation area.
-    clone.position.set(-center.x, -scaled.min.y, -3.8 - scaled.max.z);
+    // Align the measured wooden dais top to the unchanged avatar feet at y=0.3.
+    clone.position.set(-center.x - 2, -scaled.min.y - 2.19597, 4.2 - scaled.max.z);
     clone.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
       child.receiveShadow = true;
