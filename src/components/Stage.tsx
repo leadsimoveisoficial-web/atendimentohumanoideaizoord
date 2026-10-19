@@ -410,12 +410,12 @@ export function Stage() {
   return (
     <div className="fixed inset-0 bg-background">
       <div className={`stage-scene ${open !== null ? "stage-scene-menu" : ""}`}>
-      <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
+      <Canvas shadows="percentage" dpr={[1.5, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
         <StageCamera />
         <color attach="background" args={["#12161d"]} />
         <fog attach="fog" args={["#12161d", 28, 65]} />
         <ambientLight intensity={0.55} color="#cfeaff" />
-        <pointLight position={[-4, 2, 2]} intensity={26} color={CYAN} castShadow shadow-mapSize={[512, 512]} />
+        <pointLight position={[-4, 2, 2]} intensity={26} color={CYAN} castShadow shadow-mapSize={[1024, 1024]} />
         <pointLight position={[4, 2, 2]} intensity={26} color={BLUE} />
         <Environment resolution={256}>
           <Lightformer intensity={1.6} color={CYAN} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
@@ -441,7 +441,7 @@ export function Stage() {
 
         <OrbitControls target={[0, 2.45, 0]} enablePan={false} minDistance={7} maxDistance={28} minAzimuthAngle={-0.25} maxAzimuthAngle={0.25} minPolarAngle={1.25} maxPolarAngle={1.55} enableDamping />
         <EffectComposer multisampling={4}>
-          <Bloom intensity={0.35} luminanceThreshold={0.97} mipmapBlur />
+          <Bloom intensity={0.2} luminanceThreshold={0.97} mipmapBlur />
           <Vignette darkness={0.35} offset={0.35} />
         </EffectComposer>
       </Canvas>
