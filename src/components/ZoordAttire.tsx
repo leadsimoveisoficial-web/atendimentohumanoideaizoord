@@ -36,6 +36,9 @@ function useHachimakiTexture() {
  * the model: head half-width 6.4 local, head depth ~10.5 local (z), torso
  * ~8.4 wide but ~17.5 deep — the shells are stretched on z to wrap the body.
  */
+/** Forehead offset above the head bone origin, in world units. */
+const _bandOffset = new THREE.Vector3(0, 0.125, 0.015);
+
 export function ZoordAttire({ scene }: { scene: THREE.Object3D }) {
   const [head, setHead] = useState<THREE.Object3D | null>(null);
   const [spine, setSpine] = useState<THREE.Object3D | null>(null);
@@ -77,22 +80,20 @@ export function ZoordAttire({ scene }: { scene: THREE.Object3D }) {
   return (
     <>
       <group name="ZoordHachimaki" ref={hachimaki}>
-        <group position={[0, 6.2, 0.5]} rotation-x={-0.05}>
-          {/* Cloth band around the forehead; rotated so the kanji faces forward. */}
-          <mesh material={cloth} scale={[1, 1, 1.5]} rotation-y={Math.PI}>
-            <cylinderGeometry args={[8.8, 9, 4.2, 48, 1, true]} />
-          </mesh>
-          {/* Knot and two hanging ties at the back. */}
-          <mesh material={red} position={[0, 0.2, -11.6]}>
-            <sphereGeometry args={[1.3, 16, 12]} />
-          </mesh>
-          <mesh material={cloth} position={[-1, -4, -11.9]} rotation-z={0.16} rotation-x={0.14}>
-            <boxGeometry args={[1.5, 7, 0.25]} />
-          </mesh>
-          <mesh material={cloth} position={[1.1, -4.4, -11.8]} rotation-z={-0.2} rotation-x={0.2}>
-            <boxGeometry args={[1.5, 7.6, 0.25]} />
-          </mesh>
-        </group>
+        {/* World units: band around the forehead, kanji facing forward. */}
+        <mesh material={cloth} scale={[1, 1, 1.45]} rotation-y={Math.PI}>
+          <cylinderGeometry args={[0.2, 0.205, 0.095, 48, 1, true]} />
+        </mesh>
+        {/* Knot and two hanging ties at the back. */}
+        <mesh material={red} position={[0, 0.005, -0.27]}>
+          <sphereGeometry args={[0.03, 16, 12]} />
+        </mesh>
+        <mesh material={cloth} position={[-0.022, -0.09, -0.28]} rotation-z={0.16} rotation-x={0.14}>
+          <boxGeometry args={[0.034, 0.16, 0.006]} />
+        </mesh>
+        <mesh material={cloth} position={[0.025, -0.1, -0.275]} rotation-z={-0.2} rotation-x={0.2}>
+          <boxGeometry args={[0.034, 0.17, 0.006]} />
+        </mesh>
       </group>
       <group name="ZoordHappi" ref={happi}>
         {/* Happi jacket body: shoulders (y +2) down over the hips (y -31). */}
