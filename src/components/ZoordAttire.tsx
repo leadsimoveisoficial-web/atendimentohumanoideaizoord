@@ -68,8 +68,8 @@ export function ZoordAttire({ scene }: { scene: THREE.Object3D }) {
       <group name="ZoordHachimaki" ref={hachimaki}>
         <group position={[0, 3.5, 0.5]} rotation-x={-0.05}>
           {/* Cloth band around the forehead; rotated so the kanji faces forward. */}
-          <mesh material={cloth} scale={[1, 1, 1.55]} rotation-y={Math.PI}>
-            <cylinderGeometry args={[7.4, 7.6, 3.4, 48, 1, true]} />
+          <mesh material={cloth} scale={[1, 1, 1.5]} rotation-y={Math.PI}>
+            <cylinderGeometry args={[8.8, 9, 4.2, 48, 1, true]} />
           </mesh>
           {/* Knot and two hanging ties at the back. */}
           <mesh material={red} position={[0, 0.2, -11.6]}>
