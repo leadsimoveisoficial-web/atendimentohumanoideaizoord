@@ -37,7 +37,7 @@ function useHachimakiTexture() {
  * ~8.4 wide but ~17.5 deep — the shells are stretched on z to wrap the body.
  */
 /** Forehead offset above the head bone origin, in world units. */
-const _bandOffset = new THREE.Vector3(0, 0.125, 0.015);
+const _bandOffset = new THREE.Vector3(0, 0.21, 0.02);
 
 export function ZoordAttire({ scene }: { scene: THREE.Object3D }) {
   const [head, setHead] = useState<THREE.Object3D | null>(null);
