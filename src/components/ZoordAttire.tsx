@@ -1,5 +1,5 @@
-import { createPortal } from "@react-three/fiber";
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 /** White hachimaki cloth with the black kanji 平和 (peace) on the front. */
@@ -28,21 +28,34 @@ function useHachimakiTexture() {
 }
 
 /**
- * Sushi-chef attire for Zoord: a hachimaki headband (peace kanji) on the head
- * bone and a black happi jacket with red details on the torso bone.
- * Bone-local units follow the supplied Mixamo rig (world = local × 0.023).
- * Measured on the model: head half-width 0.146 world (6.4 local) at y 3.6–3.79,
- * chest ~0.19 world (8.3 local), hips ~0.23 world (10 local), arms at ±15.7 local.
+ * Sushi-chef attire for Zoord: a hachimaki headband (peace kanji) following the
+ * head bone and a black happi jacket with red details following the torso bone.
+ * The groups live in world space and copy the bone matrices every frame, so the
+ * clothing tracks animation without touching the supplied rig.
+ * Bone-local units follow the Mixamo rig (world = local × 0.023). Measured on
+ * the model: head half-width 6.4 local at y 3.6–3.79, chest ~8.3, hips ~10,
+ * arms at ±15.7 local.
  */
 export function ZoordAttire({ scene }: { scene: THREE.Object3D }) {
   const [head, setHead] = useState<THREE.Object3D | null>(null);
   const [spine, setSpine] = useState<THREE.Object3D | null>(null);
   const bandTexture = useHachimakiTexture();
+  const hachimaki = useRef<THREE.Group>(null);
+  const happi = useRef<THREE.Group>(null);
 
   useLayoutEffect(() => {
     setHead(scene.getObjectByName("mixamorig:Head") ?? scene.getObjectByName("mixamorigHead") ?? null);
     setSpine(scene.getObjectByName("mixamorig:Spine2") ?? scene.getObjectByName("mixamorigSpine2") ?? null);
   }, [scene]);
+
+  useFrame(() => {
+    for (const [bone, group] of [[head, hachimaki.current], [spine, happi.current]] as const) {
+      if (!bone || !group) continue;
+      bone.updateWorldMatrix(true, false);
+      group.matrixAutoUpdate = false;
+      group.matrix.copy(bone.matrixWorld);
+    }
+  });
 
   const black = useMemo(() => new THREE.MeshStandardMaterial({ color: "#151319", roughness: 0.75, metalness: 0.05, side: THREE.DoubleSide }), []);
   const red = useMemo(() => new THREE.MeshStandardMaterial({ color: "#c4141f", roughness: 0.6, metalness: 0.05, side: THREE.DoubleSide }), []);
@@ -51,8 +64,8 @@ export function ZoordAttire({ scene }: { scene: THREE.Object3D }) {
   if (!head || !spine) return null;
   return (
     <>
-      {createPortal(
-        <group name="ZoordHachimaki" position={[0, 6, 0.5]} rotation-x={-0.05}>
+      <group name="ZoordHachimaki" ref={hachimaki}>
+        <group position={[0, 6, 0.5]} rotation-x={-0.05}>
           {/* Cloth band wrapped around the forehead, outside the hair. */}
           <mesh material={cloth}>
             <cylinderGeometry args={[7.3, 7.5, 3.4, 48, 1, true]} />
@@ -67,45 +80,41 @@ export function ZoordAttire({ scene }: { scene: THREE.Object3D }) {
           <mesh material={cloth} position={[1.1, -4.4, -7.5]} rotation-z={-0.2} rotation-x={0.2}>
             <boxGeometry args={[1.5, 7.6, 0.25]} />
           </mesh>
-        </group>,
-        head,
-      )}
-      {createPortal(
-        <group name="ZoordHappi" position={[0, 0, 0]}>
-          {/* Happi jacket body: shoulders (y +2) down over the hips (y -31). */}
-          <mesh material={black} position={[0, -14.5, 0]}>
-            <cylinderGeometry args={[8.4, 11, 33, 32, 1, true]} />
-          </mesh>
-          {/* Red lapel strips crossing at the chest. */}
-          <mesh material={red} position={[-2.1, -3, 7.6]} rotation-z={0.4} rotation-x={0.06}>
-            <boxGeometry args={[1.7, 13, 0.4]} />
-          </mesh>
-          <mesh material={red} position={[2.1, -3, 7.6]} rotation-z={-0.4} rotation-x={0.06}>
-            <boxGeometry args={[1.7, 13, 0.4]} />
-          </mesh>
-          {/* Red obi belt at the waist with a front knot. */}
-          <mesh material={red} position={[0, -26, 0]}>
-            <cylinderGeometry args={[10.6, 10.9, 3.2, 32, 1, true]} />
-          </mesh>
-          <mesh material={red} position={[0, -26, 10.2]}>
-            <boxGeometry args={[3.2, 2.4, 1.2]} />
-          </mesh>
-          {/* Short black sleeves with red trim over the shoulders. */}
-          <mesh material={black} position={[-16.6, 0.5, 0]} rotation-z={1.45}>
-            <cylinderGeometry args={[4.2, 4.6, 8, 20, 1, true]} />
-          </mesh>
-          <mesh material={black} position={[16.6, 0.5, 0]} rotation-z={-1.45}>
-            <cylinderGeometry args={[4.2, 4.6, 8, 20, 1, true]} />
-          </mesh>
-          <mesh material={red} position={[-20.3, -0.6, 0]} rotation-z={1.45}>
-            <cylinderGeometry args={[4.65, 4.75, 1.2, 20, 1, true]} />
-          </mesh>
-          <mesh material={red} position={[20.3, -0.6, 0]} rotation-z={-1.45}>
-            <cylinderGeometry args={[4.65, 4.75, 1.2, 20, 1, true]} />
-          </mesh>
-        </group>,
-        spine,
-      )}
+        </group>
+      </group>
+      <group name="ZoordHappi" ref={happi}>
+        {/* Happi jacket body: shoulders (y +2) down over the hips (y -31). */}
+        <mesh material={black} position={[0, -14.5, 0]}>
+          <cylinderGeometry args={[8.4, 11, 33, 32, 1, true]} />
+        </mesh>
+        {/* Red lapel strips crossing at the chest. */}
+        <mesh material={red} position={[-2.1, -3, 7.6]} rotation-z={0.4} rotation-x={0.06}>
+          <boxGeometry args={[1.7, 13, 0.4]} />
+        </mesh>
+        <mesh material={red} position={[2.1, -3, 7.6]} rotation-z={-0.4} rotation-x={0.06}>
+          <boxGeometry args={[1.7, 13, 0.4]} />
+        </mesh>
+        {/* Red obi belt at the waist with a front knot. */}
+        <mesh material={red} position={[0, -26, 0]}>
+          <cylinderGeometry args={[10.6, 10.9, 3.2, 32, 1, true]} />
+        </mesh>
+        <mesh material={red} position={[0, -26, 10.2]}>
+          <boxGeometry args={[3.2, 2.4, 1.2]} />
+        </mesh>
+        {/* Short black sleeves with red trim over the shoulders. */}
+        <mesh material={black} position={[-16.6, 0.5, 0]} rotation-z={1.45}>
+          <cylinderGeometry args={[4.2, 4.6, 8, 20, 1, true]} />
+        </mesh>
+        <mesh material={black} position={[16.6, 0.5, 0]} rotation-z={-1.45}>
+          <cylinderGeometry args={[4.2, 4.6, 8, 20, 1, true]} />
+        </mesh>
+        <mesh material={red} position={[-20.3, -0.6, 0]} rotation-z={1.45}>
+          <cylinderGeometry args={[4.65, 4.75, 1.2, 20, 1, true]} />
+        </mesh>
+        <mesh material={red} position={[20.3, -0.6, 0]} rotation-z={-1.45}>
+          <cylinderGeometry args={[4.65, 4.75, 1.2, 20, 1, true]} />
+        </mesh>
+      </group>
     </>
   );
 }
