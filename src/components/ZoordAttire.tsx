@@ -54,6 +54,7 @@ export function ZoordAttire({ scene }: { scene: THREE.Object3D }) {
       bone.updateWorldMatrix(true, false);
       group.matrixAutoUpdate = false;
       group.matrix.copy(bone.matrixWorld);
+      group.matrixWorldNeedsUpdate = true;
     }
   });
 
