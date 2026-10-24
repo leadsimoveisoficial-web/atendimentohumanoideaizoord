@@ -30,12 +30,12 @@ export function CounterVitrine() {
   );
 
   const W = 5.8; // width
-  const H = 2.3; // height
+  const H = 2.65; // height: covers the baked branding up to y ≈ 3.1
   const D = 0.95; // depth
-  const BASE = 0.5; // floor clearance
+  const BASE = 0.45; // floor clearance
   const cx = 0;
-  const cy = BASE + H / 2; // 1.65
-  const cz = -7.82; // back panel sits just in front of the counter face
+  const cy = BASE + H / 2; // 1.775
+  const cz = -7.88; // back panel sits just in front of the counter face
 
   const posts: [number, number][] = [
     [-W / 2, -D / 2],
@@ -107,21 +107,21 @@ export function CounterVitrine() {
         <boxGeometry args={[W - 0.2, 0.02, 0.04]} />
         <meshBasicMaterial color={CYAN} toneMapped={false} />
       </mesh>
-      <pointLight position={[0, H / 2 - 0.4, 0]} intensity={6} color={CYAN} distance={4} decay={1.8} />
+      <pointLight position={[0, H / 2 - 0.4, 0]} intensity={10} color={CYAN} distance={4.5} decay={1.8} />
       {/* maki rolls */}
       {rolls.map((r, i) => (
         <group key={i} position={[r.x, r.y - H / 2, r.z]}>
           <mesh>
-            <cylinderGeometry args={[0.085, 0.085, 0.11, 20]} />
-            <meshStandardMaterial color="#14210f" roughness={0.7} />
+            <cylinderGeometry args={[0.11, 0.11, 0.13, 20]} />
+            <meshStandardMaterial color="#1a2b14" roughness={0.65} />
           </mesh>
-          <mesh position-y={0.045}>
-            <cylinderGeometry args={[0.07, 0.07, 0.03, 20]} />
+          <mesh position-y={0.055}>
+            <cylinderGeometry args={[0.09, 0.09, 0.035, 20]} />
             <meshStandardMaterial color="#f2ede2" roughness={0.9} />
           </mesh>
-          <mesh position-y={0.062}>
-            <cylinderGeometry args={[0.028, 0.028, 0.012, 12]} />
-            <meshStandardMaterial color={r.fill} roughness={0.6} />
+          <mesh position-y={0.075}>
+            <cylinderGeometry args={[0.035, 0.035, 0.015, 12]} />
+            <meshStandardMaterial color={r.fill} roughness={0.55} />
           </mesh>
         </group>
       ))}
