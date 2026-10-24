@@ -71,6 +71,9 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const waveTime = useRef(0);
   const speakUntil = useRef(0);
   const poseLayer = useMemo(() => new PoseLayer(), []);
+  useEffect(() => {
+    if (import.meta.env.DEV) (window as unknown as { __zoordScene?: THREE.Object3D }).__zoordScene = scene;
+  }, [scene]);
   const restWeight = useRef(1);
   const waving = anim === "Wave_One_Hand";
   // Speaking uses both hands (open-palm, maître-style); at rest he keeps the relaxed pose.
