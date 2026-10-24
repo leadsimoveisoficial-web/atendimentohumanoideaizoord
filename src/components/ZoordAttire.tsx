@@ -48,13 +48,24 @@ export function ZoordAttire({ scene }: { scene: THREE.Object3D }) {
     setSpine(scene.getObjectByName("mixamorig:Spine2") ?? scene.getObjectByName("mixamorigSpine2") ?? null);
   }, [scene]);
 
+  const headPos = useMemo(() => new THREE.Vector3(), []);
+  const headQuat = useMemo(() => new THREE.Quaternion(), []);
   useFrame(() => {
-    for (const [bone, group] of [[head, hachimaki.current], [spine, happi.current]] as const) {
-      if (!bone || !group) continue;
-      bone.updateWorldMatrix(true, false);
-      group.matrixAutoUpdate = false;
-      group.matrix.copy(bone.matrixWorld);
-      group.matrixWorldNeedsUpdate = true;
+    // Hachimaki: world-space offset above the head bone (its local axes are not world-up).
+    if (head && hachimaki.current) {
+      head.updateWorldMatrix(true, false);
+      head.getWorldPosition(headPos);
+      head.getWorldQuaternion(headQuat);
+      const g = hachimaki.current;
+      g.position.copy(headPos).add(_bandOffset);
+      g.quaternion.copy(headQuat);
+    }
+    // Happi: copy the torso bone matrix (bone-local units, world = local × 0.023).
+    if (spine && happi.current) {
+      spine.updateWorldMatrix(true, false);
+      happi.current.matrixAutoUpdate = false;
+      happi.current.matrix.copy(spine.matrixWorld);
+      happi.current.matrixWorldNeedsUpdate = true;
     }
   });
 
