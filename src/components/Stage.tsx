@@ -32,6 +32,7 @@ import { GesturePanel, type StageGesture } from "./GesturePanel";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
 import { UserAccount } from "./UserAccount";
 import { DakkaiRestaurant } from "./DakkaiRestaurant";
+import { CounterVitrine } from "./CounterVitrine";
 import { UniverseBackdrop } from "./UniverseBackdrop";
 
 const CYAN = "#3fe0ff";
@@ -430,6 +431,7 @@ export function Stage() {
 
         <Suspense fallback={null}>
           <DakkaiRestaurant />
+          <CounterVitrine />
         </Suspense>
         <pointLight position={[-8, 7, -10]} intensity={95} color={CYAN} distance={30} decay={1.5} />
         <pointLight position={[8, 6, -14]} intensity={85} color={BLUE} distance={30} decay={1.5} />
