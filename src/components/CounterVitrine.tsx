@@ -56,7 +56,7 @@ export function CounterVitrine() {
           x: -W / 2 + 0.55 + i * 0.58 + rand() * 0.1,
           y: sy + 0.09,
           z: (rand() - 0.5) * (D - 0.5),
-          fill: fills[i % fills.length],
+          fill: fills[i % fills.length] ?? "#ff8a5c",
         });
       }
     });
