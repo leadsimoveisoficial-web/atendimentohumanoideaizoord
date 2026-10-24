@@ -16,6 +16,7 @@ import dakkaiLogo from "@/assets/dakkai-logo.png";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { voiceLevel } from "@/lib/voice-level";
 import { ZoordMouth } from "./ZoordMouth";
+import { ZoordAttire } from "./ZoordAttire";
 import { SecurityBadge } from "./SecurityBadge";
 import { RecordRepeat } from "./RecordRepeat";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,9 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const waveTime = useRef(0);
   const speakUntil = useRef(0);
   const poseLayer = useMemo(() => new PoseLayer(), []);
+  useEffect(() => {
+    if (import.meta.env.DEV) (window as unknown as { __zoordScene?: THREE.Object3D }).__zoordScene = scene;
+  }, [scene]);
   const restWeight = useRef(1);
   const waving = anim === "Wave_One_Hand";
   // Speaking uses both hands (open-palm, maître-style); at rest he keeps the relaxed pose.
@@ -259,10 +263,13 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     };
   }, [clipName, actions, mixer, waveId, waving]);
   return (
-    <group ref={group} position={[0, 0.3, 0]} scale={2.3}>
-      <primitive object={scene} />
-      <ZoordMouth scene={scene} position={[-0.5, 5.8, 10.85]} rotationX={0} scale={0.9} />
-    </group>
+    <>
+      <group ref={group} position={[0, 0.3, 0]} scale={2.3}>
+        <primitive object={scene} />
+        <ZoordMouth scene={scene} position={[-0.5, 5.8, 10.85]} rotationX={0} scale={0.9} />
+      </group>
+      <ZoordAttire scene={scene} />
+    </>
   );
 }
 
