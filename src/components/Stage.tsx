@@ -16,6 +16,7 @@ import dakkaiLogo from "@/assets/dakkai-logo.png";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { voiceLevel } from "@/lib/voice-level";
 import { ZoordMouth } from "./ZoordMouth";
+import { ZoordAttire } from "./ZoordAttire";
 import { SecurityBadge } from "./SecurityBadge";
 import { RecordRepeat } from "./RecordRepeat";
 import { Button } from "@/components/ui/button";
@@ -262,6 +263,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     <group ref={group} position={[0, 0.3, 0]} scale={2.3}>
       <primitive object={scene} />
       <ZoordMouth scene={scene} position={[-0.5, 5.8, 10.85]} rotationX={0} scale={0.9} />
+      <ZoordAttire scene={scene} />
     </group>
   );
 }
