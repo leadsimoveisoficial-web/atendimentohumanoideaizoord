@@ -29,6 +29,7 @@
 - Prepare Blender offline in tools/blender; preserve face, skeleton and baked necklace to avoid destructive edits.
 - Voice category-selection events open the same nonmodal menu as clicks; this keeps spoken recommendations and visible menu details aligned.
 - Map the active avatar's supplied conversation clips to presentation and relaxed posture, with model-specific height, head-local mouth anchor and attire bone-unit conversion; this supports avatar replacement without changing the approved voice or source mesh.
+- Clone avatar materials and use a restrained albedo-derived emissive fill with reduced environment response; this preserves source colors under saturated stage lights without adding white lights or changing scenery.
 - Filter root, hip and leg tracks from stage presentation clips; stationary service gestures must not inherit locomotion or twist the planted lower body.
 - Gate browser-speech mouth cues on utterance start, pause, resume and end; this fallback cannot expose a measured audio waveform.
 - Restore procedural limb layers before each frame without overwriting fresh mixer poses, and bound presentation reach by actual limb lengths; this prevents stuck arms and unnatural overextension when talking clips pause.
