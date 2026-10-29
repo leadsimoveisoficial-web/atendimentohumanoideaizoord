@@ -1,3 +1,4 @@
+import { choiceComment } from "@/lib/menu-script";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   OrbitControls,
