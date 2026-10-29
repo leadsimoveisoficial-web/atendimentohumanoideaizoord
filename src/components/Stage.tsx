@@ -28,7 +28,8 @@ import { aimLimb } from "@/lib/zoord-gesture";
 import { PoseLayer } from "@/lib/zoord-pose";
 import { plantedPresentationClip } from "@/lib/zoord-presentation";
 import { RadioPlayer } from "./RadioPlayer";
-import { danceBlend, danceMotion, musicLevel } from "@/lib/music";
+import { danceMotion, musicLevel } from "@/lib/music";
+import { HOST_MOTION, hostBreathing, hostDanceTarget, motionStep, smoothMotion } from "@/lib/zoord-motion";
 import { GesturePanel, type StageGesture } from "./GesturePanel";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
 import { UserAccount } from "./UserAccount";
@@ -36,9 +37,7 @@ import { DakkaiRestaurant } from "./DakkaiRestaurant";
 import { CounterVitrine } from "./CounterVitrine";
 import { UniverseBackdrop } from "./UniverseBackdrop";
 
-const CYAN = "#3fe0ff";
-const BLUE = "#2f7bff";
-const RED = "#c4141f";
+const stageColors = { cyan: "", blue: "", red: "", space: "", backing: "" };
 
 // The menu opens as a side panel on the viewer's right: Zoord points there.
 export function panelPos(i: number) {
@@ -54,6 +53,25 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const group = useRef<THREE.Group>(null);
   const { scene: sourceScene, animations } = useGLTF(zoord.url);
   const scene = useMemo(() => cloneSkeleton(sourceScene), [sourceScene]);
+  const bones = useMemo(() => {
+    const cache = new Map<string, THREE.Object3D>();
+    scene.traverse((node) => {
+      if (/mixamorig/i.test(node.name)) cache.set(node.name.replace(/^mixamorig:?/i, ""), node);
+    });
+    return cache;
+  }, [scene]);
+  const reduced = useRef(false);
+  const motionTime = useRef(0);
+  const danceWeight = useRef(0);
+  const previousAction = useRef<THREE.AnimationAction | null>(null);
+  const breath = useMemo(() => ({ quaternion: new THREE.Quaternion(), euler: new THREE.Euler() }), []);
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => { reduced.current = preference.matches; };
+    update();
+    preference.addEventListener("change", update);
+    return () => preference.removeEventListener("change", update);
+  }, []);
   const maxAniso = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
   // Preserve the uploaded albedo under the saturated stage lights, without adding white lights.
   useEffect(() => {
@@ -108,25 +126,27 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     return () => { window.removeEventListener("pointermove", move); document.removeEventListener("pointerleave", leave); };
   }, []);
   const spineLean = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler() }), []);
-  useFrame(({ clock }, rawDelta) => {
+  useFrame((_, rawDelta) => {
     poseLayer.restore();
-    const head = scene.getObjectByName("mixamorig:Head") ?? scene.getObjectByName("mixamorigHead");
+    const head = bones.get("Head");
     if (!head) return;
-    const dt = Math.min(rawDelta, 0.05);
+    const dt = motionStep(rawDelta);
+    motionTime.current += dt;
+    const time = motionTime.current;
     // Gesture with the supplied talking clip while Zoord's voice is audible; hold briefly across syllable gaps.
-    if (voiceLevel.v > 0.05) speakUntil.current = clock.elapsedTime + 0.8;
-    const talking = clock.elapsedTime < speakUntil.current;
+    if (voiceLevel.v > 0.05) speakUntil.current = time + HOST_MOTION.speechHold;
+    const talking = time < speakUntil.current;
     if (talking !== speakingRef.current) { speakingRef.current = talking; setSpeaking(talking); }
     // Lower-body animation tracks are excluded: feet and hips retain the supplied standing pose.
     const active = actions[clipName];
-    if (active) active.paused = !talking && !waving && !manualPresenting;
+    if (active) active.paused = !talking && !manualPresenting;
     // While the radio plays, the dance owns the arms — the relaxed pose would otherwise pin them down.
     restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving && !manualPresenting && !musicLevel.playing ? 1 : 0, 5, dt);
     // Relax both arms beside the torso instead of freezing midway through a talking gesture.
     for (const side of ["Right", "Left"]) {
-      const arm = scene.getObjectByName(`mixamorig:${side}Arm`) ?? scene.getObjectByName(`mixamorig${side}Arm`);
-      const fore = scene.getObjectByName(`mixamorig:${side}ForeArm`) ?? scene.getObjectByName(`mixamorig${side}ForeArm`);
-      const hand = scene.getObjectByName(`mixamorig:${side}Hand`) ?? scene.getObjectByName(`mixamorig${side}Hand`);
+      const arm = bones.get(`${side}Arm`);
+      const fore = bones.get(`${side}ForeArm`);
+      const hand = bones.get(`${side}Hand`);
       if (!arm || !fore || !hand || restWeight.current < 0.001) continue;
       arm.updateWorldMatrix(true, true);
       const shoulder = arm.getWorldPosition(new THREE.Vector3());
@@ -142,16 +162,16 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     // Undo our previous offset only when the mixer has not replaced the bone pose.
     if (head.quaternion.angleTo(headMotion.last) < 0.00001) head.quaternion.multiply(headMotion.inverse).normalize();
     const presenting = point !== null && anim !== "Wave_One_Hand";
-    headMotion.strength = THREE.MathUtils.damp(headMotion.strength, listening || presenting || clock.elapsedTime < speakUntil.current ? 1 : 0, 5, dt);
+    headMotion.strength = THREE.MathUtils.damp(headMotion.strength, reduced.current ? 0 : listening || presenting || talking ? 1 : 0, 5, dt);
     const side = presenting ? (panelPos(point).x < 0 ? -1 : 1) : 0;
     // Follow the customer: mouse on screen, or their movement on camera; presenting turns the gaze toward the panel.
     const follow = presenting ? 0.35 : 1;
-    headMotion.lookX = THREE.MathUtils.damp(headMotion.lookX, gaze.x * follow, 4, dt);
-    headMotion.lookY = THREE.MathUtils.damp(headMotion.lookY, gaze.y * follow, 4, dt);
+    headMotion.lookX = THREE.MathUtils.damp(headMotion.lookX, gaze.x * follow * (reduced.current ? 0.25 : 1), 4, dt);
+    headMotion.lookY = THREE.MathUtils.damp(headMotion.lookY, gaze.y * follow * (reduced.current ? 0.25 : 1), 4, dt);
     headMotion.euler.set(
-      Math.sin(clock.elapsedTime * 2.4) * 0.025 * headMotion.strength - headMotion.lookY * 0.22 + (anim === "nod" ? Math.sin(clock.elapsedTime * 4) * 0.10 : 0),
-      (side * 0.10 + Math.sin(clock.elapsedTime * 0.9) * 0.025) * headMotion.strength + headMotion.lookX * 0.5,
-      -headMotion.lookX * 0.06 + (speakingRef.current ? Math.sin(clock.elapsedTime * 0.7) * 0.04 * headMotion.strength : 0), // gentle courteous head tilt while speaking
+      Math.sin(time * 2.4) * 0.025 * headMotion.strength - headMotion.lookY * 0.22 + (anim === "nod" ? Math.sin(time * 4) * (reduced.current ? 0.025 : 0.10) : 0),
+      (side * 0.10 + Math.sin(time * 0.9) * 0.025) * headMotion.strength + headMotion.lookX * 0.5,
+      -headMotion.lookX * 0.06 + (speakingRef.current ? Math.sin(time * 0.7) * 0.04 * headMotion.strength : 0),
     );
     // Euler is authored in world axes (Y = turn, X = nod); express it in the head's local frame.
     headMotion.next.setFromEuler(headMotion.euler);
@@ -161,46 +181,57 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     head.quaternion.multiply(headMotion.next.normalize()).normalize();
     headMotion.last.copy(head.quaternion);
     headMotion.inverse.copy(headMotion.next).invert();
+    const spine = bones.get("Spine2");
+    const breathing = hostBreathing(time, reduced.current, listening || presenting || waving || manualPresenting || musicLevel.playing);
+    if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(breath.quaternion.setFromEuler(breath.euler.set(breathing.pitch, 0, breathing.roll))));
+    if (import.meta.env.DEV) {
+      const canvas = document.querySelector(".stage-scene canvas");
+      if (canvas && !canvas.hasAttribute("data-scene-ready")) canvas.setAttribute("data-scene-ready", "true");
+    }
   });
   // Preserve the supplied wave and add a bounded outward reach for a readable greeting.
   useFrame((_, rawDelta) => {
     if (!waving) return;
-    waveTime.current += Math.min(rawDelta, 0.05);
+    waveTime.current += motionStep(rawDelta);
     const t = waveTime.current;
     if (t >= 3.2) { onWaveEnd(); return; }
-    const arm = scene.getObjectByName("mixamorig:RightArm") ?? scene.getObjectByName("mixamorigRightArm");
-    const fore = scene.getObjectByName("mixamorig:RightForeArm") ?? scene.getObjectByName("mixamorigRightForeArm");
-    const hand = scene.getObjectByName("mixamorig:RightHand") ?? scene.getObjectByName("mixamorigRightHand");
+    const arm = bones.get("RightArm");
+    const fore = bones.get("RightForeArm");
+    const hand = bones.get("RightHand");
     if (!arm || !fore || !hand) return;
     arm.updateWorldMatrix(true, false);
     const shoulder = arm.getWorldPosition(new THREE.Vector3());
     const weight = THREE.MathUtils.smoothstep(t, 0, 0.5) * (1 - THREE.MathUtils.smoothstep(t, 2.6, 3.2));
-    const elbow = shoulder.clone().add(new THREE.Vector3(-0.48, -0.12, 0.3));
-    const palm = shoulder.clone().add(new THREE.Vector3(-0.72 + Math.sin(t * 8) * 0.12, 0.55, 0.45));
+    const scale = arm.getWorldScale(new THREE.Vector3()).length() / Math.sqrt(3);
+    const upper = fore.position.length() * scale;
+    const lower = hand.position.length() * scale;
+    const elbow = shoulder.clone().add(new THREE.Vector3(-upper * 0.85, -upper * 0.2, upper * 0.35));
+    const palm = elbow.clone().add(new THREE.Vector3(Math.sin(t * 6.5) * lower * (reduced.current ? 0.03 : 0.18), lower * 0.8, lower * 0.35));
     poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, weight));
     poseLayer.apply(fore, () => aimLimb(fore, hand, palm, weight));
   });
   // Audio-reactive upper-body rhythm; planted legs never inherit dance/root tracks.
-  useFrame(({ clock }) => {
-    const blend = danceBlend(speakingRef.current, listening, point !== null, waving || manualPresenting || anim === "nod");
-    if (!musicLevel.playing || blend === 0) return;
-    const energy = musicLevel.energy * blend;
+  useFrame((_, delta) => {
+    const target = hostDanceTarget(speakingRef.current, listening, point !== null, waving || manualPresenting || anim === "nod", reduced.current);
+    danceWeight.current = smoothMotion(danceWeight.current, musicLevel.playing ? musicLevel.energy * target : 0, delta);
+    if (target === 0) return;
+    const energy = danceWeight.current;
     if (energy < 0.01) return;
     const pulse = musicLevel.pulse;
-    const rhythm = danceMotion(musicLevel.genre, clock.elapsedTime, energy, pulse, 1);
-    const spine = scene.getObjectByName("mixamorig:Spine2") ?? scene.getObjectByName("mixamorigSpine2");
+    const rhythm = danceMotion(musicLevel.genre, motionTime.current, energy, pulse, 1);
+    const spine = bones.get("Spine2");
     if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(rhythm.nod, 0, rhythm.roll))));
     for (const side of ["Right", "Left"]) {
-      const arm = scene.getObjectByName(`mixamorig:${side}Arm`) ?? scene.getObjectByName(`mixamorig${side}Arm`);
-      const fore = scene.getObjectByName(`mixamorig:${side}ForeArm`) ?? scene.getObjectByName(`mixamorig${side}ForeArm`);
-      const hand = scene.getObjectByName(`mixamorig:${side}Hand`) ?? scene.getObjectByName(`mixamorig${side}Hand`);
+      const arm = bones.get(`${side}Arm`);
+      const fore = bones.get(`${side}ForeArm`);
+      const hand = bones.get(`${side}Hand`);
       if (!arm || !fore || !hand) continue;
       arm.updateWorldMatrix(true, true);
       const shoulder = arm.getWorldPosition(new THREE.Vector3());
       const scale = arm.getWorldScale(new THREE.Vector3()).length() / Math.sqrt(3);
       const upper = fore.position.length() * scale, lower = hand.position.length() * scale;
       const sign = side === "Right" ? -1 : 1;
-      const motion = danceMotion(musicLevel.genre, clock.elapsedTime, energy, pulse, sign);
+      const motion = danceMotion(musicLevel.genre, motionTime.current, energy, pulse, sign);
       const elbow = shoulder.clone().add(new THREE.Vector3(sign * upper * motion.reach, -upper * 0.82, upper * 0.15));
       const palm = elbow.clone().add(new THREE.Vector3(sign * lower * 0.28, -lower * 0.65 + motion.lift * lower, lower * motion.forward));
       poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, motion.weight));
@@ -213,9 +244,9 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     if (w.current < 0.001) return;
     const target = panelPos(point ?? 0);
     const side = target.x < 0 ? "Right" : "Left";
-    const arm = scene.getObjectByName(`mixamorig:${side}Arm`) ?? scene.getObjectByName(`mixamorig${side}Arm`);
-    const fore = scene.getObjectByName(`mixamorig:${side}ForeArm`) ?? scene.getObjectByName(`mixamorig${side}ForeArm`);
-    const hand = scene.getObjectByName(`mixamorig:${side}Hand`) ?? scene.getObjectByName(`mixamorig${side}Hand`);
+    const arm = bones.get(`${side}Arm`);
+    const fore = bones.get(`${side}ForeArm`);
+    const hand = bones.get(`${side}Hand`);
     if (!arm?.parent || !fore || !hand) return;
     arm.updateWorldMatrix(true, false);
     const shoulder = arm.getWorldPosition(new THREE.Vector3());
@@ -234,7 +265,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     poseLayer.apply(fore, () => aimLimb(fore, hand, target, w.current));
     poseLayer.apply(hand, () => hand.quaternion.slerp(_id, w.current * 0.2));
     // Human touch: lean the chest slightly toward the panel while presenting.
-    const spine = scene.getObjectByName("mixamorig:Spine2") ?? scene.getObjectByName("mixamorigSpine2");
+    const spine = bones.get("Spine2");
     if (spine) {
       const lean = (target.x < 0 ? -1 : 1) * 0.06 * w.current;
       spineLean.next.setFromEuler(spineLean.euler.set(0, lean, lean * 0.4));
@@ -263,29 +294,28 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     });
     if (import.meta.env.DEV) (window as unknown as { __zoordScene?: THREE.Object3D }).__zoordScene = scene;
   }, [scene]);
+  useEffect(() => { waveTime.current = 0; }, [waveId]);
   useEffect(() => {
-    waveTime.current = 0;
     const a = actions[clipName];
-    if (a) {
-      a.setLoop(waving ? THREE.LoopOnce : THREE.LoopRepeat, waving ? 1 : Infinity);
-      a.clampWhenFinished = waving;
-      a.paused = false;
-      a.reset().fadeIn(0.4).play();
-      a.setEffectiveTimeScale(0.72); // unhurried, refined gestures
-      // Keep the relaxed supplied pose at rest; use the full open-hand clip when presenting.
-      if (clipName === "Hand_on_Hip_Gesture") a.paused = true;
-    }
-    return () => {
-      if (a) a.paused = false;
-      a?.fadeOut(0.4);
-    };
-  }, [clipName, actions, mixer, waveId, waving]);
+    if (!a || previousAction.current === a) return;
+    const outgoing = previousAction.current;
+    a.setLoop(THREE.LoopRepeat, Infinity);
+    a.clampWhenFinished = false;
+    a.enabled = true;
+    a.paused = false;
+    a.reset().setEffectiveWeight(1).setEffectiveTimeScale(HOST_MOTION.clipSpeed).play();
+    if (outgoing) {
+      outgoing.paused = false;
+      a.crossFadeFrom(outgoing, HOST_MOTION.transition, false);
+    } else a.fadeIn(HOST_MOTION.transition);
+    previousAction.current = a;
+  }, [clipName, actions]);
   return (
     <>
       <group ref={group} position={[0, 0.3, 0]} scale={3.49 / 1.7}>
         <primitive object={scene} />
-        <ZoordMouth scene={scene} position={[0, 0.045, 0.12]} rotationX={0} scale={0.009} />
       </group>
+      <ZoordMouth scene={scene} position={[-0.01465, 0.02568, 0.1205]} rotationX={0} scale={0.009} />
     </>
   );
 }
@@ -300,11 +330,11 @@ function Logo() {
     <group name="DakkaiFloatingLogo" position={[-3.2, 6.2, -12.5]} scale={0.65}>
       <mesh position-z={-0.1}>
         <circleGeometry args={[2.34, 96]} />
-        <meshBasicMaterial color="#0b0e13" transparent opacity={0.88} />
+        <meshBasicMaterial color={stageColors.backing} transparent opacity={0.88} />
       </mesh>
       <mesh ref={ref} position-z={-0.05}>
         <ringGeometry args={[2.35, 2.42, 128]} />
-        <meshBasicMaterial color={RED} toneMapped={false} transparent opacity={0.8} />
+        <meshBasicMaterial color={stageColors.red} toneMapped={false} transparent opacity={0.8} />
       </mesh>
       <mesh>
         <planeGeometry args={[6.4, 4.67]} />
@@ -350,7 +380,7 @@ function Brain({ active }: { active: boolean }) {
     <group name="ZoordBrain" position={BRAIN_POS.toArray()} scale={0.45}>
       <group ref={ref}>
         <lineSegments geometry={geo}>
-          <lineBasicMaterial color={CYAN} transparent opacity={0.45} toneMapped={false} />
+          <lineBasicMaterial color={stageColors.cyan} transparent opacity={0.45} toneMapped={false} />
         </lineSegments>
         <points geometry={pts}>
           <pointsMaterial vertexColors size={0.13} toneMapped={false} />
@@ -358,7 +388,7 @@ function Brain({ active }: { active: boolean }) {
       </group>
       <mesh ref={core}>
         <sphereGeometry args={[1, 32, 32]} />
-        <meshBasicMaterial color={RED} transparent opacity={0.35} toneMapped={false} />
+        <meshBasicMaterial color={stageColors.red} transparent opacity={0.35} toneMapped={false} />
       </mesh>
     </group>
   );
@@ -367,7 +397,7 @@ function Brain({ active }: { active: boolean }) {
 // Neural beam: brain -> menu panel the Zoord is pointing at
 function Beam({ point }: { point: number | null }) {
   const geo = useMemo(() => new THREE.BufferGeometry(), []);
-  const mat = useMemo(() => new THREE.LineBasicMaterial({ color: RED, transparent: true, toneMapped: false }), []);
+  const mat = useMemo(() => new THREE.LineBasicMaterial({ color: stageColors.red, transparent: true, toneMapped: false }), []);
   const obj = useMemo(() => new THREE.Line(geo, mat), [geo, mat]);
   useEffect(() => {
     if (point === null) return;
@@ -397,6 +427,16 @@ function StageCamera() {
 }
 
 export function Stage() {
+  const [colorsReady, setColorsReady] = useState(false);
+  useEffect(() => {
+    const css = getComputedStyle(document.documentElement);
+    stageColors.cyan = css.getPropertyValue("--stage-led-cyan").trim();
+    stageColors.blue = css.getPropertyValue("--stage-led-blue").trim();
+    stageColors.red = css.getPropertyValue("--stage-led-red").trim();
+    stageColors.space = css.getPropertyValue("--stage-space").trim();
+    stageColors.backing = css.getPropertyValue("--stage-logo-backing").trim();
+    setColorsReady(true);
+  }, []);
   const [anim, setAnim] = useState("Idle_12");
   const [open, setOpen] = useState<number | null>(null);
   const [aiPoint, setAiPoint] = useState<number | null>(null);
@@ -439,27 +479,29 @@ export function Stage() {
   return (
     <div className="fixed inset-0 bg-background">
       <div className={`stage-scene ${open !== null ? "stage-scene-menu" : ""}`}>
-      <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
+      {colorsReady && <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.08 }}>
         <StageCamera />
-        <color attach="background" args={["#000000"]} />
+        <color attach="background" args={[stageColors.space]} />
         <Suspense fallback={null}><UniverseBackdrop /></Suspense>
-        <fog attach="fog" args={["#000000", 28, 65]} />
-        <ambientLight intensity={0.55} color="#cfeaff" />
-        <pointLight position={[-4, 2, 2]} intensity={26} color={CYAN} castShadow shadow-mapSize={[1024, 1024]} />
-        <pointLight position={[4, 2, 2]} intensity={26} color={BLUE} />
+        <fog attach="fog" args={[stageColors.space, 28, 65]} />
+        <ambientLight intensity={0.35} color={stageColors.cyan} />
+        <pointLight position={[-4, 3, 2]} intensity={24} color={stageColors.cyan} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0002} shadow-normalBias={0.03} />
+        <pointLight position={[4, 2, 2]} intensity={20} color={stageColors.blue} />
+        <pointLight position={[2.5, 4.5, -2]} intensity={32} color={stageColors.red} distance={9} decay={2} />
         <Environment resolution={256}>
-          <Lightformer intensity={1.6} color={CYAN} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
-          <Lightformer intensity={1.5} color={CYAN} position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[20, 0.5, 1]} />
-          <Lightformer intensity={1.5} color={BLUE} position={[5, 1, -1]} rotation-y={-Math.PI / 2} scale={[20, 0.5, 1]} />
+          <Lightformer intensity={1.6} color={stageColors.cyan} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
+          <Lightformer intensity={1.3} color={stageColors.cyan} position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[20, 0.5, 1]} />
+          <Lightformer intensity={1.3} color={stageColors.blue} position={[5, 1, -1]} rotation-y={-Math.PI / 2} scale={[20, 0.5, 1]} />
+          <Lightformer intensity={0.8} color={stageColors.red} position={[0, 4, -5]} scale={[6, 2, 1]} />
         </Environment>
 
         <Suspense fallback={null}>
           <DakkaiRestaurant />
           <CounterVitrine />
         </Suspense>
-        <pointLight position={[-8, 7, -10]} intensity={95} color={CYAN} distance={30} decay={1.5} />
-        <pointLight position={[8, 6, -14]} intensity={85} color={BLUE} distance={30} decay={1.5} />
-        <pointLight position={[0, 4, -8]} intensity={18} color={RED} distance={12} />
+        <pointLight position={[-8, 7, -10]} intensity={95} color={stageColors.cyan} distance={30} decay={1.5} />
+        <pointLight position={[8, 6, -14]} intensity={85} color={stageColors.blue} distance={30} decay={1.5} />
+        <pointLight position={[0, 4, -8]} intensity={26} color={stageColors.red} distance={12} />
         <Suspense fallback={null}>
           <Logo />
         </Suspense>
@@ -472,10 +514,10 @@ export function Stage() {
 
         <OrbitControls target={[0, 2.45, 0]} enablePan={false} minDistance={7} maxDistance={28} minAzimuthAngle={-0.25} maxAzimuthAngle={0.25} minPolarAngle={1.25} maxPolarAngle={1.55} enableDamping />
         <EffectComposer multisampling={4}>
-          <Bloom intensity={0.2} luminanceThreshold={0.97} mipmapBlur />
-          <Vignette darkness={0.35} offset={0.35} />
+          <Bloom intensity={0.16} luminanceThreshold={1.1} mipmapBlur />
+          <Vignette darkness={0.22} offset={0.35} />
         </EffectComposer>
-      </Canvas>
+      </Canvas>}
       </div>
 
       {ticket && <OrderTicket ticket={ticket} onClose={() => setTicket(null)} />}

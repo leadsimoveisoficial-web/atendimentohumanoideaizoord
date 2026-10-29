@@ -3,6 +3,11 @@ import * as THREE from "three";
 import { plantedPresentationClip } from "./zoord-presentation";
 
 describe("stationary menu presentation", () => {
+  it("removes translation and scale from planted legs, hips and root", () => {
+    const tracks = ["mixamorigHips.position", "mixamorigLeftFoot.scale", "mixamorigRightLeg.position", "SmartRigArmature.position", "mixamorigLeftHand.position"].map((name) => new THREE.VectorKeyframeTrack(name, [0, 1], [0, 0, 0, 1, 1, 1]));
+    const safe = plantedPresentationClip(new THREE.AnimationClip("Stand_and_Chat", 1, tracks));
+    expect(safe.tracks.map((track) => track.name)).toEqual(["mixamorigLeftHand.position"]);
+  });
   it("removes leg rotations and root motion while preserving the supplied hand gestures", () => {
     const tracks = ["mixamorigLeftUpLeg", "mixamorigRightLeg", "mixamorigLeftFoot", "mixamorigHips", "Armature", "mixamorigLeftArm", "mixamorigHead"].map((name) =>
       new THREE.QuaternionKeyframeTrack(`${name}.quaternion`, [0, 1], [0, 0, 0, 1, 0, 1, 0, 0]),

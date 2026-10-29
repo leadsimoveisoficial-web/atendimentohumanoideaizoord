@@ -1,4 +1,4 @@
-import { createPortal, useFrame } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { voiceLevel } from "@/lib/voice-level";
@@ -8,6 +8,8 @@ import { applyAudioMouth, createMouthGeometry } from "@/lib/zoord-mouth-rig";
 export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.524, scale = 1 }: { scene: THREE.Object3D; position?: [number, number, number]; rotationX?: number; scale?: number }) {
   const [head, setHead] = useState<THREE.Object3D | null>(null);
   const lips = useRef<THREE.Mesh>(null);
+  const anchor = useRef<THREE.Group>(null);
+  const localAnchor = useMemo(() => new THREE.Matrix4().compose(new THREE.Vector3(...position), new THREE.Quaternion().setFromEuler(new THREE.Euler(rotationX, 0, 0)), new THREE.Vector3(scale, scale, scale)), [position[0], position[1], position[2], rotationX, scale]);
   const opening = useRef<THREE.Mesh>(null);
   const upper = useRef<THREE.Group>(null);
   const lower = useRef<THREE.Group>(null);
@@ -26,6 +28,11 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
     setTeethColor(getComputedStyle(document.documentElement).getPropertyValue("--stage-mouth-teeth").trim());
   }, [scene]);
   useFrame(() => {
+    if (head && anchor.current) {
+      head.updateWorldMatrix(true, false);
+      anchor.current.matrix.copy(head.matrixWorld).multiply(localAnchor);
+      anchor.current.matrixWorldNeedsUpdate = true;
+    }
     // No second envelope: it would smear syllables and keep moving after pauses.
     const shape = mouthShape(voiceLevel.v);
     if (import.meta.env.DEV) (window as unknown as { __voiceLevel?: typeof voiceLevel }).__voiceLevel = voiceLevel;
@@ -44,8 +51,8 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
     if (lips.current?.material instanceof THREE.MeshBasicMaterial) lips.current.material.opacity = shape.opacity;
   });
   if (!head || !ledColor || !cavityColor || !tongueColor || !teethColor) return null;
-  return createPortal(
-    <group name="ZoordVoiceMouth" position={position} rotation-x={rotationX} scale={scale}>
+  return (
+    <group ref={anchor} name="ZoordVoiceMouth" matrixAutoUpdate={false}>
       <mesh ref={opening} args={[geometry.cavity]}>
         <meshBasicMaterial color={cavityColor} toneMapped={false} />
       </mesh>
@@ -80,6 +87,6 @@ export function ZoordMouth({ scene, position = [0, 11.5, 10.3], rotationX = 0.52
       <mesh ref={lips} position-z={0.04} args={[geometry.lips]}>
         <meshBasicMaterial color={ledColor} transparent opacity={0.65} toneMapped={false} />
       </mesh>
-    </group>, head,
+    </group>
   );
 }

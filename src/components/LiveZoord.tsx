@@ -124,9 +124,10 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     onPoint(category);
     const ac = new AbortController();
     freeAbort.current = ac;
+    setFreeError("");
     setFreeActive(true);
     speakZoord(categoryScript(category), { signal: ac.signal })
-      .catch(() => {})
+      .catch((error: unknown) => { if (!ac.signal.aborted) setFreeError(error instanceof Error ? error.message : "Não consegui reproduzir a voz agora."); })
       .finally(() => {
         if (freeAbort.current === ac) {
           freeAbort.current = null;

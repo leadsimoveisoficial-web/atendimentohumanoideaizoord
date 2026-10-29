@@ -22,19 +22,16 @@ export async function speakZoord(text: string, options: { lang?: string; signal?
     try {
       meter.resume();
       await audio.play();
-      await new Promise<void>((resolve) => {
-        audio.onended = () => resolve();
-        audio.onerror = () => resolve();
-        signal?.addEventListener(
-          "abort",
-          () => {
-            audio.pause();
-            resolve();
-          },
-          { once: true },
-        );
+      await new Promise<void>((resolve, reject) => {
+        const cleanup = () => { audio.onended = null; audio.onerror = null; signal?.removeEventListener("abort", abort); };
+        const abort = () => { audio.pause(); cleanup(); reject(new DOMException("Reprodução interrompida", "AbortError")); };
+        audio.onended = () => { cleanup(); resolve(); };
+        audio.onerror = () => { cleanup(); reject(new Error("Não foi possível reproduzir a voz.")); };
+        if (signal?.aborted) abort();
+        else signal?.addEventListener("abort", abort, { once: true });
       });
     } finally {
+      audio.pause();
       meter.dispose();
       URL.revokeObjectURL(audio.src);
     }

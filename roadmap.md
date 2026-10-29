@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Refinar rig, transições e vida do Zoord, cores e nitidez 4K com inspiração cinematográfica; preservar modelo, cenário, voz e controles. Testes de movimentos e build OK; fluidez física não medida.
+- [x] Reposicionar boca usando matriz mundial da cabeça e ponto facial do avatar, evitando escala duplicada; corrigir erro de reprodução ignorado e limpeza de áudio. Captura da cena e 12 testes aprovados.
+- [ ] Confirmar voz masculina suave, leve e fluida e sincronização com fala real; acesso anteriormente bloqueado por créditos e escuta física indisponível. Live usa cedar, apresentações Puck e reserva xAI eve; não trocar provedor para contornar bloqueio.
+
 - [x] Substituir personagem pelo novo modelo enviado, com texturas 4K sem perdas e clipes de conversa; cenário/voz/controles preservados. Cena vista em captura ampla e 45 testes aprovados; interação final do painel e fluidez em aparelho real não verificadas.
 
 - [x] Cobrir a marca DAKKAI SUSHI gravada na frente do balcão com vitrine de vidro iluminada (prateleiras com makis); logo da parede preservada; cena conferida em 1280×1800 sem erros e build OK.
