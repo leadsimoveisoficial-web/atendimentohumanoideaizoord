@@ -167,8 +167,10 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const follow = presenting ? 0.35 : talking ? 0 : 1;
     headMotion.lookX = THREE.MathUtils.damp(headMotion.lookX, gaze.x * follow * (reduced.current ? 0.25 : 1), 4, dt);
     headMotion.lookY = THREE.MathUtils.damp(headMotion.lookY, gaze.y * follow * (reduced.current ? 0.25 : 1), 4, dt);
+    // Keep the chin slightly lifted and never let a low cursor pull the gaze far down.
+    const lookDown = Math.min(headMotion.lookY, 0.35);
     headMotion.euler.set(
-      Math.sin(time * 2.4) * 0.025 * headMotion.strength - headMotion.lookY * 0.22 + (anim === "nod" ? Math.sin(time * 4) * (reduced.current ? 0.025 : 0.10) : 0),
+      0.07 * headMotion.strength + Math.sin(time * 2.4) * 0.025 * headMotion.strength - lookDown * 0.22 + (anim === "nod" ? Math.sin(time * 4) * (reduced.current ? 0.025 : 0.10) : 0),
       (side * 0.10 + Math.sin(time * 0.9) * 0.025) * headMotion.strength + headMotion.lookX * 0.5,
       -headMotion.lookX * 0.06 + (speakingRef.current ? Math.sin(time * 0.7) * 0.04 * headMotion.strength : 0),
     );
