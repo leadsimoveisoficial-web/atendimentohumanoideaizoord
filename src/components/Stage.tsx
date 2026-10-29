@@ -44,6 +44,10 @@ export function panelPos(i: number) {
 }
 
 const _id = new THREE.Quaternion();
+// Mixamo head bones face local +Z; the gaze target sits slightly above the camera lens.
+const HEAD_FORWARD = new THREE.Vector3(0, 0, 1);
+const HEAD_AIM_LIFT = 0.9;
+const HEAD_AIM_MAX = 0.7;
 
 const _q = new THREE.Quaternion();
 const _e = new THREE.Euler();
@@ -167,18 +171,31 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const follow = presenting ? 0.35 : talking ? 0 : 1;
     headMotion.lookX = THREE.MathUtils.damp(headMotion.lookX, gaze.x * follow * (reduced.current ? 0.25 : 1), 4, dt);
     headMotion.lookY = THREE.MathUtils.damp(headMotion.lookY, gaze.y * (presenting || manualPresenting ? 0 : follow) * (reduced.current ? 0.25 : 1), 4, dt);
-    // Keep the chin slightly lifted and never let a low cursor pull the gaze far down.
-    const lookDown = Math.min(headMotion.lookY, 0.35);
-    headMotion.euler.set(
-      // The presentation clip tilts the head down; lift the chin so he faces the customer.
-      0.07 * headMotion.strength + (presenting || manualPresenting || talking ? 0.14 * headMotion.strength : 0) + Math.sin(time * 2.4) * 0.025 * headMotion.strength - lookDown * 0.22 + (anim === "nod" ? Math.sin(time * 4) * (reduced.current ? 0.025 : 0.10) : 0),
-      (side * 0.10 + Math.sin(time * 0.9) * 0.025) * headMotion.strength + headMotion.lookX * 0.5,
-      -headMotion.lookX * 0.06 + (speakingRef.current ? Math.sin(time * 0.7) * 0.04 * headMotion.strength : 0),
-    );
-    // Euler is authored in world axes (Y = turn, X = nod); express it in the head's local frame.
-    headMotion.next.setFromEuler(headMotion.euler);
+    // Absolute aim: whatever the clip does to the neck, the face points at a target in front of the
+    // camera at the customer's eye level (slightly above the lens), so he never ends up looking at the floor.
     head.parent?.updateWorldMatrix(true, false);
     const headWorld = (head.parent ? head.parent.getWorldQuaternion(new THREE.Quaternion()) : new THREE.Quaternion()).multiply(head.quaternion);
+    const headPos = head.getWorldPosition(new THREE.Vector3());
+    const lookUp = -Math.min(headMotion.lookY, 0.3); // low cursor may only dip the gaze a little
+    const target = new THREE.Vector3(
+      camera.position.x + headMotion.lookX * 3.2 + side * 2.2,
+      Math.max(camera.position.y, headPos.y) + HEAD_AIM_LIFT + lookUp * 1.2,
+      camera.position.z,
+    );
+    const facing = HEAD_FORWARD.clone().applyQuaternion(headWorld).normalize();
+    const desired = target.sub(headPos).normalize();
+    const aim = new THREE.Quaternion().setFromUnitVectors(facing, desired);
+    const aimAngle = 2 * Math.acos(Math.min(1, Math.abs(aim.w)));
+    const aimWeight = Math.min(1, HEAD_AIM_MAX / Math.max(aimAngle, 1e-6)) * (reduced.current ? 0.8 : 1);
+    aim.slerp(_id, 1 - aimWeight);
+    // Small living sway and the explicit nod ride on top of the aim (world axes: X = nod, Y = turn).
+    headMotion.euler.set(
+      Math.sin(time * 2.4) * 0.02 * headMotion.strength + (anim === "nod" ? Math.sin(time * 4) * (reduced.current ? 0.025 : 0.10) : 0),
+      Math.sin(time * 0.9) * 0.025 * headMotion.strength,
+      -headMotion.lookX * 0.06 + (speakingRef.current ? Math.sin(time * 0.7) * 0.04 * headMotion.strength : 0),
+    );
+    headMotion.next.setFromEuler(headMotion.euler).premultiply(aim);
+    // Express the world-space rotation in the head's local frame.
     headMotion.next.premultiply(headWorld.clone().invert()).multiply(headWorld);
     head.quaternion.multiply(headMotion.next.normalize()).normalize();
     headMotion.last.copy(head.quaternion);
