@@ -1,6 +1,7 @@
 # Roadmap
 
 - [ ] Refinar rig, transições e vida do Zoord, cores e nitidez 4K com referência cinematográfica GTA; preservar modelo, cenário, voz e controles.
+- [ ] Corrigir boca escura deslocada para roupa e investigar falha de voz; manter voz masculina suave, leve e fluida e sincronizar com reprodução real.
 
 - [x] Substituir personagem pelo novo modelo enviado, com texturas 4K sem perdas e clipes de conversa; cenário/voz/controles preservados. Cena vista em captura ampla e 45 testes aprovados; interação final do painel e fluidez em aparelho real não verificadas.
 
