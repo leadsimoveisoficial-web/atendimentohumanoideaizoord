@@ -8,7 +8,8 @@ function useHachimakiTexture() {
     const canvas = document.createElement("canvas");
     canvas.width = 1024;
     canvas.height = 128;
-    const ctx = canvas.getContext("2d")!;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return new THREE.CanvasTexture(canvas);
     ctx.fillStyle = "#f4efe4";
     ctx.fillRect(0, 0, 1024, 128);
     // Subtle fabric weave.
