@@ -60,4 +60,4 @@
 - [x] Build OK
 - [ ] Conta xAI sem créditos (403): quando o usuário recarregar créditos na xAI, voz e cérebro Grok ativam sozinhos
 - [ ] Validar voz/escuta grátis em aparelho real (microfone e vozes do navegador)
-- [ ] Voz OpenAI (/api/zoord-openai) conforme código enviado pelo usuário
+- [x] Voz OpenAI (/api/zoord-openai) conforme código enviado pelo usuário
