@@ -48,6 +48,17 @@ const _id = new THREE.Quaternion();
 const HEAD_FORWARD = new THREE.Vector3(0, 0, 1);
 const HEAD_AIM_LIFT = 0.9;
 const HEAD_AIM_MAX = 0.7;
+// Posture offsets in radians (world axes, character faces +Z; +X pitch = forward/down).
+const POSTURE = { spineLift: 0.03, chestOpen: 0.05, shoulderBack: 0.09, shoulderDown: 0.05, neckLift: 0.06, headDownMax: THREE.MathUtils.degToRad(2), torsoTurnMax: THREE.MathUtils.degToRad(15) };
+const _wq = new THREE.Quaternion();
+const _pq = new THREE.Quaternion();
+/** Apply a world-axis rotation to a bone, expressed in its local frame. */
+function rotateWorld(bone: THREE.Object3D, euler: THREE.Euler) {
+  bone.parent?.updateWorldMatrix(true, false);
+  const world = (bone.parent ? bone.parent.getWorldQuaternion(_pq) : _pq.identity()).multiply(bone.quaternion);
+  _wq.setFromEuler(euler).premultiply(world.clone().invert()).multiply(world);
+  bone.quaternion.multiply(_wq).normalize();
+}
 
 const _q = new THREE.Quaternion();
 const _e = new THREE.Euler();
@@ -113,6 +124,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     if (import.meta.env.DEV) (window as unknown as { __zoordScene?: THREE.Object3D }).__zoordScene = scene;
   }, [scene]);
   const restWeight = useRef(1);
+  const torsoTurn = useRef(0);
   const waving = anim === "Wave_One_Hand";
   // Speaking uses both hands (open-palm, maître-style); at rest he keeps the relaxed pose.
   const [speaking, setSpeaking] = useState(false);
@@ -143,6 +155,24 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     // Lower-body animation tracks are excluded: feet and hips retain the supplied standing pose.
     const active = actions[clipName];
     if (active) active.paused = !talking && !manualPresenting;
+    // Upright posture first (children read these world poses): open chest, shoulders back/down,
+    // organic breathing, lifted neck and a bounded torso turn toward the menu while presenting.
+    {
+      const presentingNow = point !== null && anim !== "Wave_One_Hand";
+      const turnSide = presentingNow ? (panelPos(point!).x < 0 ? -1 : 1) : 0;
+      torsoTurn.current = THREE.MathUtils.damp(torsoTurn.current, turnSide * POSTURE.torsoTurnMax, 4, dt);
+      const breathing = hostBreathing(time, reduced.current, listening || waving || musicLevel.playing);
+      const spine = bones.get("Spine");
+      if (spine) poseLayer.apply(spine, () => rotateWorld(spine, _e.set(-POSTURE.spineLift, torsoTurn.current * 0.5, 0)));
+      const chest = bones.get("Spine2");
+      if (chest) poseLayer.apply(chest, () => rotateWorld(chest, _e.set(breathing.pitch - POSTURE.chestOpen, breathing.yaw + torsoTurn.current * 0.5, breathing.roll)));
+      for (const [name, sign] of [["LeftShoulder", 1], ["RightShoulder", -1]] as const) {
+        const sh = bones.get(name);
+        if (sh) poseLayer.apply(sh, () => rotateWorld(sh, _e.set(0, sign * POSTURE.shoulderBack, -sign * POSTURE.shoulderDown)));
+      }
+      const neck = bones.get("Neck");
+      if (neck) poseLayer.apply(neck, () => rotateWorld(neck, _e.set(-POSTURE.neckLift, 0, 0)));
+    }
     // While the radio plays, the dance owns the arms — the relaxed pose would otherwise pin them down.
     restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving && !manualPresenting && !musicLevel.playing ? 1 : 0, 5, dt);
     // Relax both arms beside the torso instead of freezing midway through a talking gesture.
@@ -179,7 +209,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const headPos = head.getWorldPosition(new THREE.Vector3());
     const lookUp = -Math.min(headMotion.lookY, 0.3); // low cursor may only dip the gaze a little
     const target = new THREE.Vector3(
-      camera.position.x + headMotion.lookX * 3.2 + side * 2.2,
+      camera.position.x + headMotion.lookX * 3.2 + side * 1.2,
       Math.max(camera.position.y, headPos.y) + HEAD_AIM_LIFT + lookUp * 1.2,
       camera.position.z,
     );
@@ -195,15 +225,13 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       Math.sin(time * 0.9) * 0.025 * headMotion.strength,
       -headMotion.lookX * 0.06 + (speakingRef.current ? Math.sin(time * 0.7) * 0.04 * headMotion.strength : 0),
     );
+    headMotion.euler.x = Math.min(headMotion.euler.x, POSTURE.headDownMax);
     headMotion.next.setFromEuler(headMotion.euler).premultiply(aim);
     // Express the world-space rotation in the head's local frame.
     headMotion.next.premultiply(headWorld.clone().invert()).multiply(headWorld);
     head.quaternion.multiply(headMotion.next.normalize()).normalize();
     headMotion.last.copy(head.quaternion);
     headMotion.inverse.copy(headMotion.next).invert();
-    const spine = bones.get("Spine2");
-    const breathing = hostBreathing(time, reduced.current, listening || presenting || waving || manualPresenting || musicLevel.playing);
-    if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(breath.quaternion.setFromEuler(breath.euler.set(breathing.pitch, reduced.current || musicLevel.playing || waving ? 0 : Math.sin(time * 0.45) * 0.035, breathing.roll + (reduced.current ? 0 : Math.sin(time * 0.3) * 0.012)))));
     if (import.meta.env.DEV) {
       const canvas = document.querySelector(".stage-scene canvas");
       if (canvas && !canvas.hasAttribute("data-scene-ready")) canvas.setAttribute("data-scene-ready", "true");

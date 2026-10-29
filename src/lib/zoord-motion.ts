@@ -16,10 +16,14 @@ export function smoothMotion(current: number, target: number, delta: number, spe
   return target + (current - target) * Math.exp(-speed * motionStep(delta));
 }
 
+export const BREATH_RATE = (Math.PI * 2) / 3;
+
 export function hostBreathing(time: number, reduced: boolean, busy: boolean) {
   const amount = reduced || busy ? 0 : 1;
   return {
-    pitch: Math.sin(time * 1.25) * HOST_MOTION.breathingPitch * amount,
+    // One full breath every 3 s: chest rises (pitch), with a gentle chest yaw and spine roll.
+    pitch: Math.sin(time * BREATH_RATE) * HOST_MOTION.breathingPitch * amount,
+    yaw: Math.sin(time * BREATH_RATE + 0.6) * HOST_MOTION.breathingPitch * 0.5 * amount,
     roll: Math.sin(time * 0.65) * HOST_MOTION.breathingRoll * amount,
   };
 }

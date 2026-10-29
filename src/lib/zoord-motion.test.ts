@@ -10,8 +10,8 @@ describe("stationary host motion", () => {
   });
   it("suppresses ambient movement and dance for reduced motion", () => {
     expect(hostDanceTarget(false, false, false, false, true)).toBe(0);
-    expect(hostBreathing(1, true, false)).toEqual({ pitch: 0, roll: 0 });
-    expect(hostBreathing(1, false, true)).toEqual({ pitch: 0, roll: 0 });
+    expect(hostBreathing(1, true, false)).toEqual({ pitch: 0, yaw: 0, roll: 0 });
+    expect(hostBreathing(1, false, true)).toEqual({ pitch: 0, yaw: 0, roll: 0 });
   });
   it("bounds breathing to the chest without positional or lower-body motion", () => {
     for (let time = 0; time < 600; time += 0.17) {
@@ -28,5 +28,12 @@ describe("stationary host motion", () => {
     expect(smoothMotion(1, 0, 1 / 60)).toBeGreaterThan(0.9);
     expect(motionStep(10)).toBe(0.05);
     expect(motionStep(-1)).toBe(0);
+  });
+});
+describe("breathing rhythm", () => {
+  it("completes one breath every 3 seconds", async () => {
+    const { BREATH_RATE } = await import("./zoord-motion");
+    expect((Math.PI * 2) / BREATH_RATE).toBeCloseTo(3);
+    expect(hostBreathing(0.75, false, false).pitch).toBeCloseTo(hostBreathing(3.75, false, false).pitch);
   });
 });
