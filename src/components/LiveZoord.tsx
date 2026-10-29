@@ -4,7 +4,6 @@ import { createPlaybackMeter } from "@/lib/voice-level";
 import { createFreeListener, recognitionSupported, type FreeListener, type SpeechLang } from "@/lib/free-listen";
 import { stopFreeSpeech } from "@/lib/free-speech";
 import { speakZoord } from "@/lib/zoord-voice";
-import { streamSpeech } from "@/lib/stream-speech";
 import { categoryScript, guessCategory } from "@/lib/menu-script";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
@@ -216,8 +215,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       freeAbort.current = ac;
       setFreeError("");
       setFreeActive(true);
-      void streamSpeech("/api/zoord-openai", text, ac.signal)
-        .catch(async () => { if (!ac.signal.aborted) await speakZoord(text, { signal: ac.signal }); })
+      void speakZoord(text, { signal: ac.signal })
         .catch(() => { if (!ac.signal.aborted) setFreeError("Não consegui falar agora. A música continua disponível."); })
         .finally(() => { if (freeAbort.current === ac) { freeAbort.current = null; setFreeActive(false); } });
     },

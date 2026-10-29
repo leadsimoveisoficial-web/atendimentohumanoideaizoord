@@ -1,54 +1,44 @@
-import { createPlaybackMeter } from "./voice-level";
 import { speakFree } from "./free-speech";
 import { streamSpeech } from "./stream-speech";
 
-// Speak with the Grok (xAI) voice; the measured MP3 audio drives the LED mouth.
-// Any failure falls back to the free browser voice, so Zoord always speaks.
+// One single voice (OpenAI via the AI gateway) for every utterance, so the tone never changes
+// mid-conversation or mid-menu. Long texts are split into sentence chunks; each chunk is retried
+// with the same voice. The browser voice is used only if the main voice never started at all.
 
-export async function speakZoord(text: string, options: { lang?: string; signal?: AbortSignal } = {}): Promise<"lovable" | "xai" | "browser"> {
+export function splitSpeech(text: string, max = 600): string[] {
+  const sentences = text.replace(/\s+/g, " ").trim().match(/[^.!?…]+[.!?…]*\s*/g) ?? [];
+  const chunks: string[] = [];
+  let current = "";
+  for (const s of sentences) {
+    if (current && (current + s).length > max) { chunks.push(current.trim()); current = ""; }
+    current += s;
+  }
+  if (current.trim()) chunks.push(current.trim());
+  return chunks;
+}
+
+export async function speakZoord(text: string, options: { lang?: string; signal?: AbortSignal } = {}): Promise<"lovable" | "browser"> {
   const signal = options.signal;
   signal?.throwIfAborted();
-  // Approved Lovable AI voice first; Grok and the browser voice are backups.
-  for (const endpoint of ["/api/zoord-openai", "/api/zoord-speak"]) {
-    try {
-      await streamSpeech(endpoint, text, signal);
-      return "lovable";
-    } catch (e) {
-      if (signal?.aborted) throw e;
+  const chunks = splitSpeech(text);
+  let spoken = false;
+  for (let i = 0; i < chunks.length; i++) {
+    let ok = false;
+    for (let attempt = 0; attempt < 3 && !ok; attempt++) {
+      try {
+        await streamSpeech("/api/zoord-openai", chunks[i]!, signal);
+        ok = true;
+      } catch (e) {
+        if (signal?.aborted) throw e;
+        // Never replay audio that already played; skip to the next sentence with the same voice.
+        if ((e as { audioStarted?: boolean }).audioStarted) ok = true;
+        else await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+      }
     }
+    if (ok) { spoken = true; continue; }
+    // Main voice unavailable: only switch to the browser voice if nothing was spoken yet,
+    // so a presentation never changes tone halfway through.
+    if (!spoken) { await speakFree(chunks.slice(i).join(" "), options); return "browser"; }
   }
-  try {
-    const response = await fetch("/api/zoord-voice", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, lang: (options.lang ?? "pt-BR").slice(0, 2) }),
-      signal: signal ?? null,
-    });
-    if (!response.ok) throw new Error(`Voz do Grok falhou (${response.status})`);
-    const blob = await response.blob();
-    if (!blob.size) throw new Error("Voz do Grok vazia");
-    const audio = new Audio(URL.createObjectURL(blob));
-    const meter = createPlaybackMeter(audio, "recording");
-    try {
-      meter.resume();
-      await audio.play();
-      await new Promise<void>((resolve, reject) => {
-        const cleanup = () => { audio.onended = null; audio.onerror = null; signal?.removeEventListener("abort", abort); };
-        const abort = () => { audio.pause(); cleanup(); reject(new DOMException("Reprodução interrompida", "AbortError")); };
-        audio.onended = () => { cleanup(); resolve(); };
-        audio.onerror = () => { cleanup(); reject(new Error("Não foi possível reproduzir a voz.")); };
-        if (signal?.aborted) abort();
-        else signal?.addEventListener("abort", abort, { once: true });
-      });
-    } finally {
-      audio.pause();
-      meter.dispose();
-      URL.revokeObjectURL(audio.src);
-    }
-    return "xai";
-  } catch (e) {
-    if (signal?.aborted) throw e;
-    await speakFree(text, options);
-    return "browser";
-  }
+  return "lovable";
 }

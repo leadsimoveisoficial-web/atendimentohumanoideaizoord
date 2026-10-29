@@ -90,6 +90,9 @@ export async function streamSpeech(endpoint: string, text: string, signal?: Abor
     if (!completed || !samplesPlayed || pending.length) throw new Error("Incomplete speech stream");
     await playback;
     signal?.throwIfAborted();
+  } catch (e) {
+    if (samplesPlayed && e instanceof Error) (e as Error & { audioStarted?: boolean }).audioStarted = true;
+    throw e;
   } finally {
     signal?.removeEventListener("abort", abort);
     controller.abort();
