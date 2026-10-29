@@ -3,7 +3,7 @@ import process from "node:process";
 // Grok (xAI) brain. Server-side only, never exposed to the browser.
 
 export const XAI_CHAT_MODEL = "grok-4.7";
-export const XAI_TTS_VOICE = "eve";
+export const XAI_TTS_VOICE = "rex";
 
 export function xaiKey(): string {
   return (process.env["XAI_API_KEY"] ?? "").trim();
