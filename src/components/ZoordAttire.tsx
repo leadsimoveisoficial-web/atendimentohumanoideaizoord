@@ -8,7 +8,8 @@ function useHachimakiTexture() {
     const canvas = document.createElement("canvas");
     canvas.width = 1024;
     canvas.height = 128;
-    const ctx = canvas.getContext("2d")!;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return new THREE.CanvasTexture(canvas);
     ctx.fillStyle = "#f4efe4";
     ctx.fillRect(0, 0, 1024, 128);
     // Subtle fabric weave.
@@ -39,7 +40,7 @@ function useHachimakiTexture() {
 /** Forehead offset above the head bone origin, in world units. */
 const _bandOffset = new THREE.Vector3(0, 0.21, 0.02);
 
-export function ZoordAttire({ scene }: { scene: THREE.Object3D }) {
+export function ZoordAttire({ scene, boneUnitScale = 1 }: { scene: THREE.Object3D; boneUnitScale?: number }) {
   const [head, setHead] = useState<THREE.Object3D | null>(null);
   const [spine, setSpine] = useState<THREE.Object3D | null>(null);
   const bandTexture = useHachimakiTexture();
@@ -67,7 +68,7 @@ export function ZoordAttire({ scene }: { scene: THREE.Object3D }) {
     if (spine && happi.current) {
       spine.updateWorldMatrix(true, false);
       happi.current.matrixAutoUpdate = false;
-      happi.current.matrix.copy(spine.matrixWorld);
+      happi.current.matrix.copy(spine.matrixWorld).scale(new THREE.Vector3(boneUnitScale, boneUnitScale, boneUnitScale));
       happi.current.matrixWorldNeedsUpdate = true;
     }
   });

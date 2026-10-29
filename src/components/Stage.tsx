@@ -11,7 +11,7 @@ import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { gaze, setMouseGaze } from "@/lib/gaze";
-import zoord from "@/assets/zoord-cyborg.glb.asset.json";
+import zoord from "@/assets/zoord-new.glb.asset.json";
 import dakkaiLogo from "@/assets/dakkai-logo.png";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { voiceLevel } from "@/lib/voice-level";
@@ -80,7 +80,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const [speaking, setSpeaking] = useState(false);
   const speakingRef = useRef(false);
   const manualPresenting = anim === "welcome";
-  const clipName = waving ? "Wave_One_Hand" : (point !== null || speaking || manualPresenting) ? "Talk_with_Hands_Open" : "Armature|clip0|baselayer";
+  // Use this avatar's calm conversation clips; greetings remain bounded procedural waves.
+  const clipName = (point !== null || speaking || manualPresenting) ? "Stand_and_Chat" : "Hand_on_Hip_Gesture";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0 }), []);
   useEffect(() => {
     const move = (e: PointerEvent) => setMouseGaze((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
@@ -255,7 +256,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       a.reset().fadeIn(0.4).play();
       a.setEffectiveTimeScale(0.72); // unhurried, refined gestures
       // Keep the relaxed supplied pose at rest; use the full open-hand clip when presenting.
-      if (clipName === "Armature|clip0|baselayer") a.paused = true;
+      if (clipName === "Hand_on_Hip_Gesture") a.paused = true;
     }
     return () => {
       if (a) a.paused = false;
@@ -264,11 +265,11 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   }, [clipName, actions, mixer, waveId, waving]);
   return (
     <>
-      <group ref={group} position={[0, 0.3, 0]} scale={2.3}>
+      <group ref={group} position={[0, 0.3, 0]} scale={3.49 / 1.7}>
         <primitive object={scene} />
-        <ZoordMouth scene={scene} position={[-0.5, 5.8, 10.85]} rotationX={0} scale={0.9} />
+        <ZoordMouth scene={scene} position={[0, 0.045, 0.12]} rotationX={0} scale={0.009} />
       </group>
-      <ZoordAttire scene={scene} />
+      <ZoordAttire scene={scene} boneUnitScale={0.01} />
     </>
   );
 }
