@@ -519,6 +519,14 @@ export function Stage() {
     setAiPoint(i);
     if (i !== null && MENU[i]) setOpen(i);
   }, []);
+  const [chosen, setChosen] = useState<string | null>(null);
+  const chooseItem = (name: string, description?: string) => {
+    setChosen(name);
+    if (gestureTimer.current) clearTimeout(gestureTimer.current);
+    setAnim("nod");
+    gestureTimer.current = setTimeout(() => setAnim("Idle_12"), 1800);
+    voiceCommands.current?.say(choiceComment(name, description));
+  };
   const openMenu = (i: number) => {
     setOpen(i);
     setAnim("Idle_12");
@@ -592,7 +600,7 @@ export function Stage() {
       </div>
 
       {open !== null && (
-        <aside aria-label="Cardápio Dakkai" className="zoord-side-menu fixed z-50" >
+        <aside aria-label="Cardápio Dakkai" className="zoord-side-menu menu-enter fixed z-50" >
           <div className="menu-sheet !max-h-full !rounded-lg">
             <div className="flex items-center justify-between gap-4">
               <img src={dakkaiLogo} alt="DAKKAI Sushi" className="h-16 w-auto" />
@@ -604,13 +612,13 @@ export function Stage() {
               ))}
             </div>
             <h2 className="mt-6 font-display text-2xl text-foreground">{MENU[open]?.t}</h2>
-            <ul className="mt-4 space-y-3">
-              {MENU[open]?.items.map((it) => (
-                <li key={it.n} className="flex items-start justify-between gap-4 border-b border-border pb-3">
-                  <div>
-                    <p className="font-semibold text-foreground">{it.n}</p>
-                  </div>
-                  <span className="whitespace-nowrap font-display text-dakkai">{it.p}</span>
+            <ul key={open} className="mt-4 space-y-3">
+              {MENU[open]?.items.map((it, idx) => (
+                <li key={it.n} className="menu-item border-b border-border pb-3" style={{ animationDelay: `${120 + idx * 45}ms` }}>
+                  <button type="button" onClick={() => chooseItem(it.n, it.d)} className={`flex w-full items-start justify-between gap-4 text-left transition-colors hover:text-glow ${chosen === it.n ? "text-glow" : ""}`}>
+                    <p className="font-semibold">{it.n}</p>
+                    <span className="whitespace-nowrap font-display text-dakkai">{it.p}</span>
+                  </button>
                 </li>
               ))}
             </ul>
