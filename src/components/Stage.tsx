@@ -55,16 +55,32 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const { scene: sourceScene, animations } = useGLTF(zoord.url);
   const scene = useMemo(() => cloneSkeleton(sourceScene), [sourceScene]);
   const maxAniso = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
-  // Sharper face: full anisotropic filtering on the avatar's textures, viewed at a glancing angle.
+  // Preserve the uploaded albedo under the saturated stage lights, without adding white lights.
   useEffect(() => {
+    const ownedMaterials: THREE.MeshStandardMaterial[] = [];
+    const albedo = getComputedStyle(document.documentElement).getPropertyValue("--stage-avatar-albedo").trim();
     scene.traverse((o) => {
-      const mat = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
-      if (!mat || Array.isArray(mat)) return;
-      for (const tex of [mat.map, mat.normalMap, mat.roughnessMap, mat.metalnessMap]) {
-        if (tex) { tex.anisotropy = maxAniso; tex.needsUpdate = true; }
-      }
-      if (mat.map) mat.map.colorSpace = THREE.SRGBColorSpace;
+      if (!(o instanceof THREE.Mesh)) return;
+      const prepare = (source: THREE.Material) => {
+        if (!(source instanceof THREE.MeshStandardMaterial)) return source;
+        const mat = source.clone();
+        ownedMaterials.push(mat);
+        for (const tex of [mat.map, mat.normalMap, mat.roughnessMap, mat.metalnessMap]) {
+          if (tex) { tex.anisotropy = maxAniso; tex.needsUpdate = true; }
+        }
+        if (mat.map) {
+          mat.map.colorSpace = THREE.SRGBColorSpace;
+          mat.emissiveMap = mat.map;
+          mat.emissive.set(albedo);
+          mat.emissiveIntensity = 0.55;
+        }
+        mat.envMapIntensity = 0.15;
+        mat.needsUpdate = true;
+        return mat;
+      };
+      o.material = Array.isArray(o.material) ? o.material.map(prepare) : prepare(o.material);
     });
+    return () => { for (const material of ownedMaterials) material.dispose(); };
   }, [scene, maxAniso]);
   const stationaryAnimations = useMemo(() => animations.map(plantedPresentationClip), [animations]);
   const { actions, mixer } = useAnimations(stationaryAnimations, group);
