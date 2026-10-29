@@ -160,10 +160,11 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     // Undo our previous offset only when the mixer has not replaced the bone pose.
     if (head.quaternion.angleTo(headMotion.last) < 0.00001) head.quaternion.multiply(headMotion.inverse).normalize();
     const presenting = point !== null && anim !== "Wave_One_Hand";
-    headMotion.strength = THREE.MathUtils.damp(headMotion.strength, reduced.current ? 0 : listening || presenting || talking ? 1 : 0, 5, dt);
+    headMotion.strength = THREE.MathUtils.damp(headMotion.strength, reduced.current ? 0 : listening || presenting || talking ? 1 : 0.6, 5, dt);
     const side = presenting ? (panelPos(point).x < 0 ? -1 : 1) : 0;
     // Follow the customer: mouse on screen, or their movement on camera; presenting turns the gaze toward the panel.
-    const follow = presenting ? 0.35 : 1;
+    // While speaking, Zoord faces the center of the screen (the customer).
+    const follow = presenting ? 0.35 : talking ? 0 : 1;
     headMotion.lookX = THREE.MathUtils.damp(headMotion.lookX, gaze.x * follow * (reduced.current ? 0.25 : 1), 4, dt);
     headMotion.lookY = THREE.MathUtils.damp(headMotion.lookY, gaze.y * follow * (reduced.current ? 0.25 : 1), 4, dt);
     headMotion.euler.set(
@@ -181,7 +182,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     headMotion.inverse.copy(headMotion.next).invert();
     const spine = bones.get("Spine2");
     const breathing = hostBreathing(time, reduced.current, listening || presenting || waving || manualPresenting || musicLevel.playing);
-    if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(breath.quaternion.setFromEuler(breath.euler.set(breathing.pitch, 0, breathing.roll))));
+    if (spine) poseLayer.apply(spine, () => spine.quaternion.multiply(breath.quaternion.setFromEuler(breath.euler.set(breathing.pitch, reduced.current || musicLevel.playing || waving ? 0 : Math.sin(time * 0.45) * 0.035, breathing.roll + (reduced.current ? 0 : Math.sin(time * 0.3) * 0.012)))));
     if (import.meta.env.DEV) {
       const canvas = document.querySelector(".stage-scene canvas");
       if (canvas && !canvas.hasAttribute("data-scene-ready")) canvas.setAttribute("data-scene-ready", "true");

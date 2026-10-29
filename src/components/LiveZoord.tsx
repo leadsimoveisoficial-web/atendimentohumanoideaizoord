@@ -19,7 +19,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   const [caption, setCaption] = useState("");
   const [thinking, setThinking] = useState(false);
   const [cam, setCam] = useState(false);
-  const [freeMode, setFreeMode] = useState(false);
+  const [freeMode, setFreeMode] = useState(true);
   const [freeActive, setFreeActive] = useState(false);
   const [freeError, setFreeError] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -28,7 +28,8 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   const playbackMeter = useRef<ReturnType<typeof createPlaybackMeter> | null>(null);
   const reaction = useRef(emptyReaction());
   const listeningTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const freeModeRef = useRef(false);
+  // One consistent voice for the whole conversation: no mid-talk switch from the live voice.
+  const freeModeRef = useRef(true);
   const freeConversationOn = useRef(false);
   const freeListener = useRef<FreeListener | null>(null);
   const freeBusy = useRef(false);
@@ -318,7 +319,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       {cam && (
         <video ref={videoRef} autoPlay muted playsInline className="fixed bottom-6 right-6 h-28 w-36 rounded-lg border border-border object-cover shadow-lg" />
       )}
-      {freeMode && <span className="stage-chip !cursor-default !px-2.5 !py-1 !text-[10px]">Voz grátis do navegador ativa</span>}
+      
       <div className="flex flex-wrap items-center justify-center gap-2">
         {!live ? (
           <Button
