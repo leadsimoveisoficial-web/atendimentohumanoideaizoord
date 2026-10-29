@@ -33,9 +33,7 @@ import { HOST_MOTION, hostBreathing, hostDanceTarget, motionStep, smoothMotion }
 import { GesturePanel, type StageGesture } from "./GesturePanel";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
 import { UserAccount } from "./UserAccount";
-import { DakkaiRestaurant } from "./DakkaiRestaurant";
-import { CounterVitrine } from "./CounterVitrine";
-import { UniverseBackdrop } from "./UniverseBackdrop";
+import { StagePlatform } from "./StagePlatform";
 
 const stageColors = { cyan: "", blue: "", red: "", space: "", backing: "" };
 
@@ -482,7 +480,6 @@ export function Stage() {
       {colorsReady && <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.08 }}>
         <StageCamera />
         <color attach="background" args={[stageColors.space]} />
-        <Suspense fallback={null}><UniverseBackdrop /></Suspense>
         <fog attach="fog" args={[stageColors.space, 28, 65]} />
         <ambientLight intensity={0.35} color={stageColors.cyan} />
         <pointLight position={[-4, 3, 2]} intensity={24} color={stageColors.cyan} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0002} shadow-normalBias={0.03} />
@@ -495,10 +492,7 @@ export function Stage() {
           <Lightformer intensity={0.8} color={stageColors.red} position={[0, 4, -5]} scale={[6, 2, 1]} />
         </Environment>
 
-        <Suspense fallback={null}>
-          <DakkaiRestaurant />
-          <CounterVitrine />
-        </Suspense>
+        <StagePlatform cyan={stageColors.cyan} blue={stageColors.blue} red={stageColors.red} />
         <pointLight position={[-8, 7, -10]} intensity={95} color={stageColors.cyan} distance={30} decay={1.5} />
         <pointLight position={[8, 6, -14]} intensity={85} color={stageColors.blue} distance={30} decay={1.5} />
         <pointLight position={[0, 4, -8]} intensity={26} color={stageColors.red} distance={12} />
