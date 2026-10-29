@@ -1,12 +1,20 @@
 import { createPlaybackMeter } from "./voice-level";
 import { speakFree } from "./free-speech";
+import { streamSpeech } from "./stream-speech";
 
 // Speak with the Grok (xAI) voice; the measured MP3 audio drives the LED mouth.
 // Any failure falls back to the free browser voice, so Zoord always speaks.
 
-export async function speakZoord(text: string, options: { lang?: string; signal?: AbortSignal } = {}): Promise<"xai" | "browser"> {
+export async function speakZoord(text: string, options: { lang?: string; signal?: AbortSignal } = {}): Promise<"lovable" | "xai" | "browser"> {
   const signal = options.signal;
   signal?.throwIfAborted();
+  // Approved Lovable AI voice first; Grok and the browser voice are backups.
+  try {
+    await streamSpeech("/api/zoord-speak", text, signal);
+    return "lovable";
+  } catch (e) {
+    if (signal?.aborted) throw e;
+  }
   try {
     const response = await fetch("/api/zoord-voice", {
       method: "POST",
