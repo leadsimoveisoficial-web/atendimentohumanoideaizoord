@@ -26,7 +26,7 @@ export async function speakZoord(text: string, options: { lang?: string; signal?
     let ok = false;
     for (let attempt = 0; attempt < 3 && !ok; attempt++) {
       try {
-        await streamSpeech("/api/zoord-openai", chunks[i], signal);
+        await streamSpeech("/api/zoord-openai", chunks[i]!, signal);
         ok = true;
       } catch (e) {
         if (signal?.aborted) throw e;

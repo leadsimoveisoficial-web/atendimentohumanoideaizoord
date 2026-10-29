@@ -4,7 +4,6 @@ import { createPlaybackMeter } from "@/lib/voice-level";
 import { createFreeListener, recognitionSupported, type FreeListener, type SpeechLang } from "@/lib/free-listen";
 import { stopFreeSpeech } from "@/lib/free-speech";
 import { speakZoord } from "@/lib/zoord-voice";
-import { streamSpeech } from "@/lib/stream-speech";
 import { categoryScript, guessCategory } from "@/lib/menu-script";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
