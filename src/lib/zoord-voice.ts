@@ -9,11 +9,13 @@ export async function speakZoord(text: string, options: { lang?: string; signal?
   const signal = options.signal;
   signal?.throwIfAborted();
   // Approved Lovable AI voice first; Grok and the browser voice are backups.
-  try {
-    await streamSpeech("/api/zoord-speak", text, signal);
-    return "lovable";
-  } catch (e) {
-    if (signal?.aborted) throw e;
+  for (const endpoint of ["/api/zoord-openai", "/api/zoord-speak"]) {
+    try {
+      await streamSpeech(endpoint, text, signal);
+      return "lovable";
+    } catch (e) {
+      if (signal?.aborted) throw e;
+    }
   }
   try {
     const response = await fetch("/api/zoord-voice", {
