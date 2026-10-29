@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Substituir apenas o personagem pelo novo modelo enviado; preservar cenário, voz, controles e pés firmes; verificar apresentação e enquadramento.
+
 - [x] Cobrir a marca DAKKAI SUSHI gravada na frente do balcão com vitrine de vidro iluminada (prateleiras com makis); logo da parede preservada; cena conferida em 1280×1800 sem erros e build OK.
 - [ ] Adicionar página de preços e checkout do Clube do Dakkai, testáveis no preview; aguarda ativação de pagamentos, valores e benefícios dos planos.
 
