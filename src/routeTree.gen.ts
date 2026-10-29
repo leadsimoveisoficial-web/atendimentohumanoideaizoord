@@ -16,6 +16,7 @@ import { Route as CozinhaRouteImport } from './routes/cozinha'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedSegurancaRouteImport } from './routes/_authenticated/seguranca'
 import { Route as ApiZoordChatRouteImport } from './routes/api/zoord-chat'
+import { Route as ApiZoordOpenaiRouteImport } from './routes/api/zoord-openai'
 import { Route as ApiZoordPresentRouteImport } from './routes/api/zoord-present'
 import { Route as ApiZoordSpeakRouteImport } from './routes/api/zoord-speak'
 import { Route as ApiZoordVoiceRouteImport } from './routes/api/zoord-voice'
@@ -54,6 +55,11 @@ const ApiZoordChatRoute = ApiZoordChatRouteImport.update({
   path: '/api/zoord-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiZoordOpenaiRoute = ApiZoordOpenaiRouteImport.update({
+  id: '/api/zoord-openai',
+  path: '/api/zoord-openai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiZoordPresentRoute = ApiZoordPresentRouteImport.update({
   id: '/api/zoord-present',
   path: '/api/zoord-present',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/seguranca': typeof AuthenticatedSegurancaRoute
   '/api/zoord-chat': typeof ApiZoordChatRoute
+  '/api/zoord-openai': typeof ApiZoordOpenaiRoute
   '/api/zoord-present': typeof ApiZoordPresentRoute
   '/api/zoord-speak': typeof ApiZoordSpeakRoute
   '/api/zoord-voice': typeof ApiZoordVoiceRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/seguranca': typeof AuthenticatedSegurancaRoute
   '/api/zoord-chat': typeof ApiZoordChatRoute
+  '/api/zoord-openai': typeof ApiZoordOpenaiRoute
   '/api/zoord-present': typeof ApiZoordPresentRoute
   '/api/zoord-speak': typeof ApiZoordSpeakRoute
   '/api/zoord-voice': typeof ApiZoordVoiceRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/seguranca': typeof AuthenticatedSegurancaRoute
   '/api/zoord-chat': typeof ApiZoordChatRoute
+  '/api/zoord-openai': typeof ApiZoordOpenaiRoute
   '/api/zoord-present': typeof ApiZoordPresentRoute
   '/api/zoord-speak': typeof ApiZoordSpeakRoute
   '/api/zoord-voice': typeof ApiZoordVoiceRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/seguranca'
     | '/api/zoord-chat'
+    | '/api/zoord-openai'
     | '/api/zoord-present'
     | '/api/zoord-speak'
     | '/api/zoord-voice'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/seguranca'
     | '/api/zoord-chat'
+    | '/api/zoord-openai'
     | '/api/zoord-present'
     | '/api/zoord-speak'
     | '/api/zoord-voice'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/seguranca'
     | '/api/zoord-chat'
+    | '/api/zoord-openai'
     | '/api/zoord-present'
     | '/api/zoord-speak'
     | '/api/zoord-voice'
@@ -149,6 +161,7 @@ export interface RootRouteChildren {
   CozinhaRoute: typeof CozinhaRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiZoordChatRoute: typeof ApiZoordChatRoute
+  ApiZoordOpenaiRoute: typeof ApiZoordOpenaiRoute
   ApiZoordPresentRoute: typeof ApiZoordPresentRoute
   ApiZoordSpeakRoute: typeof ApiZoordSpeakRoute
   ApiZoordVoiceRoute: typeof ApiZoordVoiceRoute
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiZoordChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/zoord-openai': {
+      id: '/api/zoord-openai'
+      path: '/api/zoord-openai'
+      fullPath: '/api/zoord-openai'
+      preLoaderRoute: typeof ApiZoordOpenaiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/zoord-present': {
       id: '/api/zoord-present'
       path: '/api/zoord-present'
@@ -247,6 +267,7 @@ const rootRouteChildren: RootRouteChildren = {
   CozinhaRoute: CozinhaRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiZoordChatRoute: ApiZoordChatRoute,
+  ApiZoordOpenaiRoute: ApiZoordOpenaiRoute,
   ApiZoordPresentRoute: ApiZoordPresentRoute,
   ApiZoordSpeakRoute: ApiZoordSpeakRoute,
   ApiZoordVoiceRoute: ApiZoordVoiceRoute,

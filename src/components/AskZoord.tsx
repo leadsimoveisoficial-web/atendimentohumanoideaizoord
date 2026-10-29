@@ -41,7 +41,7 @@ export function AskZoord({ onPoint }: { onPoint: (i: number | null) => void }) {
       onPoint(cat ?? guessCategory(data.text + " " + q));
       setStatus("speaking");
       try {
-        await streamSpeech("/api/zoord-speak", data.text, ac.signal);
+        await streamSpeech("/api/zoord-openai", data.text, ac.signal);
       } catch (speechError) {
         if (ac.signal.aborted) throw speechError;
         // Credits or network down → Grok voice, then the free browser voice.

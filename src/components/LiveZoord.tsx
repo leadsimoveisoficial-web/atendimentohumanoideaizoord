@@ -215,7 +215,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       freeAbort.current = ac;
       setFreeError("");
       setFreeActive(true);
-      void streamSpeech("/api/zoord-speak", text, ac.signal)
+      void streamSpeech("/api/zoord-openai", text, ac.signal)
         .catch(async () => { if (!ac.signal.aborted) await speakZoord(text, { signal: ac.signal }); })
         .catch(() => { if (!ac.signal.aborted) setFreeError("Não consegui falar agora. A música continua disponível."); })
         .finally(() => { if (freeAbort.current === ac) { freeAbort.current = null; setFreeActive(false); } });
