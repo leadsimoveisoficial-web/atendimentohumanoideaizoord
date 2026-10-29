@@ -10,13 +10,13 @@ import {
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
 import { gaze, setMouseGaze } from "@/lib/gaze";
 import zoord from "@/assets/zoord-new.glb.asset.json";
 import dakkaiLogo from "@/assets/dakkai-logo.png";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { voiceLevel } from "@/lib/voice-level";
 import { ZoordMouth } from "./ZoordMouth";
-import { ZoordAttire } from "./ZoordAttire";
 import { SecurityBadge } from "./SecurityBadge";
 import { RecordRepeat } from "./RecordRepeat";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,8 @@ const _q = new THREE.Quaternion();
 const _e = new THREE.Euler();
 function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; point: number | null; listening: boolean; waveId: number; onWaveEnd: () => void }) {
   const group = useRef<THREE.Group>(null);
-  const { scene, animations } = useGLTF(zoord.url);
+  const { scene: sourceScene, animations } = useGLTF(zoord.url);
+  const scene = useMemo(() => cloneSkeleton(sourceScene), [sourceScene]);
   const maxAniso = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
   // Sharper face: full anisotropic filtering on the avatar's textures, viewed at a glancing angle.
   useEffect(() => {
@@ -269,7 +270,6 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
         <primitive object={scene} />
         <ZoordMouth scene={scene} position={[0, 0.045, 0.12]} rotationX={0} scale={0.009} />
       </group>
-      <ZoordAttire scene={scene} boneUnitScale={0.01} />
     </>
   );
 }

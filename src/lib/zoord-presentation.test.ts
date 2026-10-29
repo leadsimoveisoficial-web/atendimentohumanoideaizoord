@@ -12,4 +12,11 @@ describe("stationary menu presentation", () => {
     expect(safe.tracks.map((track) => track.name)).toEqual(["mixamorigLeftArm.quaternion", "mixamorigHead.quaternion"]);
     expect(original.tracks).toHaveLength(7);
   });
+  it("keeps the new avatar's conversation stationary, including toe end bones", () => {
+    const tracks = ["mixamorig:Hips", "mixamorig:LeftToe_End", "mixamorig:RightToe_End", "SmartRigArmature", "mixamorig:LeftArm", "mixamorig:Head"].map((name) =>
+      new THREE.QuaternionKeyframeTrack(`${name}.quaternion`, [0, 1], [0, 0, 0, 1, 0, 1, 0, 0]),
+    );
+    const safe = plantedPresentationClip(new THREE.AnimationClip("Stand_and_Chat", 1, tracks));
+    expect(safe.tracks.map((track) => track.name)).toEqual(["mixamorig:LeftArm.quaternion", "mixamorig:Head.quaternion"]);
+  });
 });
