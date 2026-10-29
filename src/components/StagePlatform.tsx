@@ -1,13 +1,13 @@
 import { useLayoutEffect, useState } from "react";
 
 /** Standalone circular dais under Zoord (top at y=0.3), replacing the restaurant backdrop. */
-export function StagePlatform() {
+export function StagePlatform({ cyan, blue, red }: { cyan: string; blue: string; red: string }) {
   const [c, setC] = useState<{ cyan: string; blue: string; red: string; wood: string; base: string } | null>(null);
   useLayoutEffect(() => {
     const css = getComputedStyle(document.documentElement);
     const v = (n: string) => css.getPropertyValue(n).trim();
-    setC({ cyan: v("--stage-cyan") || v("--primary"), blue: v("--stage-blue"), red: v("--dakkai") || v("--stage-red"), wood: v("--stage-platform-top"), base: v("--stage-platform-base") });
-  }, []);
+    setC({ cyan, blue, red, wood: v("--stage-platform-top"), base: v("--stage-platform-base") });
+  }, [cyan, blue, red]);
   if (!c) return null;
   return (
     <group name="StagePlatform">

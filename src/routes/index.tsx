@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Stage } from "@/components/Stage";
-import restaurant from "@/assets/dakkai-restaurant-4k.glb.asset.json";
 
 export const Route = createFileRoute("/")({
   ssr: false,

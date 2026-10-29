@@ -492,7 +492,7 @@ export function Stage() {
           <Lightformer intensity={0.8} color={stageColors.red} position={[0, 4, -5]} scale={[6, 2, 1]} />
         </Environment>
 
-        <StagePlatform />
+        <StagePlatform cyan={stageColors.cyan} blue={stageColors.blue} red={stageColors.red} />
         <pointLight position={[-8, 7, -10]} intensity={95} color={stageColors.cyan} distance={30} decay={1.5} />
         <pointLight position={[8, 6, -14]} intensity={85} color={stageColors.blue} distance={30} decay={1.5} />
         <pointLight position={[0, 4, -8]} intensity={26} color={stageColors.red} distance={12} />
