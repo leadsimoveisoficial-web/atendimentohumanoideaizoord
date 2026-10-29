@@ -23,3 +23,12 @@ describe("prices only when explicitly requested", () => {
     expect(requestsMenuPrice(question)).toBe(false);
   });
 });
+describe("choiceComment", () => {
+  it("praises the chosen dish without quoting a price", async () => {
+    const { choiceComment } = await import("./menu-script");
+    const text = choiceComment("Hot Philadelphia", "salmão e cream cheese");
+    expect(text).toContain("Uma escolha primorosa");
+    expect(text).toContain("Hot Philadelphia");
+    expect(text).not.toMatch(/R\$/);
+  });
+});

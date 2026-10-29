@@ -16,13 +16,13 @@ export function categoryScript(category: number | null): string {
   const parts: string[] = [];
   parts.push(
     category === null
-      ? "Com enorme prazer, apresento o nosso cardápio."
-      : `Com enorme prazer, apresento a categoria ${sections[0]?.t}.`,
+      ? "Permita-me apresentar a seleção especial do nosso chef, preparada com frescor e precisão a cada peça."
+      : `Permita-me apresentar, com todo o cuidado da casa, a nossa seleção de ${sections[0]?.t}.`,
   );
   for (const s of sections) {
     parts.push(`${s.t}: ` + s.items.map((it) => `${it.n}${it.d ? `, ${it.d.replace(/\.{3}|…/g, "")}` : ""}`).join("; ") + ".");
   }
-  parts.push("Prefere sabores delicados, preparos grelhados ou uma textura crocante? Será um prazer ajudar na sua escolha.");
+  parts.push("Prefere sabores delicados, o toque do maçarico ou uma textura crocante? Será uma honra conduzir a sua escolha.");
   return parts.join(" ");
 }
 
@@ -91,4 +91,10 @@ export function guessCategory(text: string): number | null {
     }
   });
   return score >= 3 ? best : null;
+}
+
+/** Brief, refined comment when a guest taps a dish; never volunteers the price. */
+export function choiceComment(name: string, description?: string): string {
+  const note = description?.replace(/\.{3}|…/g, "").trim();
+  return `Uma escolha primorosa: ${name}.${note ? ` ${note.charAt(0).toUpperCase()}${note.slice(1).replace(/\.$/, "")}.` : ""} Frescor e delicadeza em cada detalhe; tenho certeza de que será um momento memorável.`;
 }
