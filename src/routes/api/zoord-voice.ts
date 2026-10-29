@@ -28,8 +28,10 @@ export const Route = createFileRoute("/api/zoord-voice")({
             signal: request.signal,
           });
           if (!upstream.ok || !upstream.body) {
-            await upstream.text().catch(() => {});
-            return Response.json({ error: "A voz do Grok falhou agora." }, { status: 502 });
+            const detail = await upstream.text().catch(() => "");
+            console.error(`xAI TTS ${upstream.status}: ${detail.slice(0, 300)}`);
+            // Provider unavailable (e.g. no credits): empty reply so the browser voice takes over quietly.
+            return new Response(null, { status: 204, headers: { "X-Voice-Fallback": "browser" } });
           }
           return new Response(upstream.body, {
             headers: {
