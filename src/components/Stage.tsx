@@ -75,6 +75,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     return () => preference.removeEventListener("change", update);
   }, []);
   const maxAniso = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
+  const camera = useThree((s) => s.camera);
   // Preserve the uploaded albedo under the saturated stage lights, without adding white lights.
   useEffect(() => {
     const ownedMaterials: THREE.MeshStandardMaterial[] = [];
