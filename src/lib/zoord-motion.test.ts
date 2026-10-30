@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hostBreathing, hostDanceTarget, motionStep, smoothMotion } from "./zoord-motion";
+import { HEAD_POSTURE, hostLookPitch, hostBreathing, hostDanceTarget, motionStep, smoothMotion } from "./zoord-motion";
 
 describe("stationary host motion", () => {
   it("gives listening, pointing and explicit gestures priority over music", () => {
@@ -35,5 +35,18 @@ describe("breathing rhythm", () => {
     const { BREATH_RATE } = await import("./zoord-motion");
     expect((Math.PI * 2) / BREATH_RATE).toBeCloseTo(3);
     expect(hostBreathing(0.75, false, false).pitch).toBeCloseTo(hostBreathing(3.75, false, false).pitch);
+    expect(hostBreathing(0.75, false, false).yaw).toBeCloseTo(hostBreathing(3.75, false, false).yaw);
+    expect(hostBreathing(0.75, false, false).roll).toBeCloseTo(hostBreathing(3.75, false, false).roll);
+  });
+});
+
+describe("permanent elevated gaze", () => {
+  it("keeps a 3 degree lift even with the mouse below the avatar", () => {
+    expect(hostLookPitch(-1, 1)).toBeCloseTo(Math.PI / 60);
+    expect(hostLookPitch(0, 1)).toBe(hostLookPitch(0, 0));
+  });
+  it("limits downward nods to 2 degrees", () => {
+    expect(hostLookPitch(0, 1, 10)).toBeCloseTo(-2 * Math.PI / 180);
+    expect(hostLookPitch(10, -10)).toBe(HEAD_POSTURE.upMax);
   });
 });

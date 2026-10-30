@@ -11,6 +11,7 @@ import { motionCentroid, setCameraGaze } from "@/lib/gaze";
 import type { NewOrder } from "@/lib/orders";
 import { emptyReaction, reactToCustomer } from "@/lib/zoord-interaction";
 import { dispatchMusic, musicCommand, type MusicCommand } from "@/lib/music";
+import { StagePresence } from "./StagePresence";
 
 export type LiveZoordCommands = { present: (category: number | null) => void; say: (text: string) => void };
 
@@ -314,9 +315,9 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   return (
     <div className="pointer-events-auto flex flex-col items-center gap-2">
       <audio ref={call.audioRef} autoPlay className="hidden" />
-      {cam && (
-        <video ref={videoRef} autoPlay muted playsInline className="fixed bottom-6 right-6 h-28 w-36 rounded-lg border border-border object-cover shadow-lg" />
-      )}
+      <StagePresence show={cam} className="fixed bottom-6 right-6 z-40">
+        <video ref={videoRef} autoPlay muted playsInline className="stage-glass h-28 w-36 object-cover" />
+      </StagePresence>
       
       <div className="flex flex-wrap items-center justify-center gap-2">
         {!live ? (
@@ -350,8 +351,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
         <Button variant="ghost" onClick={toggleCam} className={`stage-chip ${cam ? "stage-chip-active" : ""}`}>{cam ? <CameraOff /> : <Camera />}{cam ? "Câmera ligada" : "Câmera"}</Button>
         {call.playbackBlocked && <Button variant="ghost" onClick={() => { playbackMeter.current?.resume(); call.resumePlayback(); }} className="stage-chip"><Volume2 />Tocar som</Button>}
       </div>
-      {call.error && <p role="alert" className="max-w-xl text-center text-xs text-dakkai">{call.error}</p>}
-      {freeError && <p role="alert" className="max-w-xl text-center text-xs text-dakkai">{freeError}</p>}
+      <StagePresence show={Boolean(call.error || freeError)}><p role="alert" className="stage-glass max-w-xl p-3 text-center text-xs text-dakkai">{call.error || freeError}</p></StagePresence>
     </div>
   );
 });

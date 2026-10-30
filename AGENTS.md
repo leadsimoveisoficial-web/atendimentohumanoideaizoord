@@ -29,11 +29,13 @@
 - Prepare Blender offline in tools/blender; preserve face, skeleton and baked necklace to avoid destructive edits.
 - Voice category-selection events open the same nonmodal menu as clicks; this keeps spoken recommendations and visible menu details aligned.
 - Map the active avatar's supplied conversation clips to presentation and relaxed posture, with model-specific height, head-local mouth anchor and attire bone-unit conversion; this supports avatar replacement without changing the approved voice or source mesh.
-- Clone avatar materials and use a restrained albedo-derived emissive fill with reduced environment response; this preserves source colors under saturated stage lights without adding white lights or changing scenery.
+- Clone avatar materials with restrained albedo-derived emissive fill and reduced environment response; read the mixed key/rim/ambient rig from stage CSS tokens so lighting changes preserve source colors.
 - Filter root, hip and leg tracks from stage presentation clips; stationary service gestures must not inherit locomotion or twist the planted lower body.
 - Gate browser-speech mouth cues on utterance start, pause, resume and end; this fallback cannot expose a measured audio waveform.
 - Restore procedural limb layers before each frame without overwriting fresh mixer poses, and bound presentation reach by actual limb lengths; this prevents stuck arms and unnatural overextension when talking clips pause.
 - Share host timing, bounded breathing, damped dance energy and reduced-motion rules in zoord-motion; cache rig bones and crossfade only changed actions to avoid greeting restarts and pose snaps. DEV exposes __zoordScene and data-scene-ready for visual verification.
+- Give procedural posture sole ownership of head/neck/spine tracks and run world-space damped gaze after all gesture layers; this prevents speech clips from lowering the face or snapping the torso.
+- Use StagePresence for HUD open/close animations and stage-glass CSS tokens for surfaces; only visual wrappers unmount, leaving the voice and radio controllers mounted to prevent audio interruptions.
 - Native packaging (capacitor.config.json, electron/main.cjs, native-shell/) wraps the published URL instead of a static bundle; the app depends on server functions, AI and realtime orders that cannot run offline from a file:// bundle.
 - Security stays isolated under _authenticated with admin-only RLS and existing camera/event/settings tables; first account promotes managers, while the public stage reads only security_mode_active() to protect camera data and preserve stage/voice/AI.
 - Store credential-free local RTSP as pending bridge metadata; browser media requires HTTPS and is live only after receipt, preventing exposed passwords and false surveillance status.

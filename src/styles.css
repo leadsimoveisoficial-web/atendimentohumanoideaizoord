@@ -161,6 +161,14 @@
   --stage-mouth-lips: #51434c;
   --stage-mouth-tongue: #b3121f;
   --stage-mouth-teeth: #e4dfd8;
+  --stage-key-light: #fff2e6;
+  --stage-rim-light: #00f0ff;
+  --stage-ambient-light: #13161b;
+  --stage-depth: #101820;
+  --hud-surface: oklch(0 0 0 / 0.5);
+  --hud-border: oklch(1 0 0 / 0.1);
+  --hud-shadow: 0 24px 48px oklch(0 0 0 / 0.5);
+  --stage-backdrop: radial-gradient(ellipse at 50% 40%, var(--stage-depth) 0%, var(--stage-space) 74%);
   --glass-highlight: oklch(0.96 0.01 220 / 0.08);
   --dakkai: oklch(0.52 0.2 27);
 }
@@ -172,23 +180,37 @@
 }
 @layer components {
   .stage-chip {
-    @apply rounded-lg border border-foreground/15 bg-background/40 px-3 py-2 text-[11px] uppercase text-muted-foreground backdrop-blur-md transition-all;
+    @apply rounded-2xl px-3 py-2 text-[11px] uppercase text-muted-foreground backdrop-blur-xl transition-all;
+    background: var(--hud-surface);
+    border: 1px solid var(--hud-border);
+    box-shadow: var(--hud-shadow);
+    transition-duration: 240ms;
   }
-  .stage-chip:hover { @apply border-glow/60 text-foreground; }
+  .stage-chip:hover { @apply border-glow/60 text-foreground; background: var(--hud-surface); }
   .stage-chip-active { @apply border-glow text-foreground; box-shadow: 0 0 18px -4px var(--glow); }
   .stage-chip-red { @apply border-dakkai bg-dakkai/80 text-foreground; box-shadow: 0 0 20px -4px var(--dakkai); }
   .stage-chip-red:hover { @apply border-dakkai bg-dakkai text-foreground; }
   .menu-sheet {
-    @apply max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-dakkai/40 bg-background/90 p-6 backdrop-blur-xl;
-    box-shadow: 0 0 60px -15px var(--dakkai);
+    @apply max-h-[90vh] w-full max-w-xl overflow-y-auto p-6;
+    background: var(--hud-surface);
+    border: 1px solid var(--hud-border);
+    border-radius: 16px;
+    backdrop-filter: blur(24px);
+    box-shadow: var(--hud-shadow);
   }
 }
+.stage-glass { background: var(--hud-surface); border: 1px solid var(--hud-border); border-radius: 16px; backdrop-filter: blur(24px); box-shadow: var(--hud-shadow); }
+.stage-glass button:hover, .menu-sheet button:hover { background: var(--glass-highlight); }
+.stage-chip:hover { background: var(--hud-surface); color: var(--foreground); }
+.stage-chip-red:hover { background: var(--dakkai); }
+.stage-backdrop { background: var(--stage-backdrop); }
 body { font-family: var(--font-sans); }
 .stage-scene { position: absolute; inset: 64px 0 142px; }
 .stage-scene-menu { right: 360px; }
+.stage-scene { transition: right 0.4s ease, bottom 0.4s ease; }
 .stage-chip svg { width: 15px; height: 15px; flex-shrink: 0; }
 .stage-controls { position: relative; max-width: 780px; margin-inline: auto; width: 100%; }
-.zoord-radio-panel { position: fixed; bottom: 172px; left: 50%; transform: translateX(-50%); }
+.zoord-radio-panel { position: fixed; bottom: 172px; left: max(16px, calc(50% - 192px)); }
 .zoord-side-menu {
   top: 82px;
   right: 12px;
@@ -213,4 +235,4 @@ body { font-family: var(--font-sans); }
 @keyframes menu-item-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .menu-enter { animation: menu-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; transform-origin: right center; }
 .menu-item { animation: menu-item-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
-@media (prefers-reduced-motion: reduce) { .menu-enter, .menu-item { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .menu-enter, .menu-item { animation: none; } .stage-scene, .stage-chip { transition: none; } }
