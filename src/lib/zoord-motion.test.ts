@@ -35,6 +35,8 @@ describe("breathing rhythm", () => {
     const { BREATH_RATE } = await import("./zoord-motion");
     expect((Math.PI * 2) / BREATH_RATE).toBeCloseTo(3);
     expect(hostBreathing(0.75, false, false).pitch).toBeCloseTo(hostBreathing(3.75, false, false).pitch);
+    expect(hostBreathing(0.75, false, false).yaw).toBeCloseTo(hostBreathing(3.75, false, false).yaw);
+    expect(hostBreathing(0.75, false, false).roll).toBeCloseTo(hostBreathing(3.75, false, false).roll);
   });
 });
 

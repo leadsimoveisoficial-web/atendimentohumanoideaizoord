@@ -33,7 +33,7 @@ export function hostBreathing(time: number, reduced: boolean, busy: boolean) {
     // One full breath every 3 s: chest rises (pitch), with a gentle chest yaw and spine roll.
     pitch: Math.sin(time * BREATH_RATE) * HOST_MOTION.breathingPitch * amount,
     yaw: Math.sin(time * BREATH_RATE + 0.6) * HOST_MOTION.breathingPitch * 0.5 * amount,
-    roll: Math.sin(time * 0.65) * HOST_MOTION.breathingRoll * amount,
+    roll: Math.sin(time * BREATH_RATE) * HOST_MOTION.breathingRoll * amount,
   };
 }
 
