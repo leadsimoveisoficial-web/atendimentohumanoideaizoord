@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Consolidar iluminação quente/ciano, fundo radial escuro, olhar erguido limitado a 2°, HUD de vidro com transições e passagem suave entre espera/fala; preservar avatar e voz.
+
 - [x] Refinar rig, transições e vida do Zoord, cores e nitidez 4K com inspiração cinematográfica; preservar modelo, cenário, voz e controles. Testes de movimentos e build OK; fluidez física não medida.
 - [x] Reposicionar boca usando matriz mundial da cabeça e ponto facial do avatar, evitando escala duplicada; corrigir erro de reprodução ignorado e limpeza de áudio. Captura da cena e 12 testes aprovados.
 - [ ] Confirmar voz masculina suave, leve e fluida e sincronização com fala real; acesso anteriormente bloqueado por créditos e escuta física indisponível. Live usa cedar, apresentações Puck e reserva xAI eve; não trocar provedor para contornar bloqueio.
