@@ -18,6 +18,15 @@ export function smoothMotion(current: number, target: number, delta: number, spe
 
 export const BREATH_RATE = (Math.PI * 2) / 3;
 
+export const HEAD_POSTURE = { lift: Math.PI / 60, downMax: Math.PI / 90, upMax: Math.PI / 12, turnMax: Math.PI / 6 } as const;
+
+/** World-space elevation: cursor cannot pull the chin below the customer's eye line. */
+export function hostLookPitch(eyePitch: number, cursorY: number, nod = 0) {
+  const finite = (value: number) => Number.isFinite(value) ? value : 0;
+  const elevation = Math.max(0, finite(eyePitch)) + HEAD_POSTURE.lift + Math.max(0, -finite(cursorY)) * 0.06 - finite(nod);
+  return Math.max(-HEAD_POSTURE.downMax, Math.min(HEAD_POSTURE.upMax, elevation));
+}
+
 export function hostBreathing(time: number, reduced: boolean, busy: boolean) {
   const amount = reduced || busy ? 0 : 1;
   return {
