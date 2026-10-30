@@ -186,7 +186,7 @@
     box-shadow: var(--hud-shadow);
     transition-duration: 240ms;
   }
-  .stage-chip:hover { @apply border-glow/60 text-foreground; }
+  .stage-chip:hover { @apply border-glow/60 text-foreground; background: var(--hud-surface); }
   .stage-chip-active { @apply border-glow text-foreground; box-shadow: 0 0 18px -4px var(--glow); }
   .stage-chip-red { @apply border-dakkai bg-dakkai/80 text-foreground; box-shadow: 0 0 20px -4px var(--dakkai); }
   .stage-chip-red:hover { @apply border-dakkai bg-dakkai text-foreground; }
@@ -200,6 +200,8 @@
   }
 }
 .stage-glass { background: var(--hud-surface); border: 1px solid var(--hud-border); border-radius: 16px; backdrop-filter: blur(24px); box-shadow: var(--hud-shadow); }
+.stage-glass button:hover, .menu-sheet button:hover { background: var(--glass-highlight); }
+.stage-chip-red:hover { background: var(--dakkai); }
 .stage-backdrop { background: var(--stage-backdrop); }
 body { font-family: var(--font-sans); }
 .stage-scene { position: absolute; inset: 64px 0 142px; }
