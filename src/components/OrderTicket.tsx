@@ -1,15 +1,16 @@
 import { X } from "lucide-react";
 import { brl, orderWhatsapp, type NewOrder } from "@/lib/orders";
+import { Button } from "./ui/button";
 
 export type TicketState = { order: NewOrder; status: "sending" | "sent" | "failed" };
 
 export function OrderTicket({ ticket, onClose }: { ticket: TicketState; onClose: () => void }) {
   const { order, status } = ticket;
   return (
-    <section aria-label="Pedido anotado" className="pointer-events-auto fixed left-3 top-20 z-50 w-[min(300px,calc(100vw-24px))] rounded-xl border border-primary/50 bg-background/85 p-4 text-sm text-foreground shadow-lg backdrop-blur">
+    <section aria-label="Pedido anotado" className="stage-glass pointer-events-auto fixed left-3 top-20 z-50 w-[min(300px,calc(100vw-24px))] p-4 text-sm text-foreground">
       <div className="mb-2 flex items-center justify-between">
         <h2 className="font-display text-xs tracking-[0.3em] text-primary">COMANDA</h2>
-        <button aria-label="Fechar comanda" onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+        <Button variant="ghost" size="icon" aria-label="Fechar comanda" onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></Button>
       </div>
       <p className="mb-2 text-xs text-muted-foreground">Mesa {order.table_number || "—"} • {order.customer_name || "Cliente"}</p>
       <ul className="mb-2 space-y-1">

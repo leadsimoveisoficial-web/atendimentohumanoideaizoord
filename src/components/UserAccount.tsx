@@ -10,6 +10,7 @@ import { UserRound, LogOut, Save, X } from "lucide-react";
 import { MUSIC_GENRES } from "@/lib/music";
 import { profilePreferences } from "@/lib/profile";
 import { safeRedirect } from "@/lib/profile";
+import { StagePresence } from "./StagePresence";
 
 type Profile = Tables<"profiles">;
 type Account = { user: User | null; profile: Profile | null; save: (patch: Partial<Pick<Profile, "display_name" | "music_genre" | "music_volume">>) => Promise<void> };
@@ -68,7 +69,7 @@ export function UserAccount() {
   const show = () => { setName(profile?.display_name ?? ""); setGenre(profile?.music_genre ?? "br-rock"); setVolume(Number(profile?.music_volume ?? 0.35)); setMessage(""); setOpen(true); };
   return <>
     <Button variant="ghost" className="stage-chip" aria-label={user ? "Minha conta" : "Entrar"} onClick={() => user ? show() : void navigate({ to: "/auth", search: { redirect: "/" } })}><UserRound /><span className="hidden lg:inline">{user ? profile?.display_name || "Minha conta" : "Entrar"}</span></Button>
-    {open && user && <aside aria-label="Minha conta" className="fixed right-3 top-20 z-50 w-[calc(100vw-24px)] max-w-sm rounded-lg border border-glow/30 bg-background/95 p-5 text-foreground backdrop-blur-xl">
+    <StagePresence show={open && Boolean(user)} className="fixed right-3 top-20 z-50 w-[calc(100vw-24px)] max-w-sm"><aside aria-label="Minha conta" className="stage-glass p-5 text-foreground">
       <header className="mb-4 flex items-center justify-between"><h2 className="font-display text-sm">Minha conta</h2><Button variant="ghost" size="icon" aria-label="Fechar conta" onClick={() => setOpen(false)}><X /></Button></header>
       <form className="space-y-4" onSubmit={async (e) => { e.preventDefault(); setBusy(true); try { await save(profilePreferences(name, genre, volume)); setMessage("Preferências salvas."); } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível salvar."); } finally { setBusy(false); } }}>
         <label className="block text-sm">Nome<Input aria-label="Nome" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} /></label>
@@ -78,6 +79,6 @@ export function UserAccount() {
         {message && <p role="status" className="text-sm text-glow">{message}</p>}
       </form>
       <Button variant="ghost" className="mt-4 w-full" onClick={async () => { await queryClient.cancelQueries(); queryClient.clear(); await supabase.auth.signOut(); setOpen(false); await navigate({ to: "/auth", search: { redirect: "/" }, replace: true }); }}><LogOut />Sair</Button>
-    </aside>}
+    </aside></StagePresence>
   </>;
 }

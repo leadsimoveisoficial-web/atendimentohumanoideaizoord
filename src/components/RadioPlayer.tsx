@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MUSIC_GENRES, danceStyle, genreIntroduction, musicLevel, rhythmEnergy, type MusicCommand, type MusicGenre } from "@/lib/music";
 import { useAccount } from "./UserAccount";
 import { voiceLevel } from "@/lib/voice-level";
+import { StagePresence } from "./StagePresence";
 
 const STATIONS: Record<MusicGenre, { name: string; url: string }> = {
   "br-rock": { name: "89 FM — rock nacional e internacional", url: "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_89FM.mp3" },
@@ -114,7 +115,7 @@ export function RadioPlayer({ listening, onSpeak, onOpen, hidden }: { listening:
       onPlaying={() => { setError(""); setStatus("playing"); }} onPause={clearRhythm} onEnded={() => { clearRhythm(); setStatus("idle"); }}
       onError={() => { clearRhythm(); setStatus("idle"); setError("Esta rádio está indisponível. Escolha outro gênero."); }} />
     <Button variant="ghost" className={`stage-chip ${status === "playing" ? "stage-chip-active" : ""}`} onClick={() => { onOpen(); setOpen(!open); }}><Music2 />Música e dança</Button>
-    {open && !hidden && createPortal(<section aria-label="Rádio do Zoord" className="zoord-radio-panel pointer-events-auto z-40 max-h-[55vh] overflow-y-auto w-[calc(100vw-32px)] max-w-sm rounded-lg border border-border bg-background/95 p-4 text-foreground backdrop-blur-xl">
+    {createPortal(<StagePresence show={open && !hidden} className="zoord-radio-panel pointer-events-auto z-40 w-[calc(100vw-32px)] max-w-sm"><section aria-label="Rádio do Zoord" className="stage-glass max-h-[55vh] overflow-y-auto p-4 text-foreground">
       <header className="mb-3 flex items-center justify-between"><h2 className="font-display text-sm">Rádio • Zoord</h2><Button size="icon" variant="ghost" aria-label="Fechar rádio" onClick={() => setOpen(false)}><X /></Button></header>
       <Select value={genre} onValueChange={(value) => { const selected = MUSIC_GENRES.find(g => g.id === value); if (!selected) return; void play(selected.id, true); }}>
         <SelectTrigger aria-label="Gênero musical" className="w-full"><SelectValue /></SelectTrigger>
@@ -129,6 +130,6 @@ export function RadioPlayer({ listening, onSpeak, onOpen, hidden }: { listening:
         <span role="status" className="text-xs text-muted-foreground">{status === "loading" ? "Conectando…" : status === "playing" ? "Ao vivo" : "Pausada"}</span>
       </div>
       {error && <p role="alert" className="mt-3 text-xs text-dakkai">{error}</p>}
-    </section>, document.body)}
+    </section></StagePresence>, document.body)}
   </>;
 }

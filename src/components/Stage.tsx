@@ -30,13 +30,14 @@ import { PoseLayer } from "@/lib/zoord-pose";
 import { plantedPresentationClip } from "@/lib/zoord-presentation";
 import { RadioPlayer } from "./RadioPlayer";
 import { danceMotion, musicLevel } from "@/lib/music";
-import { HOST_MOTION, hostBreathing, hostDanceTarget, motionStep, smoothMotion } from "@/lib/zoord-motion";
+import { HOST_MOTION, hostBreathing, hostDanceTarget, motionStep, smoothMotion, HEAD_POSTURE, hostLookPitch } from "@/lib/zoord-motion";
 import { GesturePanel, type StageGesture } from "./GesturePanel";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
 import { UserAccount } from "./UserAccount";
 import { StagePlatform } from "./StagePlatform";
+import { StagePresence } from "./StagePresence";
 
-const stageColors = { cyan: "", blue: "", red: "", space: "", backing: "" };
+const stageColors = { cyan: "", blue: "", red: "", space: "", backing: "", key: "", rim: "", ambient: "" };
 
 // The menu opens as a side panel on the viewer's right: Zoord points there.
 export function panelPos(i: number) {
@@ -47,8 +48,7 @@ export function panelPos(i: number) {
 const _id = new THREE.Quaternion();
 // Mixamo head bones face local +Z; the gaze target sits slightly above the camera lens.
 const HEAD_FORWARD = new THREE.Vector3(0, 0, 1);
-const HEAD_AIM_LIFT = 0.9;
-const HEAD_AIM_MAX = 0.7;
+
 // Posture offsets in radians (world axes, character faces +Z; +X pitch = forward/down).
 const POSTURE = { spineLift: 0.03, chestOpen: 0.05, shoulderBack: 0.09, shoulderDown: 0.05, neckLift: 0.06, headDownMax: THREE.MathUtils.degToRad(2), torsoTurnMax: THREE.MathUtils.degToRad(15) };
 const _wq = new THREE.Quaternion();
@@ -78,7 +78,6 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const motionTime = useRef(0);
   const danceWeight = useRef(0);
   const previousAction = useRef<THREE.AnimationAction | null>(null);
-  const breath = useMemo(() => ({ quaternion: new THREE.Quaternion(), euler: new THREE.Euler() }), []);
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => { reduced.current = preference.matches; };
@@ -88,7 +87,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   }, []);
   const maxAniso = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
   const camera = useThree((s) => s.camera);
-  // Preserve the uploaded albedo under the saturated stage lights, without adding white lights.
+  // Preserve uploaded albedo under the mixed warm/cyan light rig.
   useEffect(() => {
     const ownedMaterials: THREE.MeshStandardMaterial[] = [];
     const albedo = getComputedStyle(document.documentElement).getPropertyValue("--stage-avatar-albedo").trim();
@@ -115,7 +114,15 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     });
     return () => { for (const material of ownedMaterials) material.dispose(); };
   }, [scene, maxAniso]);
-  const stationaryAnimations = useMemo(() => animations.map(plantedPresentationClip), [animations]);
+  const stationaryAnimations = useMemo(() => animations.map((clip) => {
+    const stationary = plantedPresentationClip(clip);
+    // One owner for head/torso orientation: speech clips keep the supplied arm performance.
+    stationary.tracks = stationary.tracks.filter(track => {
+      const binding = THREE.PropertyBinding.parseTrackName(track.name);
+      return !/^(?:mixamorig:?)?(?:Head|Neck|Spine\d*)$/i.test(binding.nodeName ?? "");
+    });
+    return stationary;
+  }), [animations]);
   const { actions, mixer } = useAnimations(stationaryAnimations, group);
   const w = useRef(0);
   const waveTime = useRef(0);
@@ -126,6 +133,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   }, [scene]);
   const restWeight = useRef(1);
   const torsoTurn = useRef(0);
+  const clipTransitionUntil = useRef(0);
+  const breathingPose = useRef({ pitch: 0, yaw: 0, roll: 0 });
   const waving = anim === "Wave_One_Hand";
   // Speaking uses both hands (open-palm, maître-style); at rest he keeps the relaxed pose.
   const [speaking, setSpeaking] = useState(false);
@@ -133,7 +142,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const manualPresenting = anim === "welcome";
   // Use this avatar's calm conversation clips; greetings remain bounded procedural waves.
   const clipName = (point !== null || speaking || manualPresenting) ? "Stand_and_Chat" : "Hand_on_Hip_Gesture";
-  const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0 }), []);
+  const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0, world: new THREE.Quaternion(), initialized: false, position: new THREE.Vector3(), direction: new THREE.Vector3(), target: new THREE.Quaternion(), parent: new THREE.Quaternion() }), []);
   useEffect(() => {
     const move = (e: PointerEvent) => setMouseGaze((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
     const leave = () => setMouseGaze(0, 0);
@@ -141,7 +150,6 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     document.addEventListener("pointerleave", leave);
     return () => { window.removeEventListener("pointermove", move); document.removeEventListener("pointerleave", leave); };
   }, []);
-  const spineLean = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler() }), []);
   useFrame((_, rawDelta) => {
     poseLayer.restore();
     const head = bones.get("Head");
@@ -155,14 +163,18 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     if (talking !== speakingRef.current) { speakingRef.current = talking; setSpeaking(talking); }
     // Lower-body animation tracks are excluded: feet and hips retain the supplied standing pose.
     const active = actions[clipName];
-    if (active) active.paused = !talking && !manualPresenting;
+    if (active) active.paused = !talking && !manualPresenting && time >= clipTransitionUntil.current;
     // Upright posture first (children read these world poses): open chest, shoulders back/down,
     // organic breathing, lifted neck and a bounded torso turn toward the menu while presenting.
     {
       const presentingNow = point !== null && anim !== "Wave_One_Hand";
-      const turnSide = presentingNow ? (panelPos(point!).x < 0 ? -1 : 1) : 0;
+      const turnSide = presentingNow && point !== null ? (panelPos(point).x < 0 ? -1 : 1) : 0;
       torsoTurn.current = THREE.MathUtils.damp(torsoTurn.current, turnSide * POSTURE.torsoTurnMax, 4, dt);
-      const breathing = hostBreathing(time, reduced.current, listening || waving || musicLevel.playing);
+      const desiredBreath = hostBreathing(time, reduced.current, listening || waving || musicLevel.playing);
+      const breathing = breathingPose.current;
+      breathing.pitch = smoothMotion(breathing.pitch, desiredBreath.pitch, dt);
+      breathing.yaw = smoothMotion(breathing.yaw, desiredBreath.yaw, dt);
+      breathing.roll = smoothMotion(breathing.roll, desiredBreath.roll, dt);
       const spine = bones.get("Spine");
       if (spine) poseLayer.apply(spine, () => rotateWorld(spine, _e.set(-POSTURE.spineLift, torsoTurn.current * 0.5, 0)));
       const chest = bones.get("Spine2");
@@ -193,50 +205,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, restWeight.current));
       poseLayer.apply(fore, () => aimLimb(fore, hand, palm, restWeight.current));
     }
-    // Undo our previous offset only when the mixer has not replaced the bone pose.
-    if (head.quaternion.angleTo(headMotion.last) < 0.00001) head.quaternion.multiply(headMotion.inverse).normalize();
-    const presenting = point !== null && anim !== "Wave_One_Hand";
-    headMotion.strength = THREE.MathUtils.damp(headMotion.strength, reduced.current ? 0 : listening || presenting || talking ? 1 : 0.6, 5, dt);
-    const side = presenting ? (panelPos(point).x < 0 ? -1 : 1) : 0;
-    // Follow the customer: mouse on screen, or their movement on camera; presenting turns the gaze toward the panel.
-    // While speaking, Zoord faces the center of the screen (the customer).
-    const follow = presenting ? 0.35 : talking ? 0 : 1;
-    headMotion.lookX = THREE.MathUtils.damp(headMotion.lookX, gaze.x * follow * (reduced.current ? 0.25 : 1), 4, dt);
-    headMotion.lookY = THREE.MathUtils.damp(headMotion.lookY, gaze.y * (presenting || manualPresenting ? 0 : follow) * (reduced.current ? 0.25 : 1), 4, dt);
-    // Absolute aim: whatever the clip does to the neck, the face points at a target in front of the
-    // camera at the customer's eye level (slightly above the lens), so he never ends up looking at the floor.
-    head.parent?.updateWorldMatrix(true, false);
-    const headWorld = (head.parent ? head.parent.getWorldQuaternion(new THREE.Quaternion()) : new THREE.Quaternion()).multiply(head.quaternion);
-    const headPos = head.getWorldPosition(new THREE.Vector3());
-    const lookUp = -Math.min(headMotion.lookY, 0.3); // low cursor may only dip the gaze a little
-    const target = new THREE.Vector3(
-      camera.position.x + headMotion.lookX * 3.2 + side * 1.2,
-      Math.max(camera.position.y, headPos.y) + HEAD_AIM_LIFT + lookUp * 1.2,
-      camera.position.z,
-    );
-    const facing = HEAD_FORWARD.clone().applyQuaternion(headWorld).normalize();
-    const desired = target.sub(headPos).normalize();
-    const aim = new THREE.Quaternion().setFromUnitVectors(facing, desired);
-    const aimAngle = 2 * Math.acos(Math.min(1, Math.abs(aim.w)));
-    const aimWeight = Math.min(1, HEAD_AIM_MAX / Math.max(aimAngle, 1e-6)) * (reduced.current ? 0.8 : 1);
-    aim.slerp(_id, 1 - aimWeight);
-    // Small living sway and the explicit nod ride on top of the aim (world axes: X = nod, Y = turn).
-    headMotion.euler.set(
-      Math.sin(time * 2.4) * 0.02 * headMotion.strength + (anim === "nod" ? Math.sin(time * 4) * (reduced.current ? 0.025 : 0.10) : 0),
-      Math.sin(time * 0.9) * 0.025 * headMotion.strength,
-      -headMotion.lookX * 0.06 + (speakingRef.current ? Math.sin(time * 0.7) * 0.04 * headMotion.strength : 0),
-    );
-    headMotion.euler.x = Math.min(headMotion.euler.x, POSTURE.headDownMax);
-    headMotion.next.setFromEuler(headMotion.euler).premultiply(aim);
-    // Express the world-space rotation in the head's local frame.
-    headMotion.next.premultiply(headWorld.clone().invert()).multiply(headWorld);
-    head.quaternion.multiply(headMotion.next.normalize()).normalize();
-    headMotion.last.copy(head.quaternion);
-    headMotion.inverse.copy(headMotion.next).invert();
-    if (import.meta.env.DEV) {
-      const canvas = document.querySelector(".stage-scene canvas");
-      if (canvas && !canvas.hasAttribute("data-scene-ready")) canvas.setAttribute("data-scene-ready", "true");
-    }
+
   });
   // Preserve the supplied wave and add a bounded outward reach for a readable greeting.
   useFrame((_, rawDelta) => {
@@ -313,13 +282,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     poseLayer.apply(arm, () => aimLimb(arm, fore, elbowTarget, w.current));
     poseLayer.apply(fore, () => aimLimb(fore, hand, target, w.current));
     poseLayer.apply(hand, () => hand.quaternion.slerp(_id, w.current * 0.2));
-    // Human touch: lean the chest slightly toward the panel while presenting.
-    const spine = bones.get("Spine2");
-    if (spine) {
-      const lean = (target.x < 0 ? -1 : 1) * 0.06 * w.current;
-      spineLean.next.setFromEuler(spineLean.euler.set(0, lean, lean * 0.4));
-      poseLayer.apply(spine, () => spine.quaternion.multiply(spineLean.next));
-    }
+
   });
   // Posture guard (runs last): the torso and head may never drift far from the supplied rest pose,
   // so live speech + gestures can't twist Zoord's back toward the camera or fold him forward.
@@ -331,11 +294,43 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     }
     return m;
   }, [scene]);
-  useFrame(() => {
+  useFrame((_, rawDelta) => {
     for (const [bone, { q, max }] of restPose) {
       const a = bone.quaternion.angleTo(q);
+      if (bone === bones.get("Head") || bone === bones.get("Neck")) continue;
       if (a > max) bone.quaternion.rotateTowards(q, a - max);
     }
+    // Final world-space gaze pass after every posture/dance layer. No animation can lower it.
+    const head = bones.get("Head");
+    if (!head) return;
+    const dt = motionStep(rawDelta);
+    const presenting = point !== null || manualPresenting;
+    const follow = presenting ? 0.25 : speakingRef.current ? 0 : 1;
+    headMotion.lookX = smoothMotion(headMotion.lookX, gaze.x * follow, dt, 4);
+    headMotion.lookY = smoothMotion(headMotion.lookY, gaze.y * follow, dt, 4);
+    head.updateWorldMatrix(true, false);
+    head.getWorldPosition(headMotion.position);
+    headMotion.direction.copy(camera.position).sub(headMotion.position);
+    const horizontal = Math.hypot(headMotion.direction.x, headMotion.direction.z);
+    const eyePitch = Math.atan2(headMotion.direction.y, Math.max(horizontal, 0.001));
+    const nod = anim === "nod" ? Math.sin(motionTime.current * 4) * (reduced.current ? 0.015 : 0.055) : 0;
+    const pitch = hostLookPitch(eyePitch, headMotion.lookY, nod);
+    const yaw = THREE.MathUtils.clamp(Math.atan2(headMotion.direction.x, headMotion.direction.z) + headMotion.lookX * 0.25, -HEAD_POSTURE.turnMax, HEAD_POSTURE.turnMax);
+    headMotion.direction.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+    headMotion.target.setFromUnitVectors(HEAD_FORWARD, headMotion.direction);
+    if (!headMotion.initialized) { head.getWorldQuaternion(headMotion.world); headMotion.initialized = true; }
+    headMotion.world.slerp(headMotion.target, 1 - Math.exp(-6 * dt));
+    // Bound even transitional frames and nods: the face never tilts down beyond 2 degrees.
+    const facing = HEAD_FORWARD.clone().applyQuaternion(headMotion.world);
+    const actualPitch = Math.asin(THREE.MathUtils.clamp(facing.y, -1, 1));
+    if (actualPitch < -HEAD_POSTURE.downMax) {
+      const fixedYaw = Math.atan2(facing.x, facing.z);
+      headMotion.direction.set(Math.sin(fixedYaw) * Math.cos(HEAD_POSTURE.downMax), -Math.sin(HEAD_POSTURE.downMax), Math.cos(fixedYaw) * Math.cos(HEAD_POSTURE.downMax));
+      headMotion.world.setFromUnitVectors(HEAD_FORWARD, headMotion.direction);
+    }
+    if (head.parent) head.parent.getWorldQuaternion(headMotion.parent); else headMotion.parent.identity();
+    head.quaternion.copy(headMotion.parent.invert()).multiply(headMotion.world).normalize();
+    if (import.meta.env.DEV) document.querySelector(".stage-scene canvas")?.setAttribute("data-scene-ready", "true");
   });
   useEffect(() => {
     scene.traverse((o) => {
@@ -348,6 +343,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const a = actions[clipName];
     if (!a || previousAction.current === a) return;
     const outgoing = previousAction.current;
+    clipTransitionUntil.current = motionTime.current + HOST_MOTION.transition;
     a.setLoop(THREE.LoopRepeat, Infinity);
     a.clampWhenFinished = false;
     a.enabled = true;
@@ -484,6 +480,9 @@ export function Stage() {
     stageColors.red = css.getPropertyValue("--stage-led-red").trim();
     stageColors.space = css.getPropertyValue("--stage-space").trim();
     stageColors.backing = css.getPropertyValue("--stage-logo-backing").trim();
+    stageColors.key = css.getPropertyValue("--stage-key-light").trim();
+    stageColors.rim = css.getPropertyValue("--stage-rim-light").trim();
+    stageColors.ambient = css.getPropertyValue("--stage-ambient-light").trim();
     setColorsReady(true);
   }, []);
   const [anim, setAnim] = useState("Idle_12");
@@ -534,27 +533,23 @@ export function Stage() {
     voiceCommands.current?.present(i);
   };
   return (
-    <div className="fixed inset-0 bg-background">
+    <div className="stage-backdrop fixed inset-0">
       <div className={`stage-scene ${open !== null ? "stage-scene-menu" : ""}`}>
-      {colorsReady && <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: false, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.08 }}>
+      {colorsReady && <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, 3.1, 8.5], fov: 40 }} gl={{ antialias: true, alpha: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.08 }}>
         <StageCamera />
-        <color attach="background" args={[stageColors.space]} />
         <fog attach="fog" args={[stageColors.space, 28, 65]} />
-        <ambientLight intensity={0.35} color={stageColors.cyan} />
-        <pointLight position={[-4, 3, 2]} intensity={24} color={stageColors.cyan} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0002} shadow-normalBias={0.03} />
-        <pointLight position={[4, 2, 2]} intensity={20} color={stageColors.blue} />
-        <pointLight position={[2.5, 4.5, -2]} intensity={32} color={stageColors.red} distance={9} decay={2} />
+        <ambientLight intensity={0.65} color={stageColors.ambient} />
+        <directionalLight position={[-3, 7, 5]} intensity={2.4} color={stageColors.key} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-5} shadow-camera-right={5} shadow-camera-top={7} shadow-camera-bottom={-2} shadow-bias={-0.0002} shadow-normalBias={0.03} />
+        <directionalLight position={[3, 5, -4]} intensity={3.1} color={stageColors.rim} />
+        <pointLight position={[4, 3, 2]} intensity={8} color={stageColors.blue} distance={9} />
         <Environment resolution={256}>
-          <Lightformer intensity={1.6} color={stageColors.cyan} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
+          <Lightformer intensity={1.6} color={stageColors.key} position={[0, 5, 2]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
           <Lightformer intensity={1.3} color={stageColors.cyan} position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[20, 0.5, 1]} />
           <Lightformer intensity={1.3} color={stageColors.blue} position={[5, 1, -1]} rotation-y={-Math.PI / 2} scale={[20, 0.5, 1]} />
           <Lightformer intensity={0.8} color={stageColors.red} position={[0, 4, -5]} scale={[6, 2, 1]} />
         </Environment>
 
         <StagePlatform cyan={stageColors.cyan} blue={stageColors.blue} red={stageColors.red} />
-        <pointLight position={[-8, 7, -10]} intensity={95} color={stageColors.cyan} distance={30} decay={1.5} />
-        <pointLight position={[8, 6, -14]} intensity={85} color={stageColors.blue} distance={30} decay={1.5} />
-        <pointLight position={[0, 4, -8]} intensity={26} color={stageColors.red} distance={12} />
         <Suspense fallback={null}>
           <Logo />
         </Suspense>
@@ -573,7 +568,7 @@ export function Stage() {
       </Canvas>}
       </div>
 
-      {ticket && <OrderTicket ticket={ticket} onClose={() => setTicket(null)} />}
+      <StagePresence show={ticket !== null}>{ticket && <OrderTicket ticket={ticket} onClose={() => setTicket(null)} />}</StagePresence>
       <div className="stage-overlay pointer-events-none fixed inset-0 flex flex-col justify-between p-4 md:p-6">
         <header className="stage-header flex items-center justify-between gap-3">
           <span className="flex items-center gap-3">
@@ -600,9 +595,9 @@ export function Stage() {
         </div>
       </div>
 
-      {open !== null && (
-        <aside aria-label="Cardápio Dakkai" className="zoord-side-menu menu-enter fixed z-50" >
-          <div className="menu-sheet !max-h-full !rounded-lg">
+      <StagePresence show={open !== null} className="zoord-side-menu fixed z-50">
+        <aside aria-label="Cardápio Dakkai" className="h-full" >
+          <div className="menu-sheet !max-h-full">
             <div className="flex items-center justify-between gap-4">
               <img src={dakkaiLogo} alt="DAKKAI Sushi" className="h-16 w-auto" />
               <Button variant="ghost" onClick={() => setOpen(null)} className="stage-chip" aria-label="Fechar"><X /></Button>
@@ -612,14 +607,14 @@ export function Stage() {
                 <Button variant="ghost" key={s.t} onClick={() => openMenu(i)} className={`stage-chip ${open === i ? "stage-chip-active" : ""}`}>{s.t}</Button>
               ))}
             </div>
-            <h2 className="mt-6 font-display text-2xl text-foreground">{MENU[open]?.t}</h2>
+            <h2 className="mt-6 font-display text-2xl text-foreground">{MENU[open ?? 0]?.t}</h2>
             <ul key={open} className="mt-4 space-y-3">
-              {MENU[open]?.items.map((it, idx) => (
+              {MENU[open ?? 0]?.items.map((it, idx) => (
                 <li key={it.n} className="menu-item border-b border-border pb-3" style={{ animationDelay: `${120 + idx * 45}ms` }}>
-                  <button type="button" onClick={() => chooseItem(it.n, it.d)} className={`flex w-full items-start justify-between gap-4 text-left transition-colors hover:text-glow ${chosen === it.n ? "text-glow" : ""}`}>
+                  <Button variant="ghost" type="button" onClick={() => chooseItem(it.n, it.d)} className={`flex h-auto w-full items-start justify-between gap-4 whitespace-normal p-0 text-left transition-colors hover:text-glow ${chosen === it.n ? "text-glow" : ""}`}>
                     <p className="font-semibold">{it.n}</p>
                     <span className="whitespace-nowrap font-display text-dakkai">{it.p}</span>
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -629,7 +624,7 @@ export function Stage() {
             </div>
           </div>
         </aside>
-      )}
+      </StagePresence>
     </div>
   );
 }
