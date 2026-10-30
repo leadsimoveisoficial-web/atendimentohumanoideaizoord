@@ -201,6 +201,7 @@
 }
 .stage-glass { background: var(--hud-surface); border: 1px solid var(--hud-border); border-radius: 16px; backdrop-filter: blur(24px); box-shadow: var(--hud-shadow); }
 .stage-glass button:hover, .menu-sheet button:hover { background: var(--glass-highlight); }
+.stage-chip:hover { background: var(--hud-surface); color: var(--foreground); }
 .stage-chip-red:hover { background: var(--dakkai); }
 .stage-backdrop { background: var(--stage-backdrop); }
 body { font-family: var(--font-sans); }
