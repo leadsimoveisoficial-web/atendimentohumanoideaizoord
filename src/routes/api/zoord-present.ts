@@ -1,10 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createOpenAI } from "@ai-sdk/openai";
-import { streamText } from "ai";
 import { MENU } from "@/components/menu";
-import { GATEWAY_URL, apiKey, createRunIdFetch } from "@/server/gateway";
-import { xaiChat, xaiKey } from "@/lib/xai.server";
-import { groqChat, groqKey } from "@/lib/groq.server";
+import { openaiChat } from "@/lib/openai.server";
 import { categoryScript, menuAnswerScript, FREE_FALLBACK_ANSWER, requestsMenuPrice } from "@/lib/menu-script";
 import { OPEN_CONVERSATION } from "@/lib/zoord-conversation";
 
@@ -44,73 +40,16 @@ export const Route = createFileRoute("/api/zoord-present")({
           ? `Apresente a categoria "${cat.t}" de forma personalizada, destacando ingredientes e texturas de 2 ou 3 pratos, com explicações culturais pertinentes. Não mencione valores sem uma pergunta explícita de preço.${question ? ` O visitante também disse: "${question}".` : ""}`
           : `Pergunta do visitante: "${question}"`;
 
-        // 1) Free brains first: Grok (xAI), then Groq, when their keys exist.
-        if (xaiKey()) {
-          try {
-            const text = await xaiChat({
-              system: INSTRUCTIONS + menuText(requestsMenuPrice(question)),
-              messages: [{ role: "user", content: prompt }],
-              signal: request.signal,
-              maxTokens: 500,
-            });
-            return Response.json({ text, source: "xai" });
-          } catch (e) {
-            if (request.signal.aborted || (e as Error)?.name === "AbortError") return new Response(null, { status: 499 });
-            // Fall through to Groq, then the gateway, then the free local script.
-          }
-        }
-        if (groqKey()) {
-          try {
-            const text = await groqChat({
-              system: INSTRUCTIONS + menuText(requestsMenuPrice(question)),
-              messages: [{ role: "user", content: prompt }],
-              signal: request.signal,
-              maxTokens: 450,
-            });
-            return Response.json({ text, source: "groq" });
-          } catch (e) {
-            if (request.signal.aborted || (e as Error)?.name === "AbortError") return new Response(null, { status: 499 });
-            // Fall through to the gateway, then to the free local script.
-          }
-        }
-
-        // 2) Lovable AI gateway (paid, premium voice quality chain).
-        const key = apiKey();
-        if (key) {
-          const runIdFetch = createRunIdFetch(request.headers.get("X-Lovable-AIG-Run-ID") ?? undefined);
-          const provider = createOpenAI({
-            baseURL: `${GATEWAY_URL}/v1`,
-            apiKey: key,
-            headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-            fetch: runIdFetch.fetch,
+        try {
+          const text = await openaiChat({
+            system: INSTRUCTIONS + menuText(requestsMenuPrice(question)),
+            messages: [{ role: "user", content: prompt }],
+            signal: request.signal,
+            maxTokens: 700,
           });
-          try {
-            const result = streamText({
-              model: provider.responses("openai/gpt-6-astra"),
-              instructions: INSTRUCTIONS + menuText(requestsMenuPrice(question)),
-              messages: [{ role: "user", content: prompt }],
-              abortSignal: request.signal,
-              onError: () => {},
-              providerOptions: {
-                openai: {
-                  store: false,
-                  forceReasoning: true,
-                  reasoningEffort: "low",
-                  reasoningSummary: "auto",
-                  include: ["reasoning.encrypted_content"],
-                },
-              },
-            });
-            for (const k of ["response", "usage", "totalUsage", "finishReason", "steps", "content", "reasoning", "reasoningText", "sources", "files", "toolCalls", "toolResults", "providerMetadata", "warnings", "request", "output"] as const) {
-              const v = (result as unknown as Record<string, unknown>)[k];
-              if (v && typeof (v as Promise<unknown>).then === "function") (v as Promise<unknown>).then(undefined, () => {});
-            }
-            const text = (await result.text).trim();
-            if (text) return Response.json({ text, source: "gateway" });
-          } catch (e: unknown) {
-            if (request.signal.aborted || (e as Error)?.name === "AbortError") return new Response(null, { status: 499 });
-            // Fall through to the free local script.
-          }
+          return Response.json({ text, source: "openai" });
+        } catch {
+          if (request.signal.aborted) return new Response(null, { status: 499 });
         }
 
         // 3) Free local script from the verified menu — no AI, no credits.

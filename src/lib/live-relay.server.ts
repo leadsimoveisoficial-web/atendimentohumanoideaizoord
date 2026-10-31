@@ -56,14 +56,8 @@ type ProviderEvent = {
 };
 
 export function getLiveConfig(): LiveConfig {
-  const config: LiveConfig = {
-    ...liveSettings,
-    key: process.env["LOVABLE_API_KEY"] ?? "",
-  };
-  if ([config.baseURL, config.key, config.liveModel, config.backendModel].some((value) => !value)) {
-    throw new Error("Missing Live relay configuration");
-  }
-  return config;
+  // The mounted voice controller uses direct OpenAI chat + speech instead of this legacy relay.
+  throw new Error("A conexão antiga de voz está desativada. Use a voz OpenAI do Zoord.");
 }
 
 function gatewayAPIBase(baseURL: string) {

@@ -1,9 +1,8 @@
-import { speakFree } from "./free-speech";
 import { streamSpeech } from "./stream-speech";
 
-// One single voice (OpenAI via the AI gateway) for every utterance, so the tone never changes
+// One single voice (own-account OpenAI) for every utterance, so the tone never changes
 // mid-conversation or mid-menu. Long texts are split into sentence chunks; each chunk is retried
-// with the same voice. The browser voice is used only if the main voice never started at all.
+// with the same voice. No provider or browser narrator switch on failure.
 
 export function splitSpeech(text: string, max = 600): string[] {
   const sentences = text.replace(/\s+/g, " ").trim().match(/[^.!?…]+[.!?…]*\s*/g) ?? [];
@@ -17,16 +16,17 @@ export function splitSpeech(text: string, max = 600): string[] {
   return chunks;
 }
 
-export async function speakZoord(text: string, options: { lang?: string; signal?: AbortSignal } = {}): Promise<"lovable" | "browser"> {
+export async function speakZoord(text: string, options: { lang?: string; signal?: AbortSignal } = {}): Promise<"openai"> {
   const signal = options.signal;
   signal?.throwIfAborted();
   const chunks = splitSpeech(text);
-  let spoken = false;
   for (let i = 0; i < chunks.length; i++) {
     let ok = false;
     for (let attempt = 0; attempt < 3 && !ok; attempt++) {
       try {
-        await streamSpeech("/api/zoord-openai", chunks[i]!, signal);
+        const chunk = chunks[i];
+        if (!chunk) continue;
+        await streamSpeech("/api/zoord-openai", chunk, signal);
         ok = true;
       } catch (e) {
         if (signal?.aborted) throw e;
@@ -35,10 +35,7 @@ export async function speakZoord(text: string, options: { lang?: string; signal?
         else await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
       }
     }
-    if (ok) { spoken = true; continue; }
-    // Main voice unavailable: only switch to the browser voice if nothing was spoken yet,
-    // so a presentation never changes tone halfway through.
-    if (!spoken) { await speakFree(chunks.slice(i).join(" "), options); return "browser"; }
+    if (!ok) throw new Error("A voz OpenAI não está disponível agora. Confira o saldo e os limites da sua conta OpenAI.");
   }
-  return "lovable";
+  return "openai";
 }

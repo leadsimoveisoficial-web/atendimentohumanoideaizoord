@@ -13,7 +13,7 @@
 - Keep radio playback in one mounted RadioPlayer with its own CORS-enabled analyser, isolated from voiceLevel; music drives bounded upper-body rhythm, never lips or planted legs.
 - Share named, pure audio-reactive dance profiles in the music module so radio and spoken requests drive identical bounded gestures.
 - Manual genre introductions use the mounted voice controller without starting microphone capture; dance blends gently with speech and yields to listening, pointing and explicit gestures to avoid limb conflicts.
-- Zoord speech/brain fallback chain is premium gateway first, then Grok (xAI, `src/lib/xai.server.ts` + `/api/zoord-voice`), then Groq, then free browser voice/local scripts; every failure must auto-degrade, never dead-end the presentation.
+- All paid AI uses own-account OPENAI_API_KEY server-side via direct OpenAI; legacy live gateway is disabled, errors allow local text but never switch voice/provider or bill Lovable AI.
 - Share conversational and gastronomic policy through zoord-conversation across live voice, delegated reasoning and question handlers; gate menu price context and local quotations with requestsMenuPrice so presentations do not volunteer financial values.
 
 - Render the mouth as a root sibling copying the head world matrix and measured head-local lip anchor; this avoids portal/double-scale placement errors while actual output amplitude drives the opening.

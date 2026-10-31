@@ -41,6 +41,33 @@ export async function streamSpeech(endpoint: string, text: string, signal?: Abor
       signal: controller.signal,
     });
     if (!response.ok || !response.body) throw new Error(`TTS failed: ${response.status} ${await response.text()}`);
+    const schedule = (incoming: Uint8Array) => {
+      const decoded = decodePCM(pending, incoming);
+      pending = new Uint8Array(decoded.pending);
+      if (!decoded.samples.length) return;
+      samplesPlayed += decoded.samples.length;
+      const buffer = context.createBuffer(1, decoded.samples.length, 24000);
+      buffer.copyToChannel(decoded.samples, 0);
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(analyser);
+      sources.add(source);
+      playback = new Promise<void>((resolve) => { source.onended = () => { sources.delete(source); resolve(); }; });
+      playhead = Math.max(playhead, context.currentTime + 0.05);
+      source.start(playhead);
+      playhead += buffer.duration;
+    };
+    if (response.headers.get("Content-Type")?.includes("audio/pcm")) {
+      const reader = response.body.getReader();
+      try {
+        while (true) {
+          const next = await reader.read();
+          if (next.done) break;
+          schedule(next.value);
+        }
+        completed = true;
+      } finally { reader.releaseLock(); }
+    } else {
     const parser = createParser({
       onEvent(event) {
         const payload = JSON.parse(event.data) as { type: string; audio?: string; error?: unknown };
@@ -86,6 +113,7 @@ export async function streamSpeech(endpoint: string, text: string, signal?: Abor
       parser.reset({ consume: true });
     } finally {
       reader.releaseLock();
+    }
     }
     if (!completed || !samplesPlayed || pending.length) throw new Error("Incomplete speech stream");
     await playback;
