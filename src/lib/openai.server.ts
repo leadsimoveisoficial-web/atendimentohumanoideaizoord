@@ -26,7 +26,7 @@ export async function openaiSpeech(request: Request, format: "pcm" | "mp3" = "pc
     const response = await fetch("https://api.openai.com/v1/audio/speech", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "gpt-4o-mini-tts", input: text, voice: "alloy", instructions: "Fale em português do Brasil com voz masculina suave, leve, calorosa e totalmente natural, ritmo fluido de conversa.", response_format: format }),
+      body: JSON.stringify({ model: "gpt-4o-mini-tts", input: text, voice: "onyx", instructions: "Você é Zoord, maître de alta gastronomia do Dakkai Sushi. Voz masculina aveludada, suave e calorosa, português brasileiro natural. Fale de forma humana e conversacional, sem soar como locutor, sem exagero teatral e sem monotonia robótica. Ritmo tranquilo e fluido, pausas leves entre ideias, entusiasmo contido ao descrever ingredientes, frescor e texturas. Pronuncie nomes japoneses com cuidado. Não acrescente informações nem preços ao texto fornecido.", response_format: format }),
       signal: request.signal,
     });
     if (!response.ok) {

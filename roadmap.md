@@ -1,6 +1,7 @@
 # Roadmap
 
 - [ ] Usar exclusivamente a chave própria OpenAI na voz e inteligência, sem cobranças de IA Lovable; preservar narrador, cardápio e tratamento de falhas.
+- [ ] Refinar voz masculina humanizada e apresentação calorosa de maître, sem preços espontâneos.
 
 - [x] Consolidar iluminação quente/ciano, fundo radial escuro, olhar erguido limitado a 2°, HUD de vidro e transições suaves; avatar e voz preservados. 18 testes passaram; telas ampla/estreita e abertura/fechamento dos painéis conferidos. Olhar medido em +2,38° na espera e +4,36° na apresentação; fala real bloqueada por resposta 402 do serviço e fluidez em GPU física não medida.
 
