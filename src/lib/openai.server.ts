@@ -6,7 +6,7 @@ export async function openaiChat({ system, messages, signal, maxTokens = 700 }: 
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({ model: "gpt-4.1-mini", messages: [{ role: "system", content: system }, ...messages], max_tokens: maxTokens, store: false }),
-    signal,
+    signal: signal ?? null,
   });
   if (!response.ok) throw new Error(`OpenAI indisponível (${response.status}).`);
   const data = await response.json() as { choices?: { message?: { content?: string } }[] };
