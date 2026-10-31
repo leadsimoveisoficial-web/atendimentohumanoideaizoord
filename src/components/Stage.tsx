@@ -323,9 +323,10 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     // Bound even transitional frames and nods: the face never tilts down beyond 2 degrees.
     const facing = HEAD_FORWARD.clone().applyQuaternion(headMotion.world);
     const actualPitch = Math.asin(THREE.MathUtils.clamp(facing.y, -1, 1));
-    if (actualPitch < -HEAD_POSTURE.downMax) {
+    if (actualPitch < -HEAD_POSTURE.downMax || actualPitch > HEAD_POSTURE.upMax) {
       const fixedYaw = Math.atan2(facing.x, facing.z);
-      headMotion.direction.set(Math.sin(fixedYaw) * Math.cos(HEAD_POSTURE.downMax), -Math.sin(HEAD_POSTURE.downMax), Math.cos(fixedYaw) * Math.cos(HEAD_POSTURE.downMax));
+      const boundedPitch = THREE.MathUtils.clamp(actualPitch, -HEAD_POSTURE.downMax, HEAD_POSTURE.upMax);
+      headMotion.direction.set(Math.sin(fixedYaw) * Math.cos(boundedPitch), Math.sin(boundedPitch), Math.cos(fixedYaw) * Math.cos(boundedPitch));
       headMotion.world.setFromUnitVectors(HEAD_FORWARD, headMotion.direction);
     }
     if (head.parent) head.parent.getWorldQuaternion(headMotion.parent); else headMotion.parent.identity();

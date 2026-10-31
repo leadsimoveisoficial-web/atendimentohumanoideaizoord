@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Usar exclusivamente a chave própria OpenAI na voz e inteligência, sem cobranças de IA Lovable; respostas e voz reais retornaram 200 e antigo relay pago desativado. Erros preservam texto local, sem trocar narrador.
+- [x] Aplicar narrador masculino Onyx com direção de voz natural de maître; fala real do cardápio retornou 200, sem alertas; timbre em alto-falantes físicos não ouvido.
+- [x] Centralizar rosto com inclinação mínima e limites de ±2°; medido +0,27° na espera e +0,56° na apresentação, sem erros. 36 testes distintos aprovados.
+
 - [x] Consolidar iluminação quente/ciano, fundo radial escuro, olhar erguido limitado a 2°, HUD de vidro e transições suaves; avatar e voz preservados. 18 testes passaram; telas ampla/estreita e abertura/fechamento dos painéis conferidos. Olhar medido em +2,38° na espera e +4,36° na apresentação; fala real bloqueada por resposta 402 do serviço e fluidez em GPU física não medida.
 
 - [x] Refinar rig, transições e vida do Zoord, cores e nitidez 4K com inspiração cinematográfica; preservar modelo, cenário, voz e controles. Testes de movimentos e build OK; fluidez física não medida.

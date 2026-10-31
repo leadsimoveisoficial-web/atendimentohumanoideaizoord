@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 const brain = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/xai.server", () => ({ xaiKey: () => "configured", xaiChat: brain }));
-vi.mock("@/lib/groq.server", () => ({ groqKey: () => "", groqChat: vi.fn() }));
+vi.mock("@/lib/openai.server", () => ({ openaiChat: brain }));
 vi.mock("@tanstack/react-router", () => ({ createFileRoute: () => (config: unknown) => config }));
 import { Route } from "@/routes/api/zoord-chat";
 
@@ -22,7 +21,7 @@ describe("open-ended Zoord conversation", () => {
     brain.mockResolvedValueOnce("O céu parece azul porque a atmosfera espalha mais a luz azul.");
     const response = await handler({ request: new Request("http://localhost/api/zoord-chat", { method: "POST", body: JSON.stringify({ message: "Por que o céu é azul?" }) }) });
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ text: "O céu parece azul porque a atmosfera espalha mais a luz azul.", source: "xai" });
+    expect(await response.json()).toEqual({ text: "O céu parece azul porque a atmosfera espalha mais a luz azul.", source: "openai" });
     expect(brain.mock.calls.at(-1)?.[0].messages).toEqual([{ role: "user", content: "Por que o céu é azul?" }]);
   });
   it("keeps earlier turns available for follow-up questions", async () => {

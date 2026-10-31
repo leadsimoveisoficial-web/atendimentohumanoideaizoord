@@ -64,12 +64,13 @@ export const analyzeCamera = createServerFn({ method: "POST" })
 
     const { createOpenAI } = await import("@ai-sdk/openai");
     const { streamText } = await import("ai");
-    const key = process.env["LOVABLE_API_KEY"] ?? "";
-    const provider = createOpenAI({ baseURL: "https://ai.gateway.lovable.dev/v1", apiKey: key, headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" } });
+    const key = process.env["OPENAI_API_KEY"];
+    if (!key) throw new Error("A chave OpenAI não está disponível.");
+    const provider = createOpenAI({ apiKey: key });
     const result = streamText({
-      model: provider.responses("openai/gpt-6-astra"),
+      model: provider.responses("gpt-4.1-mini"),
       maxRetries: 0,
-      providerOptions: { openai: { store: false, forceReasoning: true, reasoningEffort: "low" } },
+      providerOptions: { openai: { store: false } },
       system:
         "Você é o Zoord em modo segurança do restaurante DAKKAI Sushi. Analise a imagem da câmera sem identificar pessoas (nunca descreva rostos, nomes ou traços pessoais). " +
         "Responda em UMA linha no formato exato: NIVEL|PESSOAS|RESUMO, onde NIVEL é info, atencao ou alerta; PESSOAS é um número; RESUMO tem até 25 palavras em português. " +
