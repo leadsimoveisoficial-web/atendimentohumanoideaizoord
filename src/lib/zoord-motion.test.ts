@@ -41,12 +41,16 @@ describe("breathing rhythm", () => {
 });
 
 describe("permanent elevated gaze", () => {
-  it("keeps a 3 degree lift even with the mouse below the avatar", () => {
-    expect(hostLookPitch(-1, 1)).toBeCloseTo(Math.PI / 60);
+  it("keeps a minimal half-degree lift with the mouse below the avatar", () => {
+    expect(hostLookPitch(-1, 1)).toBeCloseTo(Math.PI / 360);
     expect(hostLookPitch(0, 1)).toBe(hostLookPitch(0, 0));
+  });
+  it("keeps the face centered even when camera and cursor are high", () => {
+    expect(hostLookPitch(10, -10)).toBeLessThanOrEqual(2 * Math.PI / 180);
+    expect(hostLookPitch(0, -1)).toBeCloseTo(Math.PI / 180);
   });
   it("limits downward nods to 2 degrees", () => {
     expect(hostLookPitch(0, 1, 10)).toBeCloseTo(-2 * Math.PI / 180);
-    expect(hostLookPitch(10, -10)).toBe(HEAD_POSTURE.upMax);
+    expect(HEAD_POSTURE.upMax).toBeCloseTo(2 * Math.PI / 180);
   });
 });
