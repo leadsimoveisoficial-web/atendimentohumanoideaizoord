@@ -22,6 +22,8 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   const [freeMode, setFreeMode] = useState(true);
   const [freeActive, setFreeActive] = useState(false);
   const [freeError, setFreeError] = useState("");
+  const [phase, setPhase] = useState<"idle" | "listening" | "thinking" | "speaking">("idle");
+  const [camPending, setCamPending] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const pendingMenu = useRef<{ category: number | null } | null>(null);
@@ -114,6 +116,8 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     freeListener.current = null;
     freeAbort.current?.abort();
     freeAbort.current = null;
+    freeBusy.current = false;
+    setPhase("idle");
     stopFreeSpeech();
     setFreeActive(false);
     onListening(false);
@@ -127,12 +131,14 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     freeAbort.current = ac;
     setFreeError("");
     setFreeActive(true);
+    setPhase("speaking");
     speakZoord(categoryScript(category), { signal: ac.signal })
       .catch((error: unknown) => { if (!ac.signal.aborted) setFreeError(error instanceof Error ? error.message : "Não consegui reproduzir a voz agora."); })
       .finally(() => {
         if (freeAbort.current === ac) {
           freeAbort.current = null;
           setFreeActive(false);
+          setPhase("idle");
           onPoint(null);
         }
       });
@@ -141,6 +147,9 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   async function answerFree(text: string, lang: SpeechLang) {
     if (freeBusy.current) return;
     freeBusy.current = true;
+    setFreeError("");
+    setPhase("thinking");
+    onListening(false);
     // Pause listening while Zoord speaks so the microphone doesn't hear itself.
     freeListener.current?.stop();
     const ac = new AbortController();
@@ -148,6 +157,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     try {
       const command = handleMusic(text);
       if (command) {
+        setPhase("speaking");
         await speakZoord(command.action === "choose"
           ? "Que estilo gostaria de ouvir? Forró, pagode, sertanejo, eletrônico, hip-hop, rock nacional clássico, blues e jazz, hits do momento ou rock internacional?"
           : command.action === "stop" ? "Rádio pausada, à sua disposição."
@@ -157,21 +167,28 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       const res = await fetch("/api/zoord-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history: freeHistory.current }),
+        body: JSON.stringify({ message: text, history: freeHistory.current.slice(-24), image: captureFrame() }),
         signal: ac.signal,
       });
       const data = await res.json();
-      const answer = res.ok && data.text ? String(data.text) : "Estou com um pico de energia nos circuitos, mas você pode conferir o cardápio no painel ao lado e pedir direto pelo WhatsApp!";
-      freeHistory.current = [...freeHistory.current, { role: "user" as const, content: text }, { role: "assistant" as const, content: answer }];
+      ac.signal.throwIfAborted();
+      if (!res.ok || !data.text) throw new Error(data.error || "Não consegui responder agora. Tente novamente.");
+      const answer = String(data.text);
+      freeHistory.current = [...freeHistory.current, { role: "user" as const, content: text }, { role: "assistant" as const, content: answer }].slice(-24);
       const category = guessCategory(text);
       if (category !== null) onPoint(category);
+      setPhase("speaking");
       await speakZoord(answer, { lang, signal: ac.signal });
     } catch (e) {
       if (!ac.signal.aborted) setFreeError((e as Error).message || "Não consegui responder agora.");
     } finally {
-      freeBusy.current = false;
-      onPoint(null);
-      if (freeConversationOn.current) freeListener.current?.start();
+      if (freeAbort.current === ac) {
+        freeAbort.current = null;
+        freeBusy.current = false;
+        onPoint(null);
+        if (freeConversationOn.current) freeListener.current?.start();
+        else setPhase("idle");
+      }
     }
   }
 
@@ -187,7 +204,8 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     try {
       freeListener.current = createFreeListener({
         lang: "pt-BR",
-        onInterim: () => {},
+        onInterim: () => { setFreeError(""); onListening(true); },
+        onActive: (active) => { setPhase(active ? "listening" : "idle"); onListening(active); },
         onFinal: (text, lang) => {
           const result = reactToCustomer(reaction.current, text, Date.now(), Date.now());
           reaction.current = result.state;
@@ -197,7 +215,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
           if (result.wave) { onPoint(null); onGreeting(); }
           void answerFree(text, lang);
         },
-        onError: (message) => setFreeError(message),
+        onError: (message) => { freeConversationOn.current = false; setFreeActive(false); setPhase("idle"); onListening(false); setFreeError(message); },
       });
       freeListener.current.start();
     } catch (e) {
@@ -216,9 +234,10 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       freeAbort.current = ac;
       setFreeError("");
       setFreeActive(true);
+      setPhase("speaking");
       void speakZoord(text, { signal: ac.signal })
         .catch(() => { if (!ac.signal.aborted) setFreeError("Não consegui falar agora. A música continua disponível."); })
-        .finally(() => { if (freeAbort.current === ac) { freeAbort.current = null; setFreeActive(false); } });
+        .finally(() => { if (freeAbort.current === ac) { freeAbort.current = null; setFreeActive(false); setPhase("idle"); } });
     },
     present(category) {
       if (freeModeRef.current) {
@@ -251,7 +270,19 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     return () => { playbackMeter.current = null; output.dispose(); };
   }, [call.audioRef]);
 
-  // Camera: send a small snapshot every 2s to Zoord's brain
+  function captureFrame() {
+    const video = videoRef.current;
+    if (!streamRef.current || !video?.videoWidth || video.readyState < 2) return undefined;
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = Math.round(video.videoHeight / video.videoWidth * 512);
+    const context = canvas.getContext("2d");
+    if (!context) return undefined;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.65);
+  }
+
+  // Preview remains local; a frame is sent only with the customer's spoken turn.
   useEffect(() => {
     if (cam && videoRef.current && streamRef.current) videoRef.current.srcObject = streamRef.current;
   }, [cam]);
@@ -293,6 +324,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   }, [cam, call.status, call.sendFrame]);
 
   const toggleCam = async () => {
+    if (camPending) return;
     if (cam) {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
@@ -300,17 +332,20 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       call.sendFrame(null);
       return;
     }
+    setCamPending(true);
+    setFreeError("");
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: "user" } });
       streamRef.current = s;
+      s.getVideoTracks().forEach((track) => { track.onended = () => { streamRef.current = null; setCam(false); }; });
       setCam(true);
     } catch {
-      alert("Não consegui acessar a câmera. Verifique a permissão do navegador.");
-    }
+      setFreeError("Não consegui acessar a câmera. Confira a permissão e se ela está sendo usada em outro aplicativo.");
+    } finally { setCamPending(false); }
   };
   useEffect(() => () => streamRef.current?.getTracks().forEach((t) => t.stop()), []);
 
-  const freeListening = freeActive && !freeBusy.current;
+  const freeListening = phase === "listening";
 
   return (
     <div className="pointer-events-auto flex flex-col items-center gap-2">
@@ -337,7 +372,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
           >
             <Mic />
             {freeModeRef.current
-              ? freeListening ? "Ouvindo… (encerrar)" : "Falar com o Zoord"
+              ? freeConversationOn.current ? freeListening ? "Ouvindo… (encerrar)" : phase === "thinking" ? "Pensando… (encerrar)" : "Falando… (encerrar)" : "Falar com o Zoord"
               : stopping ? "Encerrando…" : "Falar com o Zoord"}
           </Button>
         ) : (
@@ -348,7 +383,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
             <Button variant="ghost" disabled={call.status !== "connected"} onClick={() => call.setMuted(!call.muted)} className="stage-chip">{call.muted ? <MicOff /> : <Mic />}{call.muted ? "Ativar microfone" : "Silenciar"}</Button>
           </>
         )}
-        <Button variant="ghost" onClick={toggleCam} className={`stage-chip ${cam ? "stage-chip-active" : ""}`}>{cam ? <CameraOff /> : <Camera />}{cam ? "Câmera ligada" : "Câmera"}</Button>
+        <Button variant="ghost" onClick={toggleCam} disabled={camPending} className={`stage-chip ${cam ? "stage-chip-active" : ""}`}>{cam ? <CameraOff /> : <Camera />}{camPending ? "Abrindo câmera…" : cam ? "Câmera ligada" : "Câmera"}</Button>
         {call.playbackBlocked && <Button variant="ghost" onClick={() => { playbackMeter.current?.resume(); call.resumePlayback(); }} className="stage-chip"><Volume2 />Tocar som</Button>}
       </div>
       <StagePresence show={Boolean(call.error || freeError)}><p role="alert" className="stage-glass max-w-xl p-3 text-center text-xs text-dakkai">{call.error || freeError}</p></StagePresence>

@@ -9,7 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep one mounted live voice controller for conversation and menu selections; this preserves the same voice and prevents overlapping narrators.
+- Keep one mounted voice controller with owner-scoped aborts; ignore retired recognition callbacks to prevent overlapping narrators. Send camera snapshots only with spoken turns, not AI timers.
 - Keep radio playback in one mounted RadioPlayer with its own CORS-enabled analyser, isolated from voiceLevel; music drives bounded upper-body rhythm, never lips or planted legs.
 - Share named, pure audio-reactive dance profiles in the music module so radio and spoken requests drive identical bounded gestures.
 - Manual genre introductions use the mounted voice controller without starting microphone capture; dance blends gently with speech and yields to listening, pointing and explicit gestures to avoid limb conflicts.

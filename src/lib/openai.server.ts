@@ -1,11 +1,11 @@
 /** Own-account OpenAI only. Secrets are read at request time and never returned. */
-export async function openaiChat({ system, messages, signal, maxTokens = 700 }: { system: string; messages: { role: "user" | "assistant"; content: string }[]; signal?: AbortSignal; maxTokens?: number }) {
+export async function openaiChat({ system, messages, signal, maxTokens = 700, image }: { system: string; messages: { role: "user" | "assistant"; content: string }[]; signal?: AbortSignal; maxTokens?: number; image?: string }) {
   const key = process.env["OPENAI_API_KEY"];
   if (!key) throw new Error("OpenAI não configurada.");
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "gpt-4.1-mini", messages: [{ role: "system", content: system }, ...messages], max_tokens: maxTokens, store: false }),
+    body: JSON.stringify({ model: "gpt-4.1-mini", messages: [{ role: "system", content: system }, ...messages.map((message, index) => image && message.role === "user" && index === messages.length - 1 ? { role: "user", content: [{ type: "text", text: message.content }, { type: "image_url", image_url: { url: image, detail: "low" } }] } : message)], max_tokens: maxTokens, store: false }),
     signal: signal ?? null,
   });
   if (!response.ok) throw new Error(`OpenAI indisponível (${response.status}).`);

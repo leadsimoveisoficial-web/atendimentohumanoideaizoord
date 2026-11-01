@@ -4,7 +4,7 @@ import { streamSpeech } from "./stream-speech";
 // mid-conversation or mid-menu. Long texts are split into sentence chunks; each chunk is retried
 // with the same voice. No provider or browser narrator switch on failure.
 
-export function splitSpeech(text: string, max = 600): string[] {
+export function splitSpeech(text: string, max = 2200): string[] {
   const sentences = text.replace(/\s+/g, " ").trim().match(/[^.!?…]+[.!?…]*\s*/g) ?? [];
   const chunks: string[] = [];
   let current = "";
@@ -30,6 +30,8 @@ export async function speakZoord(text: string, options: { lang?: string; signal?
         ok = true;
       } catch (e) {
         if (signal?.aborted) throw e;
+        const status = (e as { status?: number }).status;
+        if (status && status < 500 && status !== 429) throw e;
         // Never replay audio that already played; skip to the next sentence with the same voice.
         if ((e as { audioStarted?: boolean }).audioStarted) ok = true;
         else await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
