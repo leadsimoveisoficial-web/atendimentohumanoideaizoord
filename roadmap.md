@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Corrigir reinício/erros da escuta, cancelamento entre falas e câmera na conversa pela OpenAI; verificar testes e fluxo de atendimento.
+
 - [x] Usar exclusivamente a chave própria OpenAI na voz e inteligência, sem cobranças de IA Lovable; respostas e voz reais retornaram 200 e antigo relay pago desativado. Erros preservam texto local, sem trocar narrador.
 - [x] Aplicar narrador masculino Onyx com direção de voz natural de maître; fala real do cardápio retornou 200, sem alertas; timbre em alto-falantes físicos não ouvido.
 - [x] Centralizar rosto com inclinação mínima e limites de ±2°; medido +0,27° na espera e +0,56° na apresentação, sem erros. 36 testes distintos aprovados.

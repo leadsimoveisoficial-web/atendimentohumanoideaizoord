@@ -57,6 +57,7 @@ export function createFreeListener(options: {
   onFinal(text: string, lang: SpeechLang): void;
   onInterim?(text: string): void;
   onError(message: string): void;
+  onActive?(active: boolean): void;
 }): FreeListener {
   const Ctor = recognitionCtor();
   if (!Ctor) throw new Error("Este navegador não tem reconhecimento de voz gratuito.");
@@ -72,40 +73,47 @@ export function createFreeListener(options: {
     instance.interimResults = true;
     instance.maxAlternatives = 1;
     instance.onresult = (event) => {
+      if (!active || recognition !== instance) return;
       let interim = "";
+      let final = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         const text = result?.[0]?.transcript ?? "";
         if (!text) continue;
         if (result?.isFinal) {
-          const detected = detectLang(text, lang);
-          if (detected !== lang) {
-            lang = detected;
-            options.onFinal(text, detected);
-            restart();
-            return;
-          }
-          options.onFinal(text, lang);
+          final += `${text} `;
         } else interim += text;
+      }
+      if (final.trim()) {
+        lang = detectLang(final, lang);
+        options.onFinal(final.trim(), lang);
+        return;
       }
       if (interim) options.onInterim?.(interim);
     };
     instance.onerror = (event) => {
+      if (!active || recognition !== instance) return;
       if (event.error === "no-speech" || event.error === "aborted") return;
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
         active = false;
+        options.onActive?.(false);
         options.onError("Permita o acesso ao microfone no navegador para falar com o Zoord.");
         return;
       }
-      if (event.error === "network") options.onError("A escuta gratuita caiu por um instante. Continuando…");
+      if (event.error === "network" || event.error === "audio-capture") {
+        active = false;
+        options.onActive?.(false);
+        options.onError(event.error === "network" ? "Não consegui conectar a escuta. Confira a internet e toque para tentar novamente." : "Microfone indisponível. Confira se está conectado e liberado para este navegador.");
+      }
     };
     instance.onend = () => {
-      if (active) {
+      if (active && recognition === instance) {
         // Chrome ends the session periodically; restart to keep listening.
         restartTimer = setTimeout(() => {
-          if (!active) return;
+          if (!active || recognition !== instance) return;
           try {
-            recognition?.start();
+            instance.lang = lang;
+            instance.start();
           } catch {
             /* already started */
           }
@@ -117,8 +125,11 @@ export function createFreeListener(options: {
 
   const restart = () => {
     if (!active) return;
+    clearTimeout(restartTimer);
+    const previous = recognition;
+    recognition = undefined;
     try {
-      recognition?.abort();
+      previous?.abort();
     } catch {
       /* ignore */
     }
@@ -137,12 +148,17 @@ export function createFreeListener(options: {
       recognition = spawn();
       try {
         recognition.start();
+        options.onActive?.(true);
       } catch {
-        /* ignore */
+        active = false;
+        recognition = undefined;
+        options.onActive?.(false);
+        options.onError("Não consegui iniciar o microfone. Toque para tentar novamente.");
       }
     },
     stop() {
       active = false;
+      options.onActive?.(false);
       clearTimeout(restartTimer);
       try {
         recognition?.abort();
