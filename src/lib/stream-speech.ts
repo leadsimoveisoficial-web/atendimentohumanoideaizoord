@@ -25,9 +25,11 @@ export async function streamSpeech(endpoint: string, text: string, signal?: Abor
   let pending = new Uint8Array(0);
   let completed = false;
   let samplesPlayed = 0;
+  let activeReader: { cancel(reason?: unknown): Promise<void> } | undefined;
   const controller = new AbortController();
   const abort = () => {
     controller.abort(signal?.reason);
+    void activeReader?.cancel(signal?.reason).catch(() => {});
     for (const source of sources) source.stop();
   };
   signal?.addEventListener("abort", abort, { once: true });
@@ -40,7 +42,11 @@ export async function streamSpeech(endpoint: string, text: string, signal?: Abor
       body: JSON.stringify({ text }),
       signal: controller.signal,
     });
-    if (!response.ok || !response.body) throw new Error(`TTS failed: ${response.status} ${await response.text()}`);
+    if (!response.ok || !response.body) {
+      let message = "Não consegui gerar a voz OpenAI agora.";
+      try { const data = await response.json(); if (typeof data.error === "string") message = data.error; } catch { /* non-JSON failure */ }
+      throw Object.assign(new Error(message), { status: response.status });
+    }
     const schedule = (incoming: Uint8Array) => {
       const decoded = decodePCM(pending, incoming);
       pending = new Uint8Array(decoded.pending);
@@ -59,6 +65,7 @@ export async function streamSpeech(endpoint: string, text: string, signal?: Abor
     };
     if (response.headers.get("Content-Type")?.includes("audio/pcm")) {
       const reader = response.body.getReader();
+      activeReader = reader;
       try {
         while (true) {
           const next = await reader.read();
@@ -104,6 +111,7 @@ export async function streamSpeech(endpoint: string, text: string, signal?: Abor
       },
     });
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+    activeReader = reader;
     try {
       while (true) {
         const next = await reader.read();

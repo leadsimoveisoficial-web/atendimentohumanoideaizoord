@@ -3,6 +3,17 @@ import { openaiChat, openaiSpeech } from "./openai.server";
 
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 describe("own-account OpenAI only", () => {
+  it("attaches the camera only to the current question through own OpenAI", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "test-only");
+    const send = vi.fn().mockResolvedValue(Response.json({ choices: [{ message: { content: "Vejo um prato." } }] }));
+    vi.stubGlobal("fetch", send);
+    const image = "data:image/jpeg;base64,AQID";
+    await openaiChat({ system: "Maître", messages: [{ role: "user", content: "Olá" }, { role: "assistant", content: "Olá" }, { role: "user", content: "O que vê?" }], image });
+    const payload = JSON.parse(send.mock.calls[0]?.[1].body);
+    expect(payload.messages[1].content).toBe("Olá");
+    expect(payload.messages[3].content[1]).toEqual({ type: "image_url", image_url: { url: image, detail: "low" } });
+    expect(send.mock.calls[0]?.[0]).toBe("https://api.openai.com/v1/chat/completions");
+  });
   it("sends reasoning directly to OpenAI, never the Lovable gateway", async () => {
     vi.stubEnv("OPENAI_API_KEY", "test-only");
     const send = vi.fn().mockResolvedValue(Response.json({ choices: [{ message: { content: "Resposta" } }] }));

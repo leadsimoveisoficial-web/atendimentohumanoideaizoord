@@ -30,6 +30,8 @@ export async function speakZoord(text: string, options: { lang?: string; signal?
         ok = true;
       } catch (e) {
         if (signal?.aborted) throw e;
+        const status = (e as { status?: number }).status;
+        if (status && status < 500 && status !== 429) throw e;
         // Never replay audio that already played; skip to the next sentence with the same voice.
         if ((e as { audioStarted?: boolean }).audioStarted) ok = true;
         else await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
