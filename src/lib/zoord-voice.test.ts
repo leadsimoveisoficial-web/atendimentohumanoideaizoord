@@ -4,6 +4,11 @@ vi.mock("./stream-speech", () => ({ streamSpeech: playback }));
 import { speakZoord } from "./zoord-voice";
 beforeEach(() => { playback.mockReset(); });
 describe("one OpenAI narrator", () => {
+  it("does not retry terminal voice configuration errors", async () => {
+    playback.mockRejectedValue(Object.assign(new Error("OpenAI não configurada"), { status: 401 }));
+    await expect(speakZoord("Olá.")).rejects.toThrow("OpenAI não configurada");
+    expect(playback).toHaveBeenCalledTimes(1);
+  });
   it("uses only the direct OpenAI endpoint for speech", async () => {
     playback.mockResolvedValue(undefined);
     expect(await speakZoord("Permita-me apresentar nossa seleção." )).toBe("openai");
