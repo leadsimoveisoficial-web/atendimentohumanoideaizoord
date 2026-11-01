@@ -4,7 +4,7 @@ import { streamSpeech } from "./stream-speech";
 // mid-conversation or mid-menu. Long texts are split into sentence chunks; each chunk is retried
 // with the same voice. No provider or browser narrator switch on failure.
 
-export function splitSpeech(text: string, max = 600): string[] {
+export function splitSpeech(text: string, max = 2200): string[] {
   const sentences = text.replace(/\s+/g, " ").trim().match(/[^.!?…]+[.!?…]*\s*/g) ?? [];
   const chunks: string[] = [];
   let current = "";

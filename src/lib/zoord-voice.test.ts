@@ -1,9 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const playback = vi.hoisted(() => vi.fn());
 vi.mock("./stream-speech", () => ({ streamSpeech: playback }));
-import { speakZoord } from "./zoord-voice";
+import { speakZoord, splitSpeech } from "./zoord-voice";
 beforeEach(() => { playback.mockReset(); });
 describe("one OpenAI narrator", () => {
+  it("keeps a normal answer in one streaming request instead of separate sentence requests", async () => {
+    playback.mockResolvedValue(undefined);
+    const text = "Uma seleção de ingredientes frescos e texturas delicadas. ".repeat(24);
+    expect(text.length).toBeGreaterThan(600);
+    expect(splitSpeech(text)).toHaveLength(1);
+    await speakZoord(text);
+    expect(playback).toHaveBeenCalledTimes(1);
+  });
   it("does not retry terminal voice configuration errors", async () => {
     playback.mockRejectedValue(Object.assign(new Error("OpenAI não configurada"), { status: 401 }));
     await expect(speakZoord("Olá.")).rejects.toThrow("OpenAI não configurada");
