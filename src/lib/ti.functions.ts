@@ -69,7 +69,7 @@ export const askDevAssistant = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     requireTiUser(context.userId);
     if (!data.messages.length) throw new Error("Mensagem vazia.");
-    const { openaiChat } = await import("@/lib/openai.server");
-    const text = await openaiChat({ system: `${SYSTEM}\nProjeto atual: ${data.project}.`, messages: data.messages, maxTokens: 1200 });
+    const { devAssistantChat } = await import("@/lib/dev-assistant.server");
+    const text = await devAssistantChat({ system: `${SYSTEM}\nProjeto atual: ${data.project}.`, messages: data.messages, maxTokens: 1200 });
     return { text };
   });
