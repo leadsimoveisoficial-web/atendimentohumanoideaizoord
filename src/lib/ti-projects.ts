@@ -1,7 +1,7 @@
 export type TiProject = { id: string; name: string; url: string };
 
-export function requireTiAdmin(verifiedAdmin: unknown) {
-  if (verifiedAdmin !== true) throw new Error("Acesso restrito à equipe de TI.");
+export function requireTiUser(verifiedUserId: unknown) {
+  if (typeof verifiedUserId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(verifiedUserId)) throw new Error("Entre para acessar o painel de TI.");
 }
 
 export const INITIAL_TI_PROJECTS: TiProject[] = [

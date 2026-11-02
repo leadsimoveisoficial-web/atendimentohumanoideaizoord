@@ -43,4 +43,4 @@
 - Scenery uses Suspense, 4K preload and baked floor samples; re-bake on changes, instance LEDs, align feet, honor reduced motion.
 - One account provider owns identity; private profiles never hold roles or auto-start music.
 
-- TI projects/tasks use admin-only tables and authenticated functions; browser storage never authorizes access.
+- TI uses authenticated-only RLS and server identity, never admin grants; kitchen/security stay restricted.

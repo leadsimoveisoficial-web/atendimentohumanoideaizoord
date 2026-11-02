@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createTiProject, INITIAL_TI_PROJECTS, requireTiAdmin } from "./ti-projects";
+import { createTiProject, INITIAL_TI_PROJECTS, requireTiUser } from "./ti-projects";
 
 describe("projetos futuros do painel de TI", () => {
-  it("permite somente administrador verificado, negando falhas e usuários comuns", () => {
-    expect(() => requireTiAdmin(true)).not.toThrow();
-    expect(() => requireTiAdmin(false)).toThrow();
-    expect(() => requireTiAdmin(null)).toThrow();
-    expect(() => requireTiAdmin("true")).toThrow();
+  it("permite qualquer conta autenticada sem exigir papel de administrador", () => {
+    expect(() => requireTiUser("123e4567-e89b-12d3-a456-426614174000")).not.toThrow();
+  });
+  it("nega identidade ausente ou inválida", () => {
+    for (const identity of [null, undefined, "", true, "admin"]) expect(() => requireTiUser(identity)).toThrow();
   });
   it("adiciona projetos além dos dois iniciais sem alterar os existentes", () => {
     const next = createTiProject(INITIAL_TI_PROJECTS, " Novo projeto ", "https://example.org", "new");
