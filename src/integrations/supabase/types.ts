@@ -155,6 +155,68 @@ export type Database = {
         }
         Relationships: []
       }
+      ti_projects: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name: string
+          url?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      ti_tasks: {
+        Row: {
+          created_at: string
+          created_by: string
+          done: boolean
+          id: string
+          kind: string
+          project_id: string
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          done?: boolean
+          id?: string
+          kind?: string
+          project_id: string
+          text: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          done?: boolean
+          id?: string
+          kind?: string
+          project_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ti_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "ti_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
