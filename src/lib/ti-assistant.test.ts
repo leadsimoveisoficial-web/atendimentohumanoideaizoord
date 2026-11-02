@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const groqChat = vi.fn();
 const openaiChat = vi.fn();
@@ -11,6 +11,10 @@ vi.mock("./groq.server", () => ({
 vi.mock("./openai.server", () => ({
   openaiChat: (options: unknown) => openaiChat(options),
 }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 import { devAssistantChat } from "./dev-assistant.server";
 import { groqKey } from "./groq.server";
