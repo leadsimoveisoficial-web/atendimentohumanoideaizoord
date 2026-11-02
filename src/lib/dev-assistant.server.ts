@@ -10,12 +10,13 @@ export async function devAssistantChat(options: {
   messages: GroqMessage[];
   maxTokens?: number;
 }): Promise<string> {
+  const maxTokens = options.maxTokens ?? 700;
   if (openRouterKey()) {
     try {
       return await openRouterChat({
         system: options.system,
         messages: options.messages,
-        maxTokens: options.maxTokens,
+        maxTokens,
       });
     } catch {
       // OpenRouter indisponível/sem saldo: tenta a próxima reserva.
@@ -26,7 +27,7 @@ export async function devAssistantChat(options: {
       return await groqChat({
         system: options.system,
         messages: options.messages,
-        maxTokens: options.maxTokens,
+        maxTokens,
       });
     } catch {
       // Groq indisponível/sem saldo: cai para a chave OpenAI do projeto.
@@ -35,6 +36,6 @@ export async function devAssistantChat(options: {
   return openaiChat({
     system: options.system,
     messages: options.messages,
-    maxTokens: options.maxTokens,
+    maxTokens,
   });
 }
