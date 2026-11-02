@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Bot, Check, Copy, Plus, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Bot, Check, Copy, Plus, Send, Trash2, ExternalLink, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { amIAdmin } from "@/lib/security.functions";
 import { askDevAssistant } from "@/lib/ti.functions";
+import { createTiProject, INITIAL_TI_PROJECTS, type TiProject } from "@/lib/ti-projects";
 
 export const Route = createFileRoute("/_authenticated/ti")({
   head: () => ({ meta: [
@@ -20,7 +21,6 @@ export const Route = createFileRoute("/_authenticated/ti")({
 
 type Task = { id: string; text: string; kind: "melhoria" | "erro"; done: boolean };
 type Msg = { role: "user" | "assistant"; content: string };
-const PROJECTS = ["Zoord Dakkai AI", "Projeto 2"];
 const QUICK = [
   "Crie um prompt para corrigir um erro que vou descrever",
   "Liste melhorias prioritárias para este projeto",
@@ -30,7 +30,11 @@ const QUICK = [
 function TiPage() {
   const checkAdmin = useServerFn(amIAdmin), ask = useServerFn(askDevAssistant);
   const [admin, setAdmin] = useState<boolean | null>(null);
-  const [project, setProject] = useState(PROJECTS[0]!);
+  const [projects, setProjects] = useState<TiProject[]>(INITIAL_TI_PROJECTS);
+  const [project, setProject] = useState("Zoord Dakkai AI");
+  const [addingProject, setAddingProject] = useState(false);
+  const [projectName, setProjectName] = useState(""), [projectUrl, setProjectUrl] = useState("");
+  const [projectError, setProjectError] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [draft, setDraft] = useState(""), [kind, setKind] = useState<Task["kind"]>("melhoria");
   const [msgs, setMsgs] = useState<Msg[]>([]), [input, setInput] = useState(""), [busy, setBusy] = useState(false);
@@ -38,8 +42,30 @@ function TiPage() {
   const key = `ti-tasks:${project}`;
 
   useEffect(() => { checkAdmin().then((r) => setAdmin(r.admin)).catch(() => setAdmin(false)); }, [checkAdmin]);
+  useEffect(() => {
+    try {
+      const stored: unknown = JSON.parse(localStorage.getItem("ti-projects:v1") ?? "null");
+      if (Array.isArray(stored)) {
+        const restored: TiProject[] = [];
+        for (const entry of stored) {
+          if (!entry || typeof entry.name !== "string" || typeof entry.id !== "string" || typeof entry.url !== "string") continue;
+          try { restored.push(createTiProject(restored, entry.name, entry.url, entry.id)); } catch { /* Skip invalid saved entries. */ }
+        }
+        if (restored.length) { setProjects(restored); setProject(restored[0]?.name ?? "Zoord Dakkai AI"); }
+      }
+    } catch { /* Retain initial projects when browser storage is unavailable. */ }
+  }, []);
   useEffect(() => { try { setTasks(JSON.parse(localStorage.getItem(key) ?? "[]")); } catch { setTasks([]); } setMsgs([]); }, [key]);
   const save = (next: Task[]) => { setTasks(next); localStorage.setItem(key, JSON.stringify(next)); };
+
+  function addProject() {
+    try {
+      const added = createTiProject(projects, projectName, projectUrl, crypto.randomUUID());
+      const next = [...projects, added];
+      localStorage.setItem("ti-projects:v1", JSON.stringify(next));
+      setProjects(next); setProject(added.name); setProjectName(""); setProjectUrl(""); setProjectError(""); setAddingProject(false);
+    } catch (error) { setProjectError(error instanceof Error ? error.message : "Não foi possível salvar o projeto neste navegador."); }
+  }
 
   async function send(text: string) {
     if (!text.trim() || busy) return;
@@ -58,11 +84,23 @@ function TiPage() {
     <main className="min-h-screen bg-background p-4 text-foreground md:p-8">
       <header className="mx-auto mb-6 flex max-w-6xl flex-wrap items-center gap-3">
         <Link to="/" className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-5 w-5" /></Link>
-        <h1 className="text-2xl font-semibold tracking-tight">Painel de TI</h1>
-        <div className="ml-auto flex gap-2">
-          {PROJECTS.map((p) => <Button key={p} size="sm" variant={p === project ? "default" : "outline"} onClick={() => setProject(p)}>{p}</Button>)}
+        <h1 className="text-2xl font-semibold">Painel de TI</h1>
+        <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2">
+          <select aria-label="Projeto ativo" value={project} disabled={busy} onChange={(e) => setProject(e.target.value)} className="h-9 max-w-full rounded-md border border-input bg-background px-3 text-sm">
+            {projects.map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
+          </select>
+          {projects.find((p) => p.name === project)?.url && <Button variant="outline" size="icon" asChild><a href={projects.find((p) => p.name === project)?.url} target="_blank" rel="noopener noreferrer" aria-label="Abrir projeto" title="Abrir projeto"><ExternalLink className="h-4 w-4" /></a></Button>}
+          <Button size="sm" variant="outline" disabled={busy} onClick={() => { setAddingProject(!addingProject); setProjectError(""); }}><Plus className="mr-2 h-4 w-4" />Novo projeto</Button>
         </div>
       </header>
+      {addingProject && <form className="mx-auto mb-6 flex max-w-6xl flex-wrap items-end gap-3 border-b border-border pb-6" onSubmit={(e) => { e.preventDefault(); addProject(); }}>
+        <label className="min-w-0 flex-1 text-sm">Nome do projeto<Input className="mt-2" value={projectName} onChange={(e) => setProjectName(e.target.value)} maxLength={120} required autoFocus /></label>
+        <label className="min-w-0 flex-1 text-sm">Link do projeto (opcional)<Input className="mt-2" value={projectUrl} onChange={(e) => setProjectUrl(e.target.value)} type="url" placeholder="https://" /></label>
+        <Button type="submit">Adicionar projeto</Button>
+        <Button type="button" variant="ghost" size="icon" aria-label="Cancelar cadastro" onClick={() => setAddingProject(false)}><X className="h-4 w-4" /></Button>
+        {projectError && <p className="w-full text-sm text-destructive" role="alert">{projectError}</p>}
+      </form>}
+      <p className="mx-auto mb-4 max-w-6xl text-sm text-muted-foreground">Projetos e tarefas salvos neste navegador.</p>
       <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_1.3fr]">
         <section className="rounded-2xl border border-border bg-card p-5">
           <h2 className="font-semibold">Melhorias e erros <span className="text-sm text-muted-foreground">({open} abertos)</span></h2>
