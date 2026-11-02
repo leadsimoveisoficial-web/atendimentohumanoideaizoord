@@ -13,7 +13,7 @@
 - Keep radio playback in one mounted RadioPlayer with its own CORS-enabled analyser, isolated from voiceLevel; music drives bounded upper-body rhythm, never lips or planted legs.
 - Share named, pure audio-reactive dance profiles in the music module so radio and spoken requests drive identical bounded gestures.
 - Manual genre introductions use the mounted voice controller without starting microphone capture; dance blends gently with speech and yields to listening, pointing and explicit gestures to avoid limb conflicts.
-- Paid AI uses own-account server keys only: stage OPENAI_API_KEY direct OpenAI, TI GROQ_API_KEY with OpenAI reserve; errors allow local text, never switch voice/provider or bill Lovable AI.
+- Paid AI uses own-account server keys only: stage OPENAI_API_KEY direct OpenAI, TI OpenRouter, Groq, then OpenAI reserves; errors allow local text, never switch voice/provider or bill Lovable.
 - Share conversational and gastronomic policy through zoord-conversation across live voice, delegated reasoning and question handlers; gate menu price context and local quotations with requestsMenuPrice so presentations do not volunteer financial values.
 
 - Render the mouth as a root sibling copying the head world matrix and measured head-local lip anchor; this avoids portal/double-scale placement errors while actual output amplitude drives the opening.
