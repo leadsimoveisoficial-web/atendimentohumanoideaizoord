@@ -1,4 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { amIAdmin } from "@/lib/security.functions";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { brl, type OrderItem } from "@/lib/orders";
@@ -23,25 +26,35 @@ const NEXT: Record<string, string> = { novo: "preparando", preparando: "pronto",
 const LABEL: Record<string, string> = { novo: "Começar preparo", preparando: "Marcar pronto", pronto: "Entregue" };
 
 function Kitchen() {
+  const checkAdmin = useServerFn(amIAdmin);
+  const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [error, setError] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
   const load = async () => {
-    const { data } = await supabase.from("orders").select("*").neq("status", "entregue").order("created_at", { ascending: true });
+    const { data, error } = await supabase.from("orders").select("*").neq("status", "entregue").order("created_at", { ascending: true });
+    if (error) { setError("Não foi possível carregar os pedidos."); return; }
     setOrders((data ?? []) as unknown as Order[]);
   };
+  useEffect(() => { checkAdmin().then((r) => setAllowed(r.admin)).catch(() => setAllowed(false)); }, [checkAdmin]);
   useEffect(() => {
+    if (!allowed) return;
     load();
     const ch = supabase.channel("orders-kitchen").on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => load()).subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+  }, [allowed]);
   const advance = async (o: Order) => {
     const next = NEXT[o.status];
     if (!next) return;
-    setOrders((list) => list.map((x) => (x.id === o.id ? { ...x, status: next } : x)).filter((x) => x.status !== "entregue"));
-    await supabase.from("orders").update({ status: next }).eq("id", o.id);
+    const { error } = await supabase.from("orders").update({ status: next }).eq("id", o.id);
+    if (error) { setError("Não foi possível atualizar o pedido."); return; }
+    await load();
   };
+  if (allowed === null) return <main className="min-h-screen bg-background p-6 text-foreground">Verificando acesso…</main>;
+  if (!allowed) return <main className="min-h-screen bg-background p-6 text-foreground"><h1>Acesso restrito à cozinha</h1><Link to="/auth" search={{ redirect: "/cozinha" }} className="mt-4 inline-block text-primary underline">Entrar com conta de administrador</Link></main>;
   return (
     <main className="min-h-screen bg-background p-6 text-foreground">
       <h1 className="mb-6 font-display text-xl tracking-[0.4em]">COZINHA <span className="text-dakkai">•</span> COMANDAS</h1>
+      {error && <p role="alert" className="mb-4 text-destructive">{error}</p>}
       {orders.length === 0 && <p className="text-muted-foreground">Nenhum pedido em aberto.</p>}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {orders.map((o) => (
@@ -56,7 +69,7 @@ function Kitchen() {
             </ul>
             {o.notes && <p className="mb-2 text-sm text-dakkai">Obs: {o.notes}</p>}
             <p className="mb-3 text-sm text-muted-foreground">Total {brl(Number(o.total))}</p>
-            <button onClick={() => advance(o)} className="stage-chip w-full justify-center">{LABEL[o.status]}</button>
+            <Button onClick={() => advance(o)} className="w-full justify-center">{LABEL[o.status]}</Button>
           </article>
         ))}
       </div>

@@ -1,7 +1,7 @@
 # Roadmap
 
 - [x] Cadastrar projetos futuros e salvar projetos/tarefas no banco com acesso exclusivo de administradores; criação, recarga, conclusão, exclusão e leitura em segundo navegador verificadas; quatro testes passaram.
-- [ ] Publicar a atualização do painel de TI; aguarda decisão sobre alerta de acesso indevido aos pedidos identificado na verificação de segurança.
+- [ ] Concluir correção dos pedidos, publicar agora e conferir o link /ti no site publicado.
 
 - [x] Corrigir reinício/erros da escuta, cancelamento entre falas e câmera na conversa pela OpenAI; 32 testes e fluxo com câmera simulada, resposta OpenAI real e retorno à escuta passaram sem erros.
 - [x] Reduzir pausas usando uma única reprodução em fluxo para respostas comuns (até 2200 caracteres), eliminando pedidos separados a cada 600 caracteres; respostas simples começam direto, preservando explicações detalhadas quando pedidas.
