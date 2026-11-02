@@ -79,3 +79,4 @@
 - [ ] Conta xAI sem créditos (403): quando o usuário recarregar créditos na xAI, voz e cérebro Grok ativam sozinhos
 - [ ] Validar voz/escuta grátis em aparelho real (microfone e vozes do navegador)
 - [x] Voz OpenAI (/api/zoord-openai) conforme código enviado pelo usuário
+- [x] Assistente de TI usa Groq (GROQ_API_KEY própria, grátis) primeiro e OpenAI como reserva, ambos server-side; chaves nunca em VITE_/navegador. 4 testes novos.
