@@ -1,5 +1,9 @@
 export type TiProject = { id: string; name: string; url: string };
 
+export function requireTiAdmin(verifiedAdmin: unknown) {
+  if (verifiedAdmin !== true) throw new Error("Acesso restrito à equipe de TI.");
+}
+
 export const INITIAL_TI_PROJECTS: TiProject[] = [
   { id: "zoord", name: "Zoord Dakkai AI", url: "https://atendimentohumanoideaizoord.lovable.app" },
   { id: "project-2", name: "Projeto 2", url: "" },

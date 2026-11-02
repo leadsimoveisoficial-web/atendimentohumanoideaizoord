@@ -119,7 +119,7 @@ function TiPage() {
       <p className="mx-auto mb-4 max-w-6xl text-sm text-muted-foreground">Projetos e tarefas compartilhados com a equipe de TI.</p>
       {syncError && <p role="alert" className="mx-auto mb-4 max-w-6xl text-sm text-destructive">{syncError}</p>}
       <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_1.3fr]">
-        <section className="rounded-2xl border border-border bg-card p-5">
+        <section className="stage-glass p-5">
           <h2 className="font-semibold">Melhorias e erros <span className="text-sm text-muted-foreground">({open} abertos)</span></h2>
           <form className="mt-4 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (!draft.trim()) return; void save([{ id: crypto.randomUUID(), text: draft.trim(), kind, done: false }, ...tasks]); }}>
             <select value={kind} onChange={(e) => setKind(e.target.value as Task["kind"])} className="rounded-md border border-input bg-background px-2 text-sm"><option value="melhoria">Melhoria</option><option value="erro">Erro</option></select>
@@ -139,7 +139,7 @@ function TiPage() {
             {!loadingTasks && !tasks.length && <li className="text-sm text-muted-foreground">Nenhuma tarefa ainda.</li>}
           </ul>
         </section>
-        <section className="flex min-h-[560px] flex-col rounded-2xl border border-border bg-card p-5">
+        <section className="stage-glass flex min-h-[560px] flex-col p-5">
           <h2 className="flex items-center gap-2 font-semibold"><Bot className="h-5 w-5 text-primary" /> Assistente de desenvolvimento</h2>
           <div className="mt-4 flex-1 space-y-3 overflow-y-auto">
             {!msgs.length && <div className="flex flex-wrap gap-2">{QUICK.map((q) => <Button key={q} variant="outline" size="sm" onClick={() => send(q)}>{q}</Button>)}</div>}
