@@ -1,8 +1,12 @@
 # Roadmap
 
+- [x] TI usa cadastro sem nome e acesso para qualquer conta autenticada; conta não-admin gravou/releu/excluiu tarefa, segurança bloqueada e saída conferida; 10 testes passaram. Alterações de tela ainda não publicadas.
+- [ ] Conferir confirmação de novo cadastro pelo e-mail real — depende do recebimento e abertura do link pelo integrante.
+- [ ] Revisão aprofundada: corrigir promoção com e-mail não confirmado e exposição de chamadas pagas OpenAI; alertas preservados, fora do escopo desta alteração de TI.
+
 - [x] Cadastrar projetos futuros e salvar projetos/tarefas no banco com acesso exclusivo de administradores; criação, recarga, conclusão, exclusão e leitura em segundo navegador verificadas; quatro testes passaram.
 - [x] Corrigir acesso aos pedidos; cozinha bloqueia visitantes e lê pedidos como administrador; verificação básica sem alertas e finding marcado corrigido. Publicação solicitada.
-- [ ] Confirmar conclusão da publicação: consulta única a /ti ainda retornou 404 durante a implantação; depende da conclusão do serviço de publicação.
+- [x] Confirmar conclusão da publicação: /ti publicado respondeu HTTP 200 em 2 de novembro de 2026.
 
 - [x] Corrigir reinício/erros da escuta, cancelamento entre falas e câmera na conversa pela OpenAI; 32 testes e fluxo com câmera simulada, resposta OpenAI real e retorno à escuta passaram sem erros.
 - [x] Reduzir pausas usando uma única reprodução em fluxo para respostas comuns (até 2200 caracteres), eliminando pedidos separados a cada 600 caracteres; respostas simples começam direto, preservando explicações detalhadas quando pedidas.

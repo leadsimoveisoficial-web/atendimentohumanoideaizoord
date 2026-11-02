@@ -26,6 +26,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { redirect } = Route.useSearch();
   const navigate = useNavigate();
+  const isTi = redirect === "/ti" || redirect.startsWith("/ti?");
   const [mode, setMode] = useState<"in" | "up" | "reset">("in");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -36,6 +37,7 @@ function AuthPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true); setMsg("");
+    try {
     if (mode === "reset") {
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
       setMsg(error ? "Não foi possível enviar agora." : "Se houver uma conta, enviaremos um link ao seu e-mail.");
@@ -44,20 +46,22 @@ function AuthPage() {
       if (error) setMsg("E-mail ou senha incorretos.");
       else navigate({ to: redirect });
     } else {
-      const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin, data: { display_name: name.trim() } } });
-      setMsg(error ? "Não foi possível criar a conta. Confira os dados e tente novamente." : "Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre.");
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/auth?redirect=${encodeURIComponent(redirect)}`, ...(isTi ? {} : { data: { display_name: name.trim() } }) } });
+      if (error) setMsg("Não foi possível criar a conta. Confira os dados e tente novamente.");
+      else if (data.session) await navigate({ to: redirect });
+      else setMsg("Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre.");
     }
-    setBusy(false);
+    } catch { setMsg("Não foi possível conectar. Tente novamente."); } finally { setBusy(false); }
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-6 text-foreground">
       <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-lg border border-glow/30 bg-background p-6">
-        <h1 className="font-display text-lg text-glow">DAKKAI × ZOORD</h1>
-        <p className="text-sm text-muted-foreground">Sua conta Dakkai</p>
-        {mode === "up" && <Input aria-label="Nome" required maxLength={80} placeholder="Seu nome" value={name} onChange={e => setName(e.target.value)} />}
-        <Input aria-label="E-mail" type="email" required placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-        {mode !== "reset" && <Input aria-label="Senha" type="password" required minLength={8} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} />}
+        <h1 className="font-display text-lg text-glow">{isTi ? "Painel de TI" : "DAKKAI × ZOORD"}</h1>
+        <p className="text-sm text-muted-foreground">{isTi ? "Equipe Zoord · Dakkai" : "Sua conta Dakkai"}</p>
+        {mode === "up" && !isTi && <Input aria-label="Nome" required maxLength={80} placeholder="Seu nome" value={name} onChange={e => setName(e.target.value)} />}
+        <Input aria-label="E-mail" type="email" autoComplete="email" required placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
+        {mode !== "reset" && <Input aria-label="Senha" type="password" autoComplete={mode === "up" ? "new-password" : "current-password"} required minLength={8} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} />}
         <Button type="submit" disabled={busy} className="w-full">{busy ? "Aguarde…" : mode === "in" ? "Entrar" : mode === "up" ? "Criar conta" : "Enviar link"}</Button>
         <Button type="button" variant="link" onClick={() => setMode(mode === "in" ? "up" : "in")} className="w-full text-xs text-muted-foreground underline">
           {mode === "in" ? "Primeiro acesso? Criar conta" : "Já tenho conta"}

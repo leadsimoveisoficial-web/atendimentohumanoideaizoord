@@ -1,10 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Bot, Check, Copy, Plus, Send, Trash2, ExternalLink, X } from "lucide-react";
+import { ArrowLeft, Bot, Check, Copy, Plus, Send, Trash2, ExternalLink, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { amIAdmin } from "@/lib/security.functions";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAccount } from "@/components/UserAccount";
+import { supabase } from "@/integrations/supabase/client";
 import { askDevAssistant, listTiProjects, addTiProject, listTiTasks, saveTiTask, deleteTiTask } from "@/lib/ti.functions";
 import { type TiProject } from "@/lib/ti-projects";
 
@@ -28,8 +30,11 @@ const QUICK = [
 ];
 
 function TiPage() {
-  const checkAdmin = useServerFn(amIAdmin), ask = useServerFn(askDevAssistant);
-  const [admin, setAdmin] = useState<boolean | null>(null);
+  const ask = useServerFn(askDevAssistant);
+  const { user } = useAccount();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [leaving, setLeaving] = useState(false);
   const [projects, setProjects] = useState<TiProject[]>([]);
   const [project, setProject] = useState("");
   const [addingProject, setAddingProject] = useState(false);
@@ -44,20 +49,18 @@ function TiPage() {
   const [syncing, setSyncing] = useState(false), [loadingTasks, setLoadingTasks] = useState(true);
   const [syncError, setSyncError] = useState("");
 
-  useEffect(() => { checkAdmin().then((r) => setAdmin(r.admin)).catch(() => setAdmin(false)); }, [checkAdmin]);
   useEffect(() => {
-    if (!admin) return;
     let retired = false;
     loadProjects().then((rows) => { if (!retired) { setProjects(rows); setProject(rows[0]?.id ?? ""); } }).catch(() => { if (!retired) setSyncError("Não foi possível carregar os projetos. Tente novamente."); });
     return () => { retired = true; };
-  }, [admin, loadProjects]);
+  }, [loadProjects]);
   useEffect(() => {
-    if (!admin || !project) return;
+    if (!project) return;
     let retired = false;
     setTasks([]); setMsgs([]); setLoadingTasks(true);
     loadTasks({ data: { projectId: project } }).then((rows) => { if (!retired) setTasks(rows); }).catch(() => { if (!retired) setSyncError("Não foi possível carregar as tarefas."); }).finally(() => { if (!retired) setLoadingTasks(false); });
     return () => { retired = true; };
-  }, [admin, project, loadTasks]);
+  }, [project, loadTasks]);
 
   async function save(next: Task[]) {
     if (syncing || loadingTasks || !project) return;
@@ -92,8 +95,16 @@ function TiPage() {
     finally { setBusy(false); }
   }
 
-  if (admin === null) return <main className="grid min-h-screen place-items-center bg-background text-muted-foreground">Verificando acesso…</main>;
-  if (!admin) return <main className="grid min-h-screen place-items-center bg-background p-6 text-center text-foreground"><div><h1 className="text-xl font-semibold">Acesso restrito à equipe de TI</h1><Link to="/" className="mt-4 inline-block text-primary underline">Voltar</Link></div></main>;
+  async function signOut() {
+    setLeaving(true); setSyncError("");
+    try {
+      await queryClient.cancelQueries(); queryClient.clear();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setProjects([]); setTasks([]); setMsgs([]);
+      await navigate({ to: "/auth", search: { redirect: "/ti" }, replace: true });
+    } catch { setSyncError("Não foi possível sair. Tente novamente."); setLeaving(false); }
+  }
 
   const open = tasks.filter((t) => !t.done).length;
   return (
@@ -101,6 +112,8 @@ function TiPage() {
       <header className="mx-auto mb-6 flex max-w-6xl flex-wrap items-center gap-3">
         <Link to="/" className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="text-2xl font-semibold">Painel de TI</h1>
+        <span className="min-w-0 max-w-full truncate text-sm text-muted-foreground">{user?.email}</span>
+        <Button variant="ghost" size="icon" aria-label="Sair do painel" title="Sair do painel" disabled={leaving || syncing || busy} onClick={signOut}><LogOut className="h-4 w-4" /></Button>
         <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2">
           <select aria-label="Projeto ativo" value={project} disabled={busy || syncing} onChange={(e) => setProject(e.target.value)} className="h-9 max-w-full rounded-md border border-input bg-background px-3 text-sm">
             {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
