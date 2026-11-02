@@ -40,5 +40,7 @@
 - Security stays isolated under _authenticated with admin-only RLS and existing camera/event/settings tables; first account promotes managers, while the public stage reads only security_mode_active() to protect camera data and preserve stage/voice/AI.
 - Store credential-free local RTSP as pending bridge metadata; browser media requires HTTPS and is live only after receipt, preventing exposed passwords and false surveillance status.
 - Camera AI analysis runs from the open security panel (client interval) through an admin-checked server function; no unattended cron, so credits stop when no panel is open.
-- Isolate scenery in Suspense; preload 4K asset and bake LED floor samples to avoid dense-mesh raycasts. Re-bake on scenery changes. Align feet; instance LEDs; honor reduced motion; cap width at 4K.
-- Share identity/profile state in one account provider; owner-only profiles never hold roles or auto-start saved music.
+- Scenery uses Suspense, 4K preload and baked floor samples; re-bake on changes, instance LEDs, align feet, honor reduced motion.
+- One account provider owns identity; private profiles never hold roles or auto-start music.
+
+- TI projects/tasks use admin-only tables and authenticated functions; browser storage never authorizes access.
