@@ -1,5 +1,6 @@
 # Roadmap
 
+- [ ] Corrigir “painel restrito” no site: publicar a versão de TI com acesso para contas cadastradas e conferir o acesso autenticado.
 - [x] TI usa cadastro sem nome e acesso para qualquer conta autenticada; conta não-admin gravou/releu/excluiu tarefa, segurança bloqueada e saída conferida; 10 testes passaram. Alterações de tela ainda não publicadas.
 - [ ] Conferir confirmação de novo cadastro pelo e-mail real — depende do recebimento e abertura do link pelo integrante.
 - [ ] Revisão aprofundada: corrigir promoção com e-mail não confirmado e exposição de chamadas pagas OpenAI; alertas preservados, fora do escopo desta alteração de TI.
