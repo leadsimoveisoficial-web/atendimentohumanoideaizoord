@@ -1,6 +1,8 @@
 # Roadmap
 
-- [ ] Login e cadastro TI só com e-mail; liberar projetos, tarefas e assistente para contas autenticadas, preservar áreas administrativas e verificar acesso/gravação/saída.
+- [x] TI usa cadastro sem nome e acesso para qualquer conta autenticada; conta não-admin gravou/releu/excluiu tarefa, segurança bloqueada e saída conferida; 10 testes passaram. Alterações de tela ainda não publicadas.
+- [ ] Conferir confirmação de novo cadastro pelo e-mail real — depende do recebimento e abertura do link pelo integrante.
+- [ ] Revisão aprofundada: corrigir promoção com e-mail não confirmado e exposição de chamadas pagas OpenAI; alertas preservados, fora do escopo desta alteração de TI.
 
 - [x] Cadastrar projetos futuros e salvar projetos/tarefas no banco com acesso exclusivo de administradores; criação, recarga, conclusão, exclusão e leitura em segundo navegador verificadas; quatro testes passaram.
 - [x] Corrigir acesso aos pedidos; cozinha bloqueia visitantes e lê pedidos como administrador; verificação básica sem alertas e finding marcado corrigido. Publicação solicitada.
