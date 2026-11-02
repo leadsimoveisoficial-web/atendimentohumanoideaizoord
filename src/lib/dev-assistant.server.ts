@@ -1,7 +1,8 @@
 // TI dev-assistant brain. Server-side only: secrets are read at request time
-// and never reach the browser bundle. Groq (own GROQ_API_KEY, free tier) first,
-// then the project's OpenAI key as reserve.
+// and never reach the browser bundle. Chain: OpenRouter (own key) → Groq (own
+// key) → OpenAI (project key) as the last reserve.
 import { groqChat, groqKey, type GroqMessage } from "./groq.server";
+import { openRouterChat, openRouterKey } from "./openrouter.server";
 import { openaiChat } from "./openai.server";
 
 export async function devAssistantChat(options: {
@@ -9,6 +10,17 @@ export async function devAssistantChat(options: {
   messages: GroqMessage[];
   maxTokens?: number;
 }): Promise<string> {
+  if (openRouterKey()) {
+    try {
+      return await openRouterChat({
+        system: options.system,
+        messages: options.messages,
+        maxTokens: options.maxTokens,
+      });
+    } catch {
+      // OpenRouter indisponível/sem saldo: tenta a próxima reserva.
+    }
+  }
   if (groqKey()) {
     try {
       return await groqChat({
