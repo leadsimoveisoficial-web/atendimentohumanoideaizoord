@@ -5,12 +5,14 @@ import { wantsDetail } from "@/lib/speech-chunks";
 import { menuAnswerScript, FREE_FALLBACK_ANSWER, requestsMenuPrice } from "@/lib/menu-script";
 import { OPEN_CONVERSATION } from "@/lib/zoord-conversation";
 import { z } from "zod";
+import { guestDirective } from "@/lib/guest-memory";
 import { languageDirective, parseLanguage } from "@/lib/zoord-language";
 
 const chatInput = z.object({
   message: z.string().trim().min(1).max(800),
   history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(2500) })).max(24).default([]),
   language: z.enum(["pt", "en", "es"]).default("pt"),
+  guest: z.object({ name: z.string().max(80).optional(), address: z.string().max(10).optional(), notes: z.string().max(300).optional() }).optional(),
   image: z.string().max(350000).regex(/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/).optional(),
 });
 
@@ -46,7 +48,7 @@ export const Route = createFileRoute("/api/zoord-chat")({
 
         try {
           const stream = await openaiChatStream({
-            system: SYSTEM + menuText(requestsMenuPrice(message)) + languageDirective(language),
+            system: SYSTEM + menuText(requestsMenuPrice(message)) + guestDirective(body.guest) + languageDirective(language),
             messages: [...history, { role: "user", content: message }],
             signal: request.signal,
             maxTokens: wantsDetail(message) ? 700 : 160,

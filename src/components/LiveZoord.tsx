@@ -14,6 +14,7 @@ import type { NewOrder } from "@/lib/orders";
 import { emptyReaction, reactToCustomer } from "@/lib/zoord-interaction";
 import { dispatchMusic, musicCommand, type MusicCommand } from "@/lib/music";
 import { StagePresence } from "./StagePresence";
+import { useAccount } from "./UserAccount";
 
 export type LiveZoordCommands = { present: (category: number | null) => void; say: (text: string) => void };
 
@@ -42,6 +43,9 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   const lastMusic = useRef("");
   const [language, setLanguageState] = useState<ZoordLanguage>("pt");
   const languageRef = useRef<ZoordLanguage>("pt");
+  const { profile } = useAccount();
+  const guestRef = useRef<{ name?: string; address?: string; notes?: string } | undefined>(undefined);
+  guestRef.current = profile ? { name: profile.display_name, address: profile.form_of_address, notes: profile.food_notes } : undefined;
   const speakingText = useRef("");
 
   // Barge-in: the customer started talking over Zoord → stop speech at once and listen.
@@ -192,7 +196,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       const res = await fetch("/api/zoord-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history: freeHistory.current.slice(-24), language: lang, image: captureFrame() }),
+        body: JSON.stringify({ message: text, history: freeHistory.current.slice(-24), language: lang, guest: guestRef.current, image: captureFrame() }),
         signal: ac.signal,
       });
       if (!res.ok || !res.body) throw new Error("Não consegui responder agora. Tente novamente.");
