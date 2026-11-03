@@ -231,6 +231,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const palm = elbow.clone().add(new THREE.Vector3(Math.sin(t * 6.5) * lower * (reduced.current ? 0.03 : 0.18), lower * 0.8, lower * 0.35));
     poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, weight));
     poseLayer.apply(fore, () => aimLimb(fore, hand, palm, weight));
+    poseLayer.apply(hand, () => hand.quaternion.slerp(_id, weight * 0.4));
   });
   // Audio-reactive upper-body rhythm; planted legs never inherit dance/root tracks.
   useFrame((_, delta) => {
