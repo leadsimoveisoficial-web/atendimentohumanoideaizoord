@@ -10,6 +10,7 @@ import { categoryScript, guessCategory } from "@/lib/menu-script";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
 import { motionCentroid, setCameraGaze } from "@/lib/gaze";
+import { createArrivalDetector } from "@/lib/arrival";
 import type { NewOrder } from "@/lib/orders";
 import { emptyReaction, reactToCustomer } from "@/lib/zoord-interaction";
 import { dispatchMusic, musicCommand, type MusicCommand } from "@/lib/music";
@@ -290,6 +291,12 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     }
   }
 
+  const onGreetingRef = useRef(onGreeting);
+  onGreetingRef.current = onGreeting;
+  const callStatusRef = useRef(call.status);
+  callStatusRef.current = call.status;
+  const welcomeRef = useRef(() => {});
+
   useImperativeHandle(ref, () => ({
     say(text) {
       // All manual introductions belong to this controller; never open the microphone.
@@ -360,14 +367,22 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     let prev: Uint8ClampedArray | null = null;
+    const arrival = createArrivalDetector();
     const t = setInterval(() => {
       const v = videoRef.current;
       if (!ctx || !v || !v.videoWidth) return;
       ctx.drawImage(v, 0, 0, W, H);
       const next = ctx.getImageData(0, 0, W, H).data;
       const c = prev && motionCentroid(prev, next, W, H);
+      const hadPrev = prev !== null;
       prev = next;
       if (c) setCameraGaze(-(c.x * 2 - 1), c.y * 2 - 1);
+      // Someone stepped in front after a quiet moment: wave and offer a short welcome when idle.
+      if (hadPrev && arrival(Boolean(c), performance.now())) {
+        onGreetingRef.current();
+        const idle = !freeAbort.current && callStatusRef.current !== "connected" && callStatusRef.current !== "connecting";
+        if (idle) welcomeRef.current();
+      }
     }, 120);
     return () => clearInterval(t);
   }, [cam]);
