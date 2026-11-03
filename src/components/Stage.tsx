@@ -567,7 +567,7 @@ export function Stage() {
           <Robot anim={anim} point={shown} listening={listening} waveId={waveId} onWaveEnd={endWave} />
         </Suspense>
 
-        <ContactShadows position={[0, 0.012, 0]} scale={4} blur={2.6} far={2.5} opacity={0.55} resolution={512} frames={Infinity} />
+        <ContactShadows position={[0, 0.31, 0]} scale={4} blur={2.6} far={2.5} opacity={0.55} resolution={512} frames={Infinity} />
         <OrbitControls target={[0, 2.45, 0]} enablePan={false} minDistance={7} maxDistance={28} minAzimuthAngle={-0.25} maxAzimuthAngle={0.25} minPolarAngle={1.25} maxPolarAngle={1.55} enableDamping />
         <EffectComposer multisampling={4}>
           <Bloom intensity={0.32} luminanceThreshold={0.95} luminanceSmoothing={0.2} mipmapBlur radius={0.7} />
