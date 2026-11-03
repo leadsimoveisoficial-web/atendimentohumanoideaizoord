@@ -31,7 +31,7 @@ import { PoseLayer } from "@/lib/zoord-pose";
 import { plantedPresentationClip } from "@/lib/zoord-presentation";
 import { RadioPlayer } from "./RadioPlayer";
 import { danceMotion, musicLevel } from "@/lib/music";
-import { HOST_MOTION, hostBreathing, hostDanceTarget, motionStep, smoothMotion, HEAD_POSTURE, hostLookPitch } from "@/lib/zoord-motion";
+import { HOST_MOTION, hostBreathing, hostDanceTarget, motionStep, smoothMotion, HEAD_POSTURE, hostLookPitch, speechBeat } from "@/lib/zoord-motion";
 import { GesturePanel, type StageGesture } from "./GesturePanel";
 import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
 import { UserAccount } from "./UserAccount";
@@ -133,6 +133,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     if (import.meta.env.DEV) (window as unknown as { __zoordScene?: THREE.Object3D }).__zoordScene = scene;
   }, [scene]);
   const restWeight = useRef(1);
+  const beat = useRef({ fast: 0, slow: 0, lift: 0 });
   const torsoTurn = useRef(0);
   const clipTransitionUntil = useRef(0);
   const breathingPose = useRef({ pitch: 0, yaw: 0, roll: 0 });
@@ -209,6 +210,23 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       poseLayer.apply(fore, () => aimLimb(fore, hand, palm, restWeight.current));
       // Keep wrists aligned with the forearm so hands never bend into unnatural angles.
       poseLayer.apply(hand, () => hand.quaternion.slerp(_id, restWeight.current * 0.35));
+    }
+    // Speech beats: stressed syllables lift and open the forearms briefly, like a host marking key words.
+    {
+      const b = beat.current;
+      b.fast = smoothMotion(b.fast, voiceLevel.v, dt, 18);
+      b.slow = smoothMotion(b.slow, voiceLevel.v, dt, 2);
+      const enabled = talking && point === null && !waving && !musicLevel.playing && !reduced.current;
+      b.lift = smoothMotion(b.lift, speechBeat(b.fast, b.slow, enabled), dt, 9);
+      if (b.lift > 0.002) {
+        for (const [side, sign] of [["Right", -1], ["Left", 1]] as const) {
+          const fore = bones.get(`${side}ForeArm`);
+          const hand = bones.get(`${side}Hand`);
+          const lift = b.lift * (side === "Right" ? 1 : 0.7);
+          if (fore) poseLayer.apply(fore, () => rotateWorld(fore, _e.set(-lift, sign * lift * 0.4, 0)));
+          if (hand) poseLayer.apply(hand, () => rotateWorld(hand, _e.set(-lift * 0.5, 0, sign * lift * 0.3)));
+        }
+      }
     }
 
   });

@@ -40,3 +40,10 @@ export function hostBreathing(time: number, reduced: boolean, busy: boolean) {
 export function hostDanceTarget(speaking: boolean, listening: boolean, pointing: boolean, gesturing: boolean, reduced: boolean) {
   return reduced || listening || pointing || gesturing ? 0 : speaking ? 0.45 : 1;
 }
+/** Speech beat gestures: stress peaks in measured voice output (fast envelope above slow average) lift the hands briefly. */
+export const SPEECH_BEAT = { max: 0.22, gain: 3.2, threshold: 0.03 } as const;
+export function speechBeat(fast: number, slow: number, enabled: boolean) {
+  if (!enabled) return 0;
+  const accent = Math.max(0, fast - slow - SPEECH_BEAT.threshold);
+  return Math.min(SPEECH_BEAT.max, accent * SPEECH_BEAT.gain);
+}
