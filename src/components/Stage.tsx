@@ -200,10 +200,14 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       const scale = arm.getWorldScale(new THREE.Vector3()).length() / Math.sqrt(3);
       const upper = fore.position.length() * scale;
       const lower = hand.position.length() * scale;
-      const elbow = shoulder.clone().add(new THREE.Vector3(sign * upper * 0.28, -upper * 0.95, 0.04));
-      const palm = elbow.clone().add(new THREE.Vector3(sign * lower * 0.12, -lower * 0.96, lower * 0.20));
+      // Gentle, desynchronised hand sway keeps the arms alive at rest without drifting toward the body.
+      const sway = reduced.current ? 0 : Math.sin(motionTime.current * 0.9 + (sign > 0 ? 1.3 : 0)) * 0.04;
+      const elbow = shoulder.clone().add(new THREE.Vector3(sign * upper * 0.3, -upper * 0.94, 0.05 + sway * upper));
+      const palm = elbow.clone().add(new THREE.Vector3(sign * lower * 0.14, -lower * 0.9, lower * (0.26 + sway)));
       poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, restWeight.current));
       poseLayer.apply(fore, () => aimLimb(fore, hand, palm, restWeight.current));
+      // Keep wrists aligned with the forearm so hands never bend into unnatural angles.
+      poseLayer.apply(hand, () => hand.quaternion.slerp(_id, restWeight.current * 0.35));
     }
 
   });
@@ -227,6 +231,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const palm = elbow.clone().add(new THREE.Vector3(Math.sin(t * 6.5) * lower * (reduced.current ? 0.03 : 0.18), lower * 0.8, lower * 0.35));
     poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, weight));
     poseLayer.apply(fore, () => aimLimb(fore, hand, palm, weight));
+    poseLayer.apply(hand, () => hand.quaternion.slerp(_id, weight * 0.4));
   });
   // Audio-reactive upper-body rhythm; planted legs never inherit dance/root tracks.
   useFrame((_, delta) => {
@@ -281,7 +286,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     elbowTarget.z = shoulder.z + 0.18;
     poseLayer.apply(arm, () => aimLimb(arm, fore, elbowTarget, w.current));
     poseLayer.apply(fore, () => aimLimb(fore, hand, target, w.current));
-    poseLayer.apply(hand, () => hand.quaternion.slerp(_id, w.current * 0.2));
+    poseLayer.apply(hand, () => hand.quaternion.slerp(_id, w.current * 0.45));
 
   });
   // Posture guard (runs last): the torso and head may never drift far from the supplied rest pose,
