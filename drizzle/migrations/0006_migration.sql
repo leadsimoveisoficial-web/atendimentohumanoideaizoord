@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS form_of_address text NOT NULL DEFAULT '', ADD COLUMN IF NOT EXISTS food_notes text NOT NULL DEFAULT '';
