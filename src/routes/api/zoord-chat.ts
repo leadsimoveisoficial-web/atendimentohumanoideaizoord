@@ -4,10 +4,12 @@ import { openaiChat } from "@/lib/openai.server";
 import { menuAnswerScript, FREE_FALLBACK_ANSWER, requestsMenuPrice } from "@/lib/menu-script";
 import { OPEN_CONVERSATION } from "@/lib/zoord-conversation";
 import { z } from "zod";
+import { languageDirective, parseLanguage } from "@/lib/zoord-language";
 
 const chatInput = z.object({
   message: z.string().trim().min(1).max(800),
   history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(2500) })).max(24).default([]),
+  language: z.enum(["pt", "en", "es"]).default("pt"),
   image: z.string().max(350000).regex(/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/).optional(),
 });
 
@@ -16,7 +18,7 @@ const menuText = (includePrices: boolean) =>
 
 const SYSTEM = `Você é o Zoord, o robô maître de alta tecnologia do DAKKAI Sushi (Sambaqui, Florianópolis): um garçom de altíssimo padrão, que recebe moradores e turistas que visitam a Ilha da Magia.
 ${OPEN_CONVERSATION}
-Idioma: detecte o idioma da fala do cliente (português, inglês ou espanhol) e responda SEMPRE no mesmo idioma, com fluência nativa. Se ele trocar de idioma, troque junto.
+Idioma: siga estritamente a TRAVA DE IDIOMA no final destas instruções.
 Boas-vindas a turistas: em inglês, "Welcome to Dakkai Sushi!"; em espanhol, "¡Bienvenidos a Dakkai Sushi!".
 Tom cortês e sofisticado de maître de alto padrão; em português use o tratamento que o cliente escolheu ("você", "o senhor" ou "a senhora"; padrão "o senhor"/"a senhora" até ele escolher); em inglês "sir"/"madam"; em espanhol "señor"/"señora".
 Responda com frases naturais, prontas para serem faladas em voz alta: sem markdown, sem listas, sem emojis. Quando o assunto for comida, descreva os pratos de forma sensorial e detalhada; prefira duas recomendações por vez, explicando diferenças conforme os gostos do cliente.
@@ -39,10 +41,11 @@ export const Route = createFileRoute("/api/zoord-chat")({
           return Response.json({ error: "Pedido inválido" }, { status: 400 });
         }
         const { message, history, image } = body;
+        const language = parseLanguage(body.language);
 
         try {
           const text = await openaiChat({
-            system: SYSTEM + menuText(requestsMenuPrice(message)),
+            system: SYSTEM + menuText(requestsMenuPrice(message)) + languageDirective(language),
             messages: [...history, { role: "user", content: message }],
             signal: request.signal,
             maxTokens: 700,

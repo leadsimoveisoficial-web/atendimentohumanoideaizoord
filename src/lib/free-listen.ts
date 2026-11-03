@@ -85,7 +85,7 @@ export function createFreeListener(options: {
         } else interim += text;
       }
       if (final.trim()) {
-        lang = detectLang(final, lang);
+        // Language is locked by the UI selector; never auto-detect mid-conversation.
         options.onFinal(final.trim(), lang);
         return;
       }

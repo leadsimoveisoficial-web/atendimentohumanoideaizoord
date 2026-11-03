@@ -26,7 +26,7 @@ export async function speakZoord(text: string, options: { lang?: string; signal?
       try {
         const chunk = chunks[i];
         if (!chunk) continue;
-        await streamSpeech("/api/zoord-openai", chunk, signal);
+        await streamSpeech("/api/zoord-openai", chunk, signal, options.lang);
         ok = true;
       } catch (e) {
         if (signal?.aborted) throw e;

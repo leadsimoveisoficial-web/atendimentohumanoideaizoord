@@ -1,3 +1,4 @@
+import { parseLanguage, ttsInstructions, type ZoordLanguage } from "./zoord-language";
 /** Own-account OpenAI only. Secrets are read at request time and never returned. */
 export async function openaiChat({ system, messages, signal, maxTokens = 700, image }: { system: string; messages: { role: "user" | "assistant"; content: string }[]; signal?: AbortSignal; maxTokens?: number; image?: string }) {
   const key = process.env["OPENAI_API_KEY"];
@@ -17,7 +18,8 @@ export async function openaiChat({ system, messages, signal, maxTokens = 700, im
 
 export async function openaiSpeech(request: Request, format: "pcm" | "mp3" = "pcm") {
   let text = "";
-  try { const body = await request.json(); text = String(body?.text ?? body?.prompt ?? "").trim().slice(0, 2500); }
+  let lang: ZoordLanguage = "pt";
+  try { const body = await request.json(); text = String(body?.text ?? body?.prompt ?? "").trim().slice(0, 2500); lang = parseLanguage(body?.lang); }
   catch { return Response.json({ error: "Pedido inválido" }, { status: 400 }); }
   if (!text) return Response.json({ error: "Texto vazio" }, { status: 400 });
   const key = process.env["OPENAI_API_KEY"];
@@ -26,7 +28,7 @@ export async function openaiSpeech(request: Request, format: "pcm" | "mp3" = "pc
     const response = await fetch("https://api.openai.com/v1/audio/speech", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "gpt-4o-mini-tts", input: text, voice: "onyx", instructions: "Você é Zoord, maître de alta gastronomia do Dakkai Sushi. Voz masculina aveludada, suave e calorosa, português brasileiro natural. Fale de forma humana e conversacional, sem soar como locutor, sem exagero teatral e sem monotonia robótica. Ritmo tranquilo e fluido, pausas leves entre ideias, entusiasmo contido ao descrever ingredientes, frescor e texturas. Pronuncie nomes japoneses com cuidado. Não acrescente informações nem preços ao texto fornecido.", response_format: format }),
+      body: JSON.stringify({ model: "gpt-4o-mini-tts", input: text, voice: "onyx", instructions: ttsInstructions(lang), response_format: format }),
       signal: request.signal,
     });
     if (!response.ok) {
