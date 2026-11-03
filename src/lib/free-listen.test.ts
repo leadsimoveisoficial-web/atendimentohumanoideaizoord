@@ -37,7 +37,7 @@ describe("voice listening lifecycle", () => {
     const current = Recognition.instances[0];
     current?.onresult?.({ resultIndex: 0, results: [{ isFinal: true, 0: { transcript: "hello please" } }] });
     current?.onend?.(); vi.runAllTimers();
-    expect(onFinal).toHaveBeenCalledWith("hello please", "en-US");
+    expect(onFinal).toHaveBeenCalledWith("hello please", "pt-BR");
     expect(Recognition.instances).toHaveLength(1);
     expect(current?.start).toHaveBeenCalledTimes(1);
   });
