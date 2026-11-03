@@ -207,6 +207,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let answer = "";
+      let spokeFirst = false;
       let pending = "";
       let queue: Promise<unknown> = Promise.resolve();
       const enqueue = (sentence: string) => {
@@ -223,7 +224,9 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
         answer += chunk;
-        const { ready, rest } = takeSentences(pending + chunk);
+        // First sentence starts the voice fast; later ones are grouped so intonation flows instead of resetting each sentence.
+        const { ready, rest } = takeSentences(pending + chunk, spokeFirst ? 140 : 12);
+        if (ready.length) spokeFirst = true;
         pending = rest;
         ready.forEach(enqueue);
       }
