@@ -143,7 +143,11 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const speakingRef = useRef(false);
   const manualPresenting = anim === "welcome";
   // Use this avatar's calm conversation clips; greetings remain bounded procedural waves.
-  const clipName = (point !== null || speaking || manualPresenting) ? "Stand_and_Chat" : "Hand_on_Hip_Gesture";
+  // Alternate the supplied motion-captured conversation clips between replies so speech never looks looped.
+  const [talkTurn, setTalkTurn] = useState(0);
+  useEffect(() => { if (speaking) setTalkTurn((n) => n + 1); }, [speaking]);
+  const talkClip = talkTurn % 2 === 0 && actions["Talk_with_Left_Hand_Raised"] ? "Talk_with_Left_Hand_Raised" : "Stand_and_Chat";
+  const clipName = (point !== null || manualPresenting) ? "Stand_and_Chat" : speaking ? talkClip : "Hand_on_Hip_Gesture";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0, world: new THREE.Quaternion(), initialized: false, position: new THREE.Vector3(), direction: new THREE.Vector3(), target: new THREE.Quaternion(), parent: new THREE.Quaternion() }), []);
   useEffect(() => {
     const move = (e: PointerEvent) => setMouseGaze((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
