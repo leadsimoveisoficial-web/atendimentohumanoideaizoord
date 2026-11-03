@@ -1,5 +1,5 @@
 export const FORMS_OF_ADDRESS = ["", "você", "senhor", "senhora"] as const;
-export type GuestMemory = { name?: string; address?: string; notes?: string };
+export type GuestMemory = { name?: string | undefined; address?: string | undefined; notes?: string | undefined };
 
 const clean = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/[\r\n]+/g, " ").trim().slice(0, max) : "");
 
