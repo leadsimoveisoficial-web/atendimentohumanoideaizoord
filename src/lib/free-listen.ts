@@ -65,6 +65,9 @@ export function createFreeListener(options: {
   let active = false;
   let lang = options.lang;
   let restartTimer: ReturnType<typeof setTimeout> | undefined;
+  // Transient mic/network hiccups (busy device, flaky connection) retry quietly before showing an error.
+  let failures = 0;
+  const MAX_RETRIES = 3;
 
   const spawn = () => {
     const instance = new Ctor();
@@ -74,6 +77,7 @@ export function createFreeListener(options: {
     instance.maxAlternatives = 1;
     instance.onresult = (event) => {
       if (!active || recognition !== instance) return;
+      failures = 0;
       let interim = "";
       let final = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -101,6 +105,12 @@ export function createFreeListener(options: {
         return;
       }
       if (event.error === "network" || event.error === "audio-capture") {
+        if (failures < MAX_RETRIES) {
+          failures++;
+          clearTimeout(restartTimer);
+          restartTimer = setTimeout(restart, 400 * failures);
+          return;
+        }
         active = false;
         options.onActive?.(false);
         options.onError(event.error === "network" ? "Não consegui conectar a escuta. Confira a internet e toque para tentar novamente." : "Microfone indisponível. Confira se está conectado e liberado para este navegador.");
@@ -109,15 +119,9 @@ export function createFreeListener(options: {
     instance.onend = () => {
       if (active && recognition === instance) {
         // Chrome ends the session periodically; restart to keep listening.
-        restartTimer = setTimeout(() => {
-          if (!active || recognition !== instance) return;
-          try {
-            instance.lang = lang;
-            instance.start();
-          } catch {
-            /* already started */
-          }
-        }, 250);
+        // A fresh instance is more reliable than restarting an ended one.
+        clearTimeout(restartTimer);
+        restartTimer = setTimeout(() => { if (active && recognition === instance) restart(); }, 250);
       }
     };
     return instance;
@@ -145,6 +149,7 @@ export function createFreeListener(options: {
     start() {
       if (active) return;
       active = true;
+      failures = 0;
       recognition = spawn();
       try {
         recognition.start();
