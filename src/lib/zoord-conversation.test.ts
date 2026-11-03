@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { OPEN_CONVERSATION } from "@/lib/zoord-conversation";
 
 const brain = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/openai.server", () => ({ openaiChat: brain }));
@@ -29,5 +30,10 @@ describe("open-ended Zoord conversation", () => {
     brain.mockResolvedValueOnce("Ana, podemos falar sobre estrelas.");
     await handler({ request: new Request("http://localhost/api/zoord-chat", { method: "POST", body: JSON.stringify({ history, message: "Lembra do assunto que eu gosto?" }) }) });
     expect(brain.mock.calls.at(-1)?.[0].messages).toEqual([...history, { role: "user", content: "Lembra do assunto que eu gosto?" }]);
+  });
+  it("instructs Portuguese-only speech unless the customer asks another language", () => {
+    expect(OPEN_CONVERSATION).toContain("fale exclusivamente em português do Brasil");
+    expect(OPEN_CONVERSATION).toContain("Só use outro idioma quando o cliente pedir explicitamente");
+    expect(OPEN_CONVERSATION).toContain("responda em português do Brasil");
   });
 });
