@@ -54,3 +54,15 @@ describe("permanent elevated gaze", () => {
     expect(HEAD_POSTURE.upMax).toBeCloseTo(2 * Math.PI / 180);
   });
 });
+
+import { speechBeat, SPEECH_BEAT } from "./zoord-motion";
+describe("speech beat gestures", () => {
+  it("stays still for steady speech and when disabled", () => {
+    expect(speechBeat(0.3, 0.3, true)).toBe(0);
+    expect(speechBeat(0.9, 0.1, false)).toBe(0);
+  });
+  it("lifts on stress peaks but never beyond the bound", () => {
+    expect(speechBeat(0.2, 0.1, true)).toBeGreaterThan(0);
+    expect(speechBeat(1, 0, true)).toBe(SPEECH_BEAT.max);
+  });
+});
