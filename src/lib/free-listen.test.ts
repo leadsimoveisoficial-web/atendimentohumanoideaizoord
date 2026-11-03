@@ -41,13 +41,14 @@ describe("voice listening lifecycle", () => {
     expect(Recognition.instances).toHaveLength(1);
     expect(current?.start).toHaveBeenCalledTimes(1);
   });
-  it("stops network error retry loops", () => {
+  it("retries network errors 3 times, then stops with one error", () => {
     const onError = vi.fn();
     const listener = createFreeListener({ lang: "pt-BR", onFinal: vi.fn(), onError });
     listener.start();
-    const current = Recognition.instances[0];
-    current?.onerror?.({ error: "network" }); current?.onend?.(); vi.runAllTimers();
+    for (let i = 0; i < 4; i++) { Recognition.instances.at(-1)?.onerror?.({ error: "network" }); vi.runAllTimers(); }
     expect(onError).toHaveBeenCalledTimes(1);
-    expect(current?.start).toHaveBeenCalledTimes(1);
+    expect(Recognition.instances).toHaveLength(4);
+    Recognition.instances.at(-1)?.onend?.(); vi.runAllTimers();
+    expect(Recognition.instances).toHaveLength(4);
   });
 });
