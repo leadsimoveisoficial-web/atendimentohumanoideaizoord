@@ -203,7 +203,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       const decoder = new TextDecoder();
       let answer = "";
       let pending = "";
-      let queue = Promise.resolve();
+      let queue: Promise<unknown> = Promise.resolve();
       const enqueue = (sentence: string) => {
         queue = queue.then(() => {
           ac.signal.throwIfAborted();
