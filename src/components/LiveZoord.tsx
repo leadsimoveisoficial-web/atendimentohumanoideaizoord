@@ -1,7 +1,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
 import { createPlaybackMeter } from "@/lib/voice-level";
-import { createFreeListener, recognitionSupported, type FreeListener, type SpeechLang } from "@/lib/free-listen";
+import { createFreeListener, recognitionSupported, type FreeListener } from "@/lib/free-listen";
+import { isCustomerBargeIn, recognitionLang, ZOORD_LANGUAGES, type ZoordLanguage } from "@/lib/zoord-language";
 import { stopFreeSpeech } from "@/lib/free-speech";
 import { speakZoord } from "@/lib/zoord-voice";
 import { categoryScript, guessCategory } from "@/lib/menu-script";
@@ -38,6 +39,28 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   const freeAbort = useRef<AbortController | null>(null);
   const freeHistory = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
   const lastMusic = useRef("");
+  const [language, setLanguageState] = useState<ZoordLanguage>("pt");
+  const languageRef = useRef<ZoordLanguage>("pt");
+  const speakingText = useRef("");
+
+  // Barge-in: the customer started talking over Zoord → stop speech at once and listen.
+  function interruptSpeech() {
+    freeAbort.current?.abort();
+    freeAbort.current = null;
+    freeBusy.current = false;
+    speakingText.current = "";
+    stopFreeSpeech();
+    onPoint(null);
+    setPhase("listening");
+  }
+
+  function selectLanguage(next: ZoordLanguage) {
+    if (next === languageRef.current) return;
+    languageRef.current = next;
+    setLanguageState(next);
+    if (freeBusy.current) interruptSpeech();
+    freeListener.current?.setLang(recognitionLang(next));
+  }
 
   function handleMusic(text: string): MusicCommand | null {
     const command = musicCommand(text);
@@ -132,7 +155,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     setFreeError("");
     setFreeActive(true);
     setPhase("speaking");
-    speakZoord(categoryScript(category), { signal: ac.signal })
+    speakZoord(categoryScript(category), { lang: languageRef.current, signal: ac.signal })
       .catch((error: unknown) => { if (!ac.signal.aborted) setFreeError(error instanceof Error ? error.message : "Não consegui reproduzir a voz agora."); })
       .finally(() => {
         if (freeAbort.current === ac) {
@@ -144,20 +167,21 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       });
   }
 
-  async function answerFree(text: string, lang: SpeechLang) {
+  async function answerFree(text: string) {
+    const lang = languageRef.current;
     if (freeBusy.current) return;
     freeBusy.current = true;
     setFreeError("");
     setPhase("thinking");
     onListening(false);
-    // Pause listening while Zoord speaks so the microphone doesn't hear itself.
-    freeListener.current?.stop();
+    // Listening stays on while Zoord speaks so the customer can interrupt (echo is filtered).
     const ac = new AbortController();
     freeAbort.current = ac;
     try {
       const command = handleMusic(text);
       if (command) {
         setPhase("speaking");
+        speakingText.current = "rádio pausada selecionei estilo gostaria ouvir";
         await speakZoord(command.action === "choose"
           ? "Que estilo gostaria de ouvir? Forró, pagode, sertanejo, eletrônico, hip-hop, rock nacional clássico, blues e jazz, hits do momento ou rock internacional?"
           : command.action === "stop" ? "Rádio pausada, à sua disposição."
@@ -167,7 +191,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       const res = await fetch("/api/zoord-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history: freeHistory.current.slice(-24), image: captureFrame() }),
+        body: JSON.stringify({ message: text, history: freeHistory.current.slice(-24), language: lang, image: captureFrame() }),
         signal: ac.signal,
       });
       const data = await res.json();
@@ -178,6 +202,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       const category = guessCategory(text);
       if (category !== null) onPoint(category);
       setPhase("speaking");
+      speakingText.current = answer;
       await speakZoord(answer, { lang, signal: ac.signal });
     } catch (e) {
       if (!ac.signal.aborted) setFreeError((e as Error).message || "Não consegui responder agora.");
@@ -185,8 +210,9 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       if (freeAbort.current === ac) {
         freeAbort.current = null;
         freeBusy.current = false;
+        speakingText.current = "";
         onPoint(null);
-        if (freeConversationOn.current) freeListener.current?.start();
+        if (freeConversationOn.current) { freeListener.current?.start(); setPhase("listening"); }
         else setPhase("idle");
       }
     }
@@ -203,17 +229,28 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
     setFreeActive(true);
     try {
       freeListener.current = createFreeListener({
-        lang: "pt-BR",
-        onInterim: () => { setFreeError(""); onListening(true); },
-        onActive: (active) => { setPhase(active ? "listening" : "idle"); onListening(active); },
-        onFinal: (text, lang) => {
+        lang: recognitionLang(languageRef.current),
+        onInterim: (heard) => {
+          setFreeError("");
+          if (freeBusy.current) {
+            if (!isCustomerBargeIn(heard, speakingText.current)) return;
+            interruptSpeech();
+          }
+          onListening(true);
+        },
+        onActive: (active) => { if (!freeBusy.current) setPhase(active ? "listening" : "idle"); onListening(active && !freeBusy.current); },
+        onFinal: (text) => {
+          if (freeBusy.current) {
+            if (!isCustomerBargeIn(text, speakingText.current)) return;
+            interruptSpeech();
+          }
           const result = reactToCustomer(reaction.current, text, Date.now(), Date.now());
           reaction.current = result.state;
           onListening(true);
           if (listeningTimer.current) clearTimeout(listeningTimer.current);
           listeningTimer.current = setTimeout(() => onListening(false), 1800);
           if (result.wave) { onPoint(null); onGreeting(); }
-          void answerFree(text, lang);
+          void answerFree(text);
         },
         onError: (message) => { freeConversationOn.current = false; setFreeActive(false); setPhase("idle"); onListening(false); setFreeError(message); },
       });
@@ -235,7 +272,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       setFreeError("");
       setFreeActive(true);
       setPhase("speaking");
-      void speakZoord(text, { signal: ac.signal })
+      void speakZoord(text, { lang: languageRef.current, signal: ac.signal })
         .catch(() => { if (!ac.signal.aborted) setFreeError("Não consegui falar agora. A música continua disponível."); })
         .finally(() => { if (freeAbort.current === ac) { freeAbort.current = null; setFreeActive(false); setPhase("idle"); } });
     },
@@ -384,6 +421,21 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
           </>
         )}
         <Button variant="ghost" onClick={toggleCam} disabled={camPending} className={`stage-chip ${cam ? "stage-chip-active" : ""}`}>{cam ? <CameraOff /> : <Camera />}{camPending ? "Abrindo câmera…" : cam ? "Câmera ligada" : "Câmera"}</Button>
+        <div role="radiogroup" aria-label="Idioma do Zoord" className="stage-chip flex items-center gap-1 px-1">
+          {ZOORD_LANGUAGES.map((l) => (
+            <button
+              key={l.id}
+              type="button"
+              role="radio"
+              aria-checked={language === l.id}
+              title={l.label}
+              onClick={() => selectLanguage(l.id)}
+              className={`min-w-9 rounded-full px-2 py-1 text-xs font-semibold transition-colors ${language === l.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {l.short}
+            </button>
+          ))}
+        </div>
         {call.playbackBlocked && <Button variant="ghost" onClick={() => { playbackMeter.current?.resume(); call.resumePlayback(); }} className="stage-chip"><Volume2 />Tocar som</Button>}
       </div>
       <StagePresence show={Boolean(call.error || freeError)}><p role="alert" className="stage-glass max-w-xl p-3 text-center text-xs text-dakkai">{call.error || freeError}</p></StagePresence>
