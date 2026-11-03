@@ -384,7 +384,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       // Someone stepped in front after a quiet moment: wave and offer a short welcome when idle.
       if (hadPrev && arrival(Boolean(c), performance.now())) {
         onGreetingRef.current();
-        const idle = !freeAbort.current && callStatusRef.current !== "connected" && callStatusRef.current !== "connecting";
+        const idle = !freeAbort.current && !freeModeRef.current && callStatusRef.current !== "connected" && callStatusRef.current !== "connecting";
         if (idle) welcomeRef.current();
       }
     }, 120);
