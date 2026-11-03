@@ -16,6 +16,42 @@ export async function openaiChat({ system, messages, signal, maxTokens = 700, im
   return text;
 }
 
+/** Streams text deltas (token by token) from OpenAI chat completions. */
+export async function openaiChatStream({ system, messages, signal, maxTokens = 220, image }: { system: string; messages: { role: "user" | "assistant"; content: string }[]; signal?: AbortSignal; maxTokens?: number; image?: string }): Promise<ReadableStream<Uint8Array>> {
+  const key = process.env["OPENAI_API_KEY"];
+  if (!key) throw new Error("OpenAI não configurada.");
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "gpt-4.1-mini", stream: true, messages: [{ role: "system", content: system }, ...messages.map((message, index) => image && message.role === "user" && index === messages.length - 1 ? { role: "user", content: [{ type: "text", text: message.content }, { type: "image_url", image_url: { url: image, detail: "low" } }] } : message)], max_tokens: maxTokens, temperature: 0.6, store: false }),
+    signal: signal ?? null,
+  });
+  if (!response.ok || !response.body) throw new Error(`OpenAI indisponível (${response.status}).`);
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let buffer = "";
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) { controller.close(); return; }
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        let out = "";
+        for (const line of lines) {
+          const data = line.startsWith("data:") ? line.slice(5).trim() : "";
+          if (!data || data === "[DONE]") continue;
+          try { out += (JSON.parse(data) as { choices?: { delta?: { content?: string } }[] }).choices?.[0]?.delta?.content ?? ""; } catch { /* partial */ }
+        }
+        if (out) { controller.enqueue(encoder.encode(out)); return; }
+      }
+    },
+    cancel() { void reader.cancel(); },
+  });
+}
+
 export async function openaiSpeech(request: Request, format: "pcm" | "mp3" = "pcm") {
   let text = "";
   let lang: ZoordLanguage = "pt";

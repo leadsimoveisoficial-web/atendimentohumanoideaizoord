@@ -5,6 +5,7 @@ import { createFreeListener, recognitionSupported, type FreeListener } from "@/l
 import { isCustomerBargeIn, recognitionLang, ZOORD_LANGUAGES, type ZoordLanguage } from "@/lib/zoord-language";
 import { stopFreeSpeech } from "@/lib/free-speech";
 import { speakZoord } from "@/lib/zoord-voice";
+import { takeSentences } from "@/lib/speech-chunks";
 import { categoryScript, guessCategory } from "@/lib/menu-script";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
@@ -194,16 +195,39 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
         body: JSON.stringify({ message: text, history: freeHistory.current.slice(-24), language: lang, image: captureFrame() }),
         signal: ac.signal,
       });
-      const data = await res.json();
-      ac.signal.throwIfAborted();
-      if (!res.ok || !data.text) throw new Error(data.error || "Não consegui responder agora. Tente novamente.");
-      const answer = String(data.text);
-      freeHistory.current = [...freeHistory.current, { role: "user" as const, content: text }, { role: "assistant" as const, content: answer }].slice(-24);
+      if (!res.ok || !res.body) throw new Error("Não consegui responder agora. Tente novamente.");
       const category = guessCategory(text);
       if (category !== null) onPoint(category);
-      setPhase("speaking");
+      // Speak each sentence as soon as it arrives; playback stays sequential with the same voice.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let answer = "";
+      let pending = "";
+      let queue = Promise.resolve();
+      const enqueue = (sentence: string) => {
+        queue = queue.then(() => {
+          ac.signal.throwIfAborted();
+          setPhase("speaking");
+          speakingText.current = answer;
+          return speakZoord(sentence, { lang, signal: ac.signal });
+        });
+        queue.catch(() => undefined);
+      };
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        answer += chunk;
+        const { ready, rest } = takeSentences(pending + chunk);
+        pending = rest;
+        ready.forEach(enqueue);
+      }
+      ac.signal.throwIfAborted();
+      if (pending.trim()) enqueue(pending.trim());
+      if (!answer.trim()) throw new Error("Não consegui responder agora. Tente novamente.");
       speakingText.current = answer;
-      await speakZoord(answer, { lang, signal: ac.signal });
+      freeHistory.current = [...freeHistory.current, { role: "user" as const, content: text }, { role: "assistant" as const, content: answer.trim() }].slice(-24);
+      await queue;
     } catch (e) {
       if (!ac.signal.aborted) setFreeError((e as Error).message || "Não consegui responder agora.");
     } finally {
