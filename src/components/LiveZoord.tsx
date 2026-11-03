@@ -297,20 +297,24 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   callStatusRef.current = call.status;
   const welcomeRef = useRef(() => {});
 
-  useImperativeHandle(ref, () => ({
-    say(text) {
+  function sayText(text: string) {
       // All manual introductions belong to this controller; never open the microphone.
-      call.stop();
-      stopFreeConversation();
-      const ac = new AbortController();
-      freeAbort.current = ac;
-      setFreeError("");
-      setFreeActive(true);
-      setPhase("speaking");
-      void speakZoord(text, { lang: languageRef.current, signal: ac.signal })
-        .catch(() => { if (!ac.signal.aborted) setFreeError("Não consegui falar agora. A música continua disponível."); })
-        .finally(() => { if (freeAbort.current === ac) { freeAbort.current = null; setFreeActive(false); setPhase("idle"); } });
-    },
+    call.stop();
+    stopFreeConversation();
+    const ac = new AbortController();
+    freeAbort.current = ac;
+    setFreeError("");
+    setFreeActive(true);
+    setPhase("speaking");
+    void speakZoord(text, { lang: languageRef.current, signal: ac.signal })
+      .catch(() => { if (!ac.signal.aborted) setFreeError("Não consegui falar agora. A música continua disponível."); })
+      .finally(() => { if (freeAbort.current === ac) { freeAbort.current = null; setFreeActive(false); setPhase("idle"); } });
+  }
+  const WELCOME = { pt: "Seja bem-vindo ao Dakkai Sushi! Toque em Falar com o Zoord quando quiser conversar.", en: "Welcome to Dakkai Sushi! Tap Talk to Zoord whenever you like.", es: "¡Bienvenidos a Dakkai Sushi! Toque Hablar con Zoord cuando quiera." } as const;
+  welcomeRef.current = () => sayText(WELCOME[languageRef.current]);
+
+  useImperativeHandle(ref, () => ({
+    say: sayText,
     present(category) {
       if (freeModeRef.current) {
         freePresent(category);
