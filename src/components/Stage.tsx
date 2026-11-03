@@ -38,6 +38,7 @@ import { UserAccount } from "./UserAccount";
 import { StagePlatform } from "./StagePlatform";
 import { StagePresence } from "./StagePresence";
 
+const TALK_CLIPS = ["Stand_and_Chat", "Talk_with_Left_Hand_Raised", "Stand_Talking_Angry", "Hand_on_Hip_Gesture"];
 const stageColors = { cyan: "", blue: "", red: "", space: "", backing: "", key: "", rim: "", ambient: "" };
 
 // The menu opens as a side panel on the viewer's right: Zoord points there.
@@ -145,10 +146,18 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const manualPresenting = anim === "welcome";
   // Use this avatar's calm conversation clips; greetings remain bounded procedural waves.
   // Alternate the supplied motion-captured conversation clips between replies so speech never looks looped.
+  // Rotate the supplied motion-captured talking clips every few seconds while he speaks, so gestures never look looped.
+  const talkClips = useMemo(() => TALK_CLIPS.filter((n) => actions[n]), [actions]);
   const [talkTurn, setTalkTurn] = useState(0);
-  useEffect(() => { if (speaking) setTalkTurn((n) => n + 1); }, [speaking]);
-  const talkClip = talkTurn % 2 === 0 && actions["Talk_with_Left_Hand_Raised"] ? "Talk_with_Left_Hand_Raised" : "Stand_and_Chat";
-  const clipName = (point !== null || manualPresenting) ? "Stand_and_Chat" : speaking ? talkClip : "Hand_on_Hip_Gesture";
+  const talkingNow = speaking || manualPresenting;
+  useEffect(() => {
+    if (!talkingNow) return;
+    setTalkTurn((n) => n + 1);
+    const id = window.setInterval(() => setTalkTurn((n) => n + 1 + Math.floor(Math.random() * 2)), 3800);
+    return () => window.clearInterval(id);
+  }, [talkingNow]);
+  const talkClip = talkClips.length ? talkClips[talkTurn % talkClips.length]! : "Stand_and_Chat";
+  const clipName = point !== null ? "Stand_and_Chat" : talkingNow ? talkClip : "Hand_on_Hip_Gesture";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0, world: new THREE.Quaternion(), initialized: false, position: new THREE.Vector3(), direction: new THREE.Vector3(), target: new THREE.Quaternion(), parent: new THREE.Quaternion() }), []);
   useEffect(() => {
     const move = (e: PointerEvent) => setMouseGaze((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
@@ -405,7 +414,8 @@ function Logo() {
     <group name="DakkaiFloatingLogo" position={[-3.2, 6.2, -12.5]} scale={0.65}>
       <mesh position-z={-0.1}>
         <circleGeometry args={[2.34, 96]} />
-        <meshBasicMaterial color={stageColors.backing} transparent opacity={0.88} />
+        {/* Opaque black disc behind the logo; fallback keeps it dark if the token is read after mount. */}
+        <meshBasicMaterial color={stageColors.backing || "#05070a"} toneMapped={false} />
       </mesh>
       <mesh ref={ref} position-z={-0.05}>
         <ringGeometry args={[2.35, 2.42, 128]} />
