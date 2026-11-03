@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { OPEN_CONVERSATION } from "@/lib/zoord-conversation";
 
 const brain = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/openai.server", () => ({ openaiChat: brain }));
