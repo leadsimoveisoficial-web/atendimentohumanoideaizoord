@@ -107,7 +107,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
           mat.emissive.set(albedo);
           mat.emissiveIntensity = 0.55;
         }
-        mat.envMapIntensity = 0.15;
+        // Studio reflections: metal parts catch the softboxes, fabric/skin stay close to source colors.
+        mat.envMapIntensity = mat.metalness > 0.3 || mat.metalnessMap ? 0.42 : 0.18;
         mat.needsUpdate = true;
         return mat;
       };
@@ -571,7 +572,9 @@ export function Stage() {
         <directionalLight position={[-3, 7, 5]} intensity={2.4} color={stageColors.key} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-5} shadow-camera-right={5} shadow-camera-top={7} shadow-camera-bottom={-2} shadow-bias={-0.0002} shadow-normalBias={0.03} />
         <directionalLight position={[3, 5, -4]} intensity={3.1} color={stageColors.rim} />
         <pointLight position={[4, 3, 2]} intensity={8} color={stageColors.blue} distance={9} />
-        <Environment resolution={256}>
+        <Environment resolution={512}>
+          <Lightformer form="rect" intensity={1.1} color={stageColors.key} position={[-2.5, 2.4, 4]} scale={[2.2, 3.2, 1]} target={[0, 1.4, 0]} />
+          <Lightformer form="rect" intensity={0.7} color={stageColors.key} position={[2.8, 2, 3.5]} scale={[1.4, 2.6, 1]} target={[0, 1.4, 0]} />
           <Lightformer intensity={1.6} color={stageColors.key} position={[0, 5, 2]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
           <Lightformer intensity={1.3} color={stageColors.cyan} position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[20, 0.5, 1]} />
           <Lightformer intensity={1.3} color={stageColors.blue} position={[5, 1, -1]} rotation-y={-Math.PI / 2} scale={[20, 0.5, 1]} />
