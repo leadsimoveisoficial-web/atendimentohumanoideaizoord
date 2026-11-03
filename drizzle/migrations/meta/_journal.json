@@ -43,6 +43,13 @@
       "when": 1793641580022,
       "tag": "0005_ti_registered_team_access",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793746245186,
+      "tag": "0006_migration",
+      "breakpoints": true
     }
   ]
 }

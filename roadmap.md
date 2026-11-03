@@ -81,3 +81,6 @@
 - [x] Voz OpenAI (/api/zoord-openai) conforme código enviado pelo usuário
 - [x] Assistente de TI usa Groq (GROQ_API_KEY própria, grátis) primeiro e OpenAI como reserva, ambos server-side; chaves nunca em VITE_/navegador. 4 testes novos.
 - [x] Zoord Core do painel de TI: OpenRouter (OPENROUTER_API_KEY) como principal, Groq e OpenAI como reservas, tudo server-side.
+
+- [x] Logo do Dakkai com fundo preto destacado
+- [x] Zoord alterna 2-3 gestos de fala a cada frase

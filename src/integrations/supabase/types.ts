@@ -50,6 +50,8 @@ export type Database = {
       profiles: {
         Row: {
           display_name: string
+          food_notes: string
+          form_of_address: string
           id: string
           music_genre: string
           music_volume: number
@@ -57,6 +59,8 @@ export type Database = {
         }
         Insert: {
           display_name?: string
+          food_notes?: string
+          form_of_address?: string
           id: string
           music_genre?: string
           music_volume?: number
@@ -64,6 +68,8 @@ export type Database = {
         }
         Update: {
           display_name?: string
+          food_notes?: string
+          form_of_address?: string
           id?: string
           music_genre?: string
           music_volume?: number

@@ -13,7 +13,7 @@ import { safeRedirect } from "@/lib/profile";
 import { StagePresence } from "./StagePresence";
 
 type Profile = Tables<"profiles">;
-type Account = { user: User | null; profile: Profile | null; save: (patch: Partial<Pick<Profile, "display_name" | "music_genre" | "music_volume">>) => Promise<void> };
+type Account = { user: User | null; profile: Profile | null; save: (patch: Partial<Pick<Profile, "display_name" | "music_genre" | "music_volume" | "form_of_address" | "food_notes">>) => Promise<void> };
 const AccountContext = createContext<Account>({ user: null, profile: null, save: async () => {} });
 export const useAccount = () => useContext(AccountContext);
 
@@ -64,15 +64,19 @@ export function UserAccount() {
   const [name, setName] = useState("");
   const [genre, setGenre] = useState("br-rock");
   const [volume, setVolume] = useState(0.35);
+  const [address, setAddress] = useState("");
+  const [notes, setNotes] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const show = () => { setName(profile?.display_name ?? ""); setGenre(profile?.music_genre ?? "br-rock"); setVolume(Number(profile?.music_volume ?? 0.35)); setMessage(""); setOpen(true); };
+  const show = () => { setName(profile?.display_name ?? ""); setGenre(profile?.music_genre ?? "br-rock"); setVolume(Number(profile?.music_volume ?? 0.35)); setAddress(profile?.form_of_address ?? ""); setNotes(profile?.food_notes ?? ""); setMessage(""); setOpen(true); };
   return <>
     <Button variant="ghost" className="stage-chip" aria-label={user ? "Minha conta" : "Entrar"} onClick={() => user ? show() : void navigate({ to: "/auth", search: { redirect: "/" } })}><UserRound /><span className="hidden lg:inline">{user ? profile?.display_name || "Minha conta" : "Entrar"}</span></Button>
     <StagePresence show={open && Boolean(user)} className="fixed right-3 top-20 z-50 w-[calc(100vw-24px)] max-w-sm"><aside aria-label="Minha conta" className="stage-glass p-5 text-foreground">
       <header className="mb-4 flex items-center justify-between"><h2 className="font-display text-sm">Minha conta</h2><Button variant="ghost" size="icon" aria-label="Fechar conta" onClick={() => setOpen(false)}><X /></Button></header>
-      <form className="space-y-4" onSubmit={async (e) => { e.preventDefault(); setBusy(true); try { await save(profilePreferences(name, genre, volume)); setMessage("Preferências salvas."); } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível salvar."); } finally { setBusy(false); } }}>
+      <form className="space-y-4" onSubmit={async (e) => { e.preventDefault(); setBusy(true); try { await save(profilePreferences(name, genre, volume, address, notes)); setMessage("Preferências salvas."); } catch (error) { setMessage(error instanceof Error ? error.message : "Não foi possível salvar."); } finally { setBusy(false); } }}>
         <label className="block text-sm">Nome<Input aria-label="Nome" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} /></label>
+        <label className="block text-sm">Como prefere ser chamado<select aria-label="Tratamento preferido" className="mt-1 w-full rounded-md border border-input bg-background p-2" value={address} onChange={(e) => setAddress(e.target.value)}><option value="">Sem preferência</option><option value="você">Você</option><option value="senhor">Senhor</option><option value="senhora">Senhora</option></select></label>
+        <label className="block text-sm">Gostos e restrições<Input aria-label="Gostos e restrições" maxLength={300} placeholder="Ex.: adoro salmão, sem camarão" value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
         <label className="block text-sm">Gênero musical<select aria-label="Gênero preferido" className="mt-1 w-full rounded-md border border-input bg-background p-2" value={genre} onChange={(e) => setGenre(e.target.value)}>{MUSIC_GENRES.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
         <label className="block text-sm">Volume<input aria-label="Volume preferido" className="mt-2 w-full accent-glow" type="range" min="0" max="1" step="0.05" value={volume} onChange={(e) => setVolume(Number(e.target.value))} /></label>
         <Button disabled={busy || !profile} variant="outline" type="submit" className="w-full"><Save />Salvar preferências</Button>
