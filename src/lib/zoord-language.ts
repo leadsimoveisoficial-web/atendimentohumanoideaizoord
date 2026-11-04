@@ -35,11 +35,23 @@ export function ttsInstructions(lang: ZoordLanguage): string {
 }
 
 /** Barge-in: true when what the mic heard is the customer, not Zoord's own voice echoing back. */
+const normWords = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(Boolean);
+/** How long after Zoord stops talking a transcript is still checked against his last words. */
+export const ECHO_TAIL_MS = 3000;
+/** Share of heard words that also appear in what Zoord said (0..1). */
+function echoRatio(heard: string, speaking: string) {
+  const words = normWords(heard);
+  if (!words.length) return 1;
+  const spoken = new Set(normWords(speaking));
+  return words.filter((w) => spoken.has(w)).length / words.length;
+}
+/** Mostly Zoord's own recent words: ignore instead of answering himself. */
+export function isEchoOf(heard: string, spoken: string): boolean {
+  if (!spoken.trim()) return false;
+  return echoRatio(heard, spoken) >= 0.5;
+}
+/** Interrupt only for 3+ words that are clearly not his own voice, so misheard echo can't cut him off. */
 export function isCustomerBargeIn(heard: string, speaking: string): boolean {
-  const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(Boolean);
-  const words = norm(heard);
-  if (words.length < 2) return false;
-  const spoken = new Set(norm(speaking));
-  const echoed = words.filter((w) => spoken.has(w)).length;
-  return echoed / words.length < 0.6;
+  if (normWords(heard).length < 3) return false;
+  return echoRatio(heard, speaking) < 0.34;
 }

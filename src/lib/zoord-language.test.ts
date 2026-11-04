@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isCustomerBargeIn, languageDirective, parseLanguage, recognitionLang } from "./zoord-language";
+import { isCustomerBargeIn, isEchoOf, languageDirective, parseLanguage, recognitionLang } from "./zoord-language";
 
 describe("zoord language lock", () => {
   it("defaults to Portuguese for unknown values", () => {
@@ -20,5 +20,13 @@ describe("zoord language lock", () => {
     expect(isCustomerBargeIn("recomendo o nigiri de salmão", speaking)).toBe(false);
     expect(isCustomerBargeIn("espera quero um temaki", speaking)).toBe(true);
     expect(isCustomerBargeIn("oi", speaking)).toBe(false);
+    // A misheard 2-word echo (1 of 2 matching) must not cut him off.
+    expect(isCustomerBargeIn("salmão fresco", speaking)).toBe(false);
+  });
+  it("recognises his own last words arriving after he stops", () => {
+    const said = "Recomendo o nigiri de salmão, ele é muito fresco.";
+    expect(isEchoOf("ele é muito fresco", said)).toBe(true);
+    expect(isEchoOf("quero um temaki de atum", said)).toBe(false);
+    expect(isEchoOf("ele é muito fresco", "")).toBe(false);
   });
 });
