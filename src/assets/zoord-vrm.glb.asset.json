@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "asset_id": "14e5fced-4ed5-4157-b1a7-29b159f936c6",
+  "asset_id": "5fc72691-d91c-4c42-9267-1bf471293cfb",
   "project_id": "7254fe52-5e24-4b12-8523-a6fcaf450099",
-  "url": "/__l5e/assets-v1/14e5fced-4ed5-4157-b1a7-29b159f936c6/zoord-vrm.glb",
-  "r2_key": "a/v1/7254fe52-5e24-4b12-8523-a6fcaf450099/14e5fced-4ed5-4157-b1a7-29b159f936c6/zoord-vrm.glb",
+  "url": "/__l5e/assets-v1/5fc72691-d91c-4c42-9267-1bf471293cfb/zoord-vrm.glb",
+  "r2_key": "a/v1/7254fe52-5e24-4b12-8523-a6fcaf450099/5fc72691-d91c-4c42-9267-1bf471293cfb/zoord-vrm.glb",
   "original_filename": "zoord-vrm.glb",
-  "size": 10862088,
+  "size": 8096536,
   "content_type": "model/gltf-binary",
-  "created_at": "2026-11-04T17:02:50Z"
+  "created_at": "2026-11-04T17:05:05Z"
 }
