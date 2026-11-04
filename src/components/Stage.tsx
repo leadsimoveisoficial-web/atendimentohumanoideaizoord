@@ -15,7 +15,7 @@ import * as THREE from "three";
 import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
 import { gaze, setMouseGaze } from "@/lib/gaze";
 import zoord from "@/assets/zoord-vrm.glb.asset.json";
-import { FACE_TARGETS, blinkCurve, debugWeights, easeWeight, emptyFace, faceDebug, faceLive, nextBlinkDelay, visemesFromAudio, FACE_LIMITS } from "@/lib/zoord-face";
+import { FACE_TARGETS, debugWeights, easeWeight, emptyFace, faceDebug, faceLive, visemesFromAudio, FACE_LIMITS } from "@/lib/zoord-face";
 import { FaceDiagnostics } from "./FaceDiagnostics";
 import { ZoordMouth } from "./ZoordMouth";
 import dakkaiLogo from "@/assets/dakkai-logo.webp";
@@ -384,7 +384,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const face = useMemo(() => {
     let mesh: THREE.Mesh | null = null;
     scene.traverse((o) => { if (!mesh && (o as THREE.Mesh).isMesh && (o as THREE.Mesh).morphTargetDictionary?.["aa"] !== undefined) mesh = o as THREE.Mesh; });
-    return { mesh: mesh as THREE.Mesh | null, current: emptyFace(), clock: 0, nextBlink: nextBlinkDelay(), blinkStart: -1 };
+    return { mesh: mesh as THREE.Mesh | null, current: emptyFace(), clock: 0, };
   }, [scene]);
   useFrame((_, rawDelta) => {
     const mesh = face.mesh;
@@ -396,8 +396,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     if (faceDebug.enabled) target = debugWeights(faceDebug.values);
     else {
       Object.assign(target, visemesFromAudio(voiceLevel.v, voiceLevel.round, voiceLevel.wide));
-      if (face.clock >= face.nextBlink) { face.blinkStart = face.clock; face.nextBlink = face.clock + nextBlinkDelay(); }
-      target.blink = reduced.current ? 0 : blinkCurve(face.clock - face.blinkStart);
+      // No automatic blinking: the owner wants focus on speech and mouth movement only.
       // Neutral while listening, full soft smile on greetings, friendly while serving.
       target.happy = listening ? 0 : waving ? FACE_LIMITS.smileMax : speakingRef.current || manualPresenting ? FACE_LIMITS.smileMax * 0.6 : FACE_LIMITS.smileMax * 0.3;
     }
@@ -434,7 +433,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
         <primitive object={scene} />
       </group>
       {/* Previous avatar's animated LED mouth, anchored on this face's measured lip line (head-local). */}
-      <ZoordMouth scene={scene} position={[0, 0.008, 0.069]} rotationX={0} scale={0.0075} />
+      <ZoordMouth scene={scene} position={[0, 0.009, 0.069]} rotationX={0} scale={0.0075} />
     </>
   );
 }
