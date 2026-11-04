@@ -17,6 +17,7 @@ import { gaze, setMouseGaze } from "@/lib/gaze";
 import zoord from "@/assets/zoord-vrm.glb.asset.json";
 import { FACE_TARGETS, blinkCurve, debugWeights, easeWeight, emptyFace, faceDebug, faceLive, nextBlinkDelay, visemesFromAudio, FACE_LIMITS } from "@/lib/zoord-face";
 import { FaceDiagnostics } from "./FaceDiagnostics";
+import { ZoordMouth } from "./ZoordMouth";
 import dakkaiLogo from "@/assets/dakkai-logo.webp";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { voiceLevel } from "@/lib/voice-level";
@@ -432,6 +433,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       <group ref={group} position={[0, 0.3, 0]} scale={3.49 / 1.576}>
         <primitive object={scene} />
       </group>
+      {/* Previous avatar's animated LED mouth, anchored on this face's measured lip line (head-local). */}
+      <ZoordMouth scene={scene} position={[0, 0.02, 0.07]} rotationX={0} scale={0.0075} />
     </>
   );
 }
