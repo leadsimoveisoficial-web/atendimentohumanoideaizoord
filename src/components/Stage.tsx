@@ -14,7 +14,9 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type Compo
 import * as THREE from "three";
 import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
 import { gaze, setMouseGaze } from "@/lib/gaze";
-import zoord from "@/assets/zoord-light.glb.asset.json";
+import zoord from "@/assets/zoord-vrm.glb.asset.json";
+import { FACE_TARGETS, blinkCurve, debugWeights, easeWeight, emptyFace, faceDebug, nextBlinkDelay, visemesFromAudio, FACE_LIMITS } from "@/lib/zoord-face";
+import { FaceDiagnostics } from "./FaceDiagnostics";
 import dakkaiLogo from "@/assets/dakkai-logo.webp";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { voiceLevel } from "@/lib/voice-level";
@@ -378,6 +380,35 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     });
     if (import.meta.env.DEV) (window as unknown as { __zoordScene?: THREE.Object3D }).__zoordScene = scene;
   }, [scene]);
+  // Real face: the avatar's own visemes, blinks and smile, driven by measured voice output.
+  const face = useMemo(() => {
+    let mesh: THREE.Mesh | null = null;
+    scene.traverse((o) => { if (!mesh && (o as THREE.Mesh).isMesh && (o as THREE.Mesh).morphTargetDictionary?.aa !== undefined) mesh = o as THREE.Mesh; });
+    return { mesh: mesh as THREE.Mesh | null, current: emptyFace(), clock: 0, nextBlink: nextBlinkDelay(), blinkStart: -1 };
+  }, [scene]);
+  useFrame((_, rawDelta) => {
+    const mesh = face.mesh;
+    const dict = mesh?.morphTargetDictionary, inf = mesh?.morphTargetInfluences;
+    if (!dict || !inf) return;
+    const dt = Math.min(rawDelta, 0.1);
+    face.clock += dt;
+    let target = emptyFace();
+    if (faceDebug.enabled) target = debugWeights(faceDebug.values);
+    else {
+      Object.assign(target, visemesFromAudio(voiceLevel.v, voiceLevel.round, voiceLevel.wide));
+      if (face.clock >= face.nextBlink) { face.blinkStart = face.clock; face.nextBlink = face.clock + nextBlinkDelay(); }
+      target.blink = reduced.current ? 0 : blinkCurve(face.clock - face.blinkStart);
+      target.happy = speakingRef.current || manualPresenting ? FACE_LIMITS.smileMax * 0.6 : FACE_LIMITS.smileMax * 0.3;
+    }
+    for (const name of FACE_TARGETS) {
+      const idx = dict[name];
+      if (idx === undefined) continue;
+      // Blinks are instant curves already; everything else eases to avoid jumps.
+      const next = name.startsWith("blink") ? target[name] : easeWeight(face.current[name], target[name], dt);
+      face.current[name] = next;
+      inf[idx] = next;
+    }
+  });
   useEffect(() => { waveTime.current = 0; }, [waveId]);
   useEffect(() => {
     const a = actions[clipName];
@@ -397,10 +428,9 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   }, [clipName, actions]);
   return (
     <>
-      <group ref={group} position={[0, 0.3, 0]} scale={3.49 / 1.7}>
+      <group ref={group} position={[0, 0.3, 0]} scale={3.49 / 1.576}>
         <primitive object={scene} />
       </group>
-      <ZoordMouth scene={scene} position={[-0.0163, 0.014, 0.1195]} rotationX={0} scale={0.009} />
     </>
   );
 }
@@ -621,6 +651,7 @@ export function Stage() {
   };
   return (
     <div className="stage-backdrop fixed inset-0">
+      <FaceDiagnostics />
       <div className={`stage-scene ${open !== null ? "stage-scene-menu" : ""}`}>
       {colorsReady && <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, STAGE_CAMERA.closeTargetY, STAGE_CAMERA.near], fov: STAGE_CAMERA.fov }} gl={{ antialias: true, alpha: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.08 }}>
         <StageCamera zoom={cameraZoom} demonstration={anim === "welcome"} />
