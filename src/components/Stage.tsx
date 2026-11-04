@@ -20,7 +20,6 @@ import { FaceDiagnostics } from "./FaceDiagnostics";
 import dakkaiLogo from "@/assets/dakkai-logo.webp";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { voiceLevel } from "@/lib/voice-level";
-import { ZoordMouth } from "./ZoordMouth";
 import { SecurityBadge } from "./SecurityBadge";
 import { RecordRepeat } from "./RecordRepeat";
 import { Button } from "@/components/ui/button";
