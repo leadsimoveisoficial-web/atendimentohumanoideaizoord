@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import { useLiveVoice, type LiveEvent } from "@/hooks/use-live-voice";
 import { createPlaybackMeter } from "@/lib/voice-level";
 import { createFreeListener, recognitionSupported, type FreeListener } from "@/lib/free-listen";
-import { isCustomerBargeIn, recognitionLang, ZOORD_LANGUAGES, type ZoordLanguage } from "@/lib/zoord-language";
+import { isCustomerBargeIn, isEchoOf, ECHO_TAIL_MS, recognitionLang, ZOORD_LANGUAGES, type ZoordLanguage } from "@/lib/zoord-language";
 import { stopFreeSpeech } from "@/lib/free-speech";
 import { speakZoord } from "@/lib/zoord-voice";
 import { takeSentences } from "@/lib/speech-chunks";
@@ -48,6 +48,8 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   const guestRef = useRef<{ name?: string; address?: string; notes?: string } | undefined>(undefined);
   guestRef.current = profile ? { name: profile.display_name, address: profile.form_of_address, notes: profile.food_notes } : undefined;
   const speakingText = useRef("");
+  const echoTail = useRef({ text: "", until: 0 });
+  const isOwnEcho = (heard: string) => Date.now() < echoTail.current.until && isEchoOf(heard, echoTail.current.text);
 
   // Barge-in: the customer started talking over Zoord → stop speech at once and listen.
   function interruptSpeech() {
@@ -242,6 +244,8 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       if (freeAbort.current === ac) {
         freeAbort.current = null;
         freeBusy.current = false;
+        // Recognition delivers the final transcript after silence: keep filtering his own words briefly.
+        echoTail.current = { text: speakingText.current, until: Date.now() + ECHO_TAIL_MS };
         speakingText.current = "";
         onPoint(null);
         if (freeConversationOn.current) { freeListener.current?.start(); setPhase("listening"); }
@@ -267,7 +271,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
           if (freeBusy.current) {
             if (!isCustomerBargeIn(heard, speakingText.current)) return;
             interruptSpeech();
-          }
+          } else if (isOwnEcho(heard)) return;
           onListening(true);
         },
         onActive: (active) => { if (!freeBusy.current) setPhase(active ? "listening" : "idle"); onListening(active && !freeBusy.current); },
@@ -275,7 +279,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
           if (freeBusy.current) {
             if (!isCustomerBargeIn(text, speakingText.current)) return;
             interruptSpeech();
-          }
+          } else if (isOwnEcho(text)) return;
           const result = reactToCustomer(reaction.current, text, Date.now(), Date.now());
           reaction.current = result.state;
           onListening(true);
