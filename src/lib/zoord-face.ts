@@ -52,3 +52,6 @@ export function debugWeights(v: typeof faceDebug.values): FaceWeights {
   f.happy = clamp(v.smile ?? 0); f.surprised = clamp(v.surprise ?? 0);
   return f;
 }
+
+/** Last applied weights, read by the diagnostics panel. */
+export const faceLive: FaceWeights = emptyFace();

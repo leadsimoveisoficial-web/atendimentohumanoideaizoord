@@ -15,7 +15,7 @@ import * as THREE from "three";
 import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
 import { gaze, setMouseGaze } from "@/lib/gaze";
 import zoord from "@/assets/zoord-vrm.glb.asset.json";
-import { FACE_TARGETS, blinkCurve, debugWeights, easeWeight, emptyFace, faceDebug, nextBlinkDelay, visemesFromAudio, FACE_LIMITS } from "@/lib/zoord-face";
+import { FACE_TARGETS, blinkCurve, debugWeights, easeWeight, emptyFace, faceDebug, faceLive, nextBlinkDelay, visemesFromAudio, FACE_LIMITS } from "@/lib/zoord-face";
 import { FaceDiagnostics } from "./FaceDiagnostics";
 import dakkaiLogo from "@/assets/dakkai-logo.webp";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
@@ -108,7 +108,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
           mat.map.colorSpace = THREE.SRGBColorSpace;
           mat.emissiveMap = mat.map;
           mat.emissive.set(albedo);
-          mat.emissiveIntensity = 0.55;
+          mat.emissiveIntensity = 0.28; // softer self-fill: white uniform and face no longer bloom
         }
         // Studio reflections: metal parts catch the softboxes, fabric/skin stay close to source colors.
         mat.envMapIntensity = mat.metalness > 0.3 || mat.metalnessMap ? 0.42 : 0.18;
@@ -397,7 +397,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       Object.assign(target, visemesFromAudio(voiceLevel.v, voiceLevel.round, voiceLevel.wide));
       if (face.clock >= face.nextBlink) { face.blinkStart = face.clock; face.nextBlink = face.clock + nextBlinkDelay(); }
       target.blink = reduced.current ? 0 : blinkCurve(face.clock - face.blinkStart);
-      target.happy = speakingRef.current || manualPresenting ? FACE_LIMITS.smileMax * 0.6 : FACE_LIMITS.smileMax * 0.3;
+      // Neutral while listening, full soft smile on greetings, friendly while serving.
+      target.happy = listening ? 0 : waving ? FACE_LIMITS.smileMax : speakingRef.current || manualPresenting ? FACE_LIMITS.smileMax * 0.6 : FACE_LIMITS.smileMax * 0.3;
     }
     for (const name of FACE_TARGETS) {
       const idx = dict[name];
@@ -407,6 +408,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       face.current[name] = next;
       inf[idx] = next;
     }
+    Object.assign(faceLive, face.current);
   });
   useEffect(() => { waveTime.current = 0; }, [waveId]);
   useEffect(() => {
