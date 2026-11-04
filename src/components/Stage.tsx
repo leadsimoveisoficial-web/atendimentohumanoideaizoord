@@ -382,7 +382,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   // Real face: the avatar's own visemes, blinks and smile, driven by measured voice output.
   const face = useMemo(() => {
     let mesh: THREE.Mesh | null = null;
-    scene.traverse((o) => { if (!mesh && (o as THREE.Mesh).isMesh && (o as THREE.Mesh).morphTargetDictionary?.aa !== undefined) mesh = o as THREE.Mesh; });
+    scene.traverse((o) => { if (!mesh && (o as THREE.Mesh).isMesh && (o as THREE.Mesh).morphTargetDictionary?.["aa"] !== undefined) mesh = o as THREE.Mesh; });
     return { mesh: mesh as THREE.Mesh | null, current: emptyFace(), clock: 0, nextBlink: nextBlinkDelay(), blinkStart: -1 };
   }, [scene]);
   useFrame((_, rawDelta) => {
