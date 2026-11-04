@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Aplicar câmera cinematográfica do arquivo enviado: cintura para cima, rosto centralizado, deslocamento discreto, zoom suave e retorno após demonstrações; preservar avatar e áudio.
+
 - [x] Corrigir “painel restrito” no site: versão atual publicada; mesma conta antes bloqueada abriu /ti, salvou/releu/excluiu tarefa no site publicado; segurança continuou bloqueada.
 - [x] TI usa cadastro sem nome e acesso para qualquer conta autenticada; conta não-admin gravou/releu/excluiu tarefa, segurança bloqueada e saída conferida; 10 testes passaram. Alterações de tela publicadas e acesso confirmado.
 - [ ] Conferir confirmação de novo cadastro pelo e-mail real — depende do recebimento e abertura do link pelo integrante.
