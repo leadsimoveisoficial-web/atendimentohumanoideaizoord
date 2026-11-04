@@ -42,7 +42,7 @@ export function FaceDiagnostics() {
               <span className="w-9 text-right tabular-nums text-muted-foreground">{(live[target] ?? 0).toFixed(2)}</span>
             </label>
           ))}
-          <Button size="sm" variant="ghost" className="w-full" onClick={neutral}>Neutral</Button>
+          <Button size="sm" variant="outline" className="w-full" onClick={neutral}>Neutral</Button>
         </div>
       )}
     </div>
