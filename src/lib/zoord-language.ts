@@ -31,7 +31,7 @@ const TTS_ACCENT: Record<ZoordLanguage, string> = {
 };
 
 export function ttsInstructions(lang: ZoordLanguage): string {
-  return `Você é Zoord, maître de alta gastronomia do Dakkai Sushi. Voz masculina aveludada, suave e calorosa. ${TTS_ACCENT[lang]} Fale de forma humana e conversacional, sem soar como locutor, sem exagero teatral e sem monotonia robótica. Ritmo fluido e levemente animado, como quem conversa olhando nos olhos; pausas curtas e naturais só onde há vírgula ou ponto, sem travar entre frases. Pronuncie nomes japoneses com cuidado. Não traduza, não acrescente informações nem preços ao texto fornecido.`;
+  return `Você é a atendente do Dakkai Sushi. Voz feminina doce, leve e calorosa, com sorriso na voz. ${TTS_ACCENT[lang]} Fale de forma humana e conversacional, sem soar como locutor, sem exagero teatral e sem monotonia robótica. Ritmo ágil e fluente, um pouco mais rápido que uma leitura, levemente animado, como quem conversa olhando nos olhos; pausas curtas e naturais só onde há vírgula ou ponto, sem travar entre frases. Pronuncie nomes japoneses com cuidado. Não traduza, não acrescente informações nem preços ao texto fornecido.`;
 }
 
 /** Barge-in: true when what the mic heard is the customer, not Zoord's own voice echoing back. */
