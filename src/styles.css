@@ -222,7 +222,7 @@ body { font-family: var(--font-sans); }
   .stage-header { align-items: flex-start; flex-wrap: wrap; }
   .stage-header > span { font-size: 10px; }
   .stage-header .stage-chip { font-size: 9px; padding: 6px 9px; }
-  .stage-scene { top: 80px; bottom: 156px; }
+  .stage-scene { top: 92px; bottom: 244px; }
   .stage-scene-menu { right: 0; bottom: 48%; }
   .zoord-side-menu { top: 54%; right: 8px; bottom: 8px; width: calc(100% - 16px); }
   .zoord-side-menu .menu-sheet { padding: 16px; }

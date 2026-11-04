@@ -33,11 +33,11 @@ import { RadioPlayer } from "./RadioPlayer";
 import { danceMotion, musicLevel } from "@/lib/music";
 import { HOST_MOTION, hostBreathing, hostDanceTarget, motionStep, smoothMotion, HEAD_POSTURE, hostLookPitch, speechBeat } from "@/lib/zoord-motion";
 import { GesturePanel, type StageGesture } from "./GesturePanel";
-import { Hand, UtensilsCrossed, X, RotateCcw } from "lucide-react";
+import { Hand, UtensilsCrossed, X, RotateCcw, ZoomIn, ZoomOut, Focus } from "lucide-react";
 import { UserAccount } from "./UserAccount";
 import { StagePlatform } from "./StagePlatform";
 import { StagePresence } from "./StagePresence";
-import { STAGE_CAMERA, stageCameraTarget } from "@/lib/stage-camera";
+import { STAGE_CAMERA, stageCameraTarget, cameraDrift } from "@/lib/stage-camera";
 
 const TALK_CLIPS = ["Stand_and_Chat", "Talk_with_Left_Hand_Raised", "Stand_Talking_Angry", "Hand_on_Hip_Gesture"];
 const stageColors = { cyan: "", blue: "", red: "", space: "", backing: "", key: "", rim: "", ambient: "" };
@@ -500,9 +500,31 @@ function Beam({ point }: { point: number | null }) {
   return <primitive object={obj} />;
 }
 
-function StageCamera() {
-  const { camera, size, setDpr } = useThree();
+function StageCamera({ zoom, demonstration }: { zoom: { distance: number; id: number }; demonstration: boolean }) {
+  const { camera, size, setDpr, gl } = useThree();
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
+  const desired = useRef<number>(STAGE_CAMERA.near);
+  const reduced = useRef(false);
+  const motion = useRef({ time: 0, offset: new THREE.Vector3(), direction: new THREE.Vector3() });
+  useEffect(() => { desired.current = zoom.distance; }, [zoom]);
+  useEffect(() => {
+    desired.current = demonstration ? STAGE_CAMERA.fullBody : zoom.distance;
+  }, [demonstration, zoom.distance]);
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => { reduced.current = preference.matches; };
+    update();
+    preference.addEventListener("change", update);
+    const wheel = (event: WheelEvent) => {
+      event.preventDefault();
+      desired.current = THREE.MathUtils.clamp(desired.current * Math.exp(event.deltaY * 0.0015), STAGE_CAMERA.near, STAGE_CAMERA.far);
+    };
+    gl.domElement.addEventListener("wheel", wheel, { passive: false });
+    return () => {
+      preference.removeEventListener("change", update);
+      gl.domElement.removeEventListener("wheel", wheel);
+    };
+  }, [gl]);
   useEffect(() => {
     setDpr(Math.min(2, window.devicePixelRatio || 1, 3840 / Math.max(size.width, 1)));
   }, [size.width, setDpr]);
@@ -513,13 +535,25 @@ function StageCamera() {
   useFrame((_, delta) => {
     const orbit = controls.current;
     if (!orbit) return;
-    const targetY = stageCameraTarget(orbit.getDistance());
+    const state = motion.current;
+    camera.position.sub(state.offset);
+    const dt = Math.min(delta, 0.05);
+    state.time += dt;
+    const distance = orbit.getDistance();
+    const next = THREE.MathUtils.lerp(distance, desired.current, 1 - Math.exp(-4 * dt));
+    state.direction.copy(camera.position).sub(orbit.target).normalize();
+    camera.position.copy(orbit.target).addScaledVector(state.direction, next);
+    const targetY = stageCameraTarget(next);
     const shift = (targetY - orbit.target.y) * (1 - Math.exp(-10 * Math.min(delta, 0.05)));
     orbit.target.y += shift;
     camera.position.y += shift;
     orbit.update();
+    const drift = cameraDrift(state.time, reduced.current);
+    state.offset.set(drift.x, drift.y, drift.z);
+    camera.position.add(state.offset);
+    camera.lookAt(orbit.target);
   });
-  return <OrbitControls ref={controls} target={[0, STAGE_CAMERA.closeTargetY, 0]} enablePan={false} minDistance={STAGE_CAMERA.near} maxDistance={STAGE_CAMERA.far} minAzimuthAngle={-0.25} maxAzimuthAngle={0.25} minPolarAngle={Math.PI / 2} maxPolarAngle={Math.PI / 2} enableDamping />;
+  return <OrbitControls ref={controls} target={[0, STAGE_CAMERA.closeTargetY, 0]} enablePan={false} enableZoom={false} minDistance={STAGE_CAMERA.near} maxDistance={STAGE_CAMERA.far} minAzimuthAngle={-0.12} maxAzimuthAngle={0.12} minPolarAngle={Math.PI / 2} maxPolarAngle={Math.PI / 2} enableDamping />;
 }
 
 export function Stage() {
@@ -537,6 +571,8 @@ export function Stage() {
     setColorsReady(true);
   }, []);
   const [anim, setAnim] = useState("Idle_12");
+  const [cameraZoom, setCameraZoom] = useState({ distance: Number(STAGE_CAMERA.near), id: 0 });
+  const setZoom = (distance: number) => setCameraZoom((current) => ({ distance, id: current.id + 1 }));
   const [open, setOpen] = useState<number | null>(null);
   const [aiPoint, setAiPoint] = useState<number | null>(null);
   const [listening, setListening] = useState(false);
@@ -587,7 +623,7 @@ export function Stage() {
     <div className="stage-backdrop fixed inset-0">
       <div className={`stage-scene ${open !== null ? "stage-scene-menu" : ""}`}>
       {colorsReady && <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, STAGE_CAMERA.closeTargetY, STAGE_CAMERA.near], fov: STAGE_CAMERA.fov }} gl={{ antialias: true, alpha: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.08 }}>
-        <StageCamera />
+        <StageCamera zoom={cameraZoom} demonstration={anim === "welcome"} />
         <fog attach="fog" args={[stageColors.space, 28, 65]} />
         <ambientLight intensity={0.65} color={stageColors.ambient} />
         <directionalLight position={[-3, 7, 5]} intensity={2.4} color={stageColors.key} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-5} shadow-camera-right={5} shadow-camera-top={7} shadow-camera-bottom={-2} shadow-bias={-0.0002} shadow-normalBias={0.03} />
@@ -620,6 +656,12 @@ export function Stage() {
           <Vignette darkness={0.28} offset={0.32} />
         </EffectComposer>
       </Canvas>}
+      </div>
+
+      <div className="pointer-events-auto fixed right-3 top-28 z-30 flex flex-col gap-1">
+        <Button variant="ghost" className="stage-chip" aria-label="Aproximar Zoord" title="Aproximar" onClick={() => setZoom(STAGE_CAMERA.near)}><ZoomIn /></Button>
+        <Button variant="ghost" className="stage-chip" aria-label="Mostrar corpo inteiro" title="Corpo inteiro" onClick={() => setZoom(STAGE_CAMERA.fullBody)}><ZoomOut /></Button>
+        <Button variant="ghost" className="stage-chip" aria-label="Centralizar câmera" title="Centralizar câmera" onClick={() => setZoom(STAGE_CAMERA.near)}><Focus /></Button>
       </div>
 
       <StagePresence show={ticket !== null}>{ticket && <OrderTicket ticket={ticket} onClose={() => setTicket(null)} />}</StagePresence>
