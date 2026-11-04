@@ -86,3 +86,4 @@
 
 - [x] Logo do Dakkai com fundo preto destacado
 - [x] Zoord alterna 2-3 gestos de fala a cada frase
+- [ ] Lip sync como no 3D anterior (boca animada sobre os lábios da nova personagem)
