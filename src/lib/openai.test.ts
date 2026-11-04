@@ -22,14 +22,15 @@ describe("own-account OpenAI only", () => {
     expect(send.mock.calls[0]?.[0]).toBe("https://api.openai.com/v1/chat/completions");
     expect(send).toHaveBeenCalledTimes(1);
   });
-  it("uses one masculine OpenAI narrator with PCM for the mouth meter", async () => {
+  it("uses one sweet feminine OpenAI narrator, slightly faster, with PCM for the mouth meter", async () => {
     vi.stubEnv("OPENAI_API_KEY", "test-only");
     const send = vi.fn().mockResolvedValue(new Response(new Uint8Array([0, 1, 2, 3])));
     vi.stubGlobal("fetch", send);
     const response = await openaiSpeech(new Request("http://localhost/api/zoord-openai", { method: "POST", body: JSON.stringify({ text: "Excelente escolha." }) }));
     const payload = JSON.parse(send.mock.calls[0]?.[1].body);
     expect(send.mock.calls[0]?.[0]).toBe("https://api.openai.com/v1/audio/speech");
-    expect(payload.voice).toBe("onyx");
+    expect(payload.voice).toBe("shimmer");
+    expect(payload.speed).toBe(1.12);
     expect(payload.model).toBe("gpt-4o-mini-tts");
     expect(payload.response_format).toBe("pcm");
     expect(response.headers.get("content-type")).toBe("audio/pcm");
