@@ -7,8 +7,8 @@ export const FACE_TARGETS = ["aa", "ih", "ee", "oh", "ou", "blinkLeft", "blinkRi
 export type FaceTarget = (typeof FACE_TARGETS)[number];
 export type FaceWeights = Record<FaceTarget, number>;
 
-/** Mouth total never exceeds this, so visemes can't stack into cheek/chin deformation. */
-export const FACE_LIMITS = { mouthMax: 0.85, smileMax: 0.35, attack: 22, release: 14 };
+/** Mouth total cap: the supplied aa/oh/ee targets deform nose and cheeks above ~0.3, so speech stays below it. */
+export const FACE_LIMITS = { mouthMax: 0.3, smileMax: 0.3, attack: 22, release: 14 };
 
 const clamp = (n: number) => (Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0);
 export const emptyFace = (): FaceWeights => Object.fromEntries(FACE_TARGETS.map((t) => [t, 0])) as FaceWeights;
