@@ -433,7 +433,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
         <primitive object={scene} />
       </group>
       {/* Previous avatar's animated LED mouth, anchored on this face's measured lip line (head-local). */}
-      <ZoordMouth scene={scene} position={[-0.004, 0.009, 0.069]} rotationX={0} scale={0.0095} />
+      <ZoordMouth scene={scene} position={[-0.004, 0.009, 0.069]} rotationX={0} scale={0.0088} />
     </>
   );
 }
