@@ -45,4 +45,4 @@
 
 - TI uses authenticated-only RLS and server identity, never admin grants; kitchen/security stay restricted.
 
-- The VRM avatar's own visemes, blinks and smile are driven by measured playback audio through zoord-face with a capped mouth total (its targets deform the face at high weight); the old procedural mouth overlay is retired and its clips come from the previous Mixamo GLB merged offline (rotation tracks only).
+- VRM face: own morphs driven by measured audio via zoord-face, mouth weight capped (targets deform when high); clips merged offline from prior Mixamo GLB.
