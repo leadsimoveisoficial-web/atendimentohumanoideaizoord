@@ -10,8 +10,8 @@ describe("Zoord LED blend shapes", () => {
   });
   it("derives interior dimensions from the actual blended cavity and closes in silence", () => {
     const pose = audioMouthPose(1, 1, 0);
-    expect(pose.width).toBeCloseTo(0.4 * 2 + 0.42 * 1.6 + 0.18 * 1.4);
-    expect(pose.height).toBeCloseTo(0.4 * 1.15 + 0.42 * 0.85 + 0.18 * 0.35);
+    expect(pose.width).toBeCloseTo((0.4 * 2 + 0.7 * 1.6 + 0.3 * 1.4) / 1.4);
+    expect(pose.height).toBeCloseTo((0.4 * 1.15 + 0.7 * 0.85 + 0.3 * 0.35) / 1.4);
     expect(audioMouthPose(0, 1, 1)).toMatchObject({ width: 2.35, height: 0.1, visible: false });
     expect(audioMouthPose(NaN, NaN, Infinity).visible).toBe(false);
   });
