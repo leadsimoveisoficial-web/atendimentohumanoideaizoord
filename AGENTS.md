@@ -44,3 +44,4 @@
 - TI uses authenticated-only RLS and server identity, never admin grants; kitchen/security stay restricted.
 
 - VRM face: own morphs driven by measured audio via zoord-face, mouth weight capped (targets deform when high); clips merged offline from prior Mixamo GLB.
+- Parent the LED mouth to the avatar head through an R3F portal and derive teeth/tongue dimensions from the bounded cavity blend; this avoids transform lag and interior details escaping the opening.
