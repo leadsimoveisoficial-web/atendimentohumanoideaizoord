@@ -48,6 +48,8 @@ function echoRatio(heard: string, speaking: string) {
 /** Mostly Zoord's own recent words: ignore instead of answering himself. */
 export function isEchoOf(heard: string, spoken: string): boolean {
   if (!spoken.trim()) return false;
+  // Short answers ("salmão", "o primeiro") often repeat offered options; never drop them as echo.
+  if (normWords(heard).length < 4) return false;
   return echoRatio(heard, spoken) >= 0.5;
 }
 /** Interrupt only for 3+ words that are clearly not his own voice, so misheard echo can't cut him off. */
