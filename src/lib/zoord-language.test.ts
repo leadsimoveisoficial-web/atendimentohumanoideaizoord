@@ -28,5 +28,7 @@ describe("zoord language lock", () => {
     expect(isEchoOf("ele é muito fresco", said)).toBe(true);
     expect(isEchoOf("quero um temaki de atum", said)).toBe(false);
     expect(isEchoOf("ele é muito fresco", "")).toBe(false);
+    expect(isEchoOf("salmão", "Você prefere salmão ou atum?")).toBe(false);
+    expect(isEchoOf("o salmão", "Você prefere salmão ou atum?")).toBe(false);
   });
 });
