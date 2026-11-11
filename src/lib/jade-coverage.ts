@@ -13,7 +13,7 @@ export function createJadeCoverage(body: THREE.SkinnedMesh, color: string) {
   }
   geometry.setIndex(indices);
   geometry.clearGroups();
-  const material = new THREE.MeshStandardMaterial({ color, roughness: 0.92, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+  const material = new THREE.MeshStandardMaterial({ color, roughness: 0.92, metalness: 0, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
   const lining = new THREE.SkinnedMesh(geometry, material);
   lining.name = "JadeOpaqueTorsoLining";
   lining.position.copy(body.position);

@@ -1,5 +1,6 @@
 import { browseMenu } from "@/lib/menu-interaction";
 import { createJadeCoverage } from "@/lib/jade-coverage";
+import { bindJadeClothing } from "@/lib/jade-clothing";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -103,6 +104,26 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   }, []);
   const maxAniso = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
   const camera = useThree((s) => s.camera);
+  useEffect(() => {
+    const body = scene.getObjectByName("Object_26");
+    if (!(body instanceof THREE.SkinnedMesh) || !body.parent) return;
+    let cloth: THREE.Mesh | undefined;
+    scene.traverse(object => {
+      if (!(object instanceof THREE.Mesh) || object instanceof THREE.SkinnedMesh) return;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      if (materials.some(material => material.name === "cloth_mat")) cloth = object;
+    });
+    if (!cloth) return;
+    const original = cloth;
+    const garment = bindJadeClothing(original, body);
+    original.visible = false;
+    body.parent.add(garment);
+    return () => {
+      original.visible = true; garment.removeFromParent(); garment.geometry.dispose();
+      const materials = Array.isArray(garment.material) ? garment.material : [garment.material];
+      materials.forEach(material => material.dispose());
+    };
+  }, [scene]);
   useEffect(() => {
     const body = scene.getObjectByName("Object_26");
     if (!(body instanceof THREE.SkinnedMesh) || !body.parent) return;
