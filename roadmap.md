@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Melhorar continuidade em conversas longas e interrupções, simplificar o tom e preservar voz/aparência; verificar respostas reais e retorno à escuta.
+
 - [x] Consolidar identidade Jade em conversas e apresentações e suavizar braços com movimentos menores e assimétricos, sem conflitos com gestos; 11 testes passaram, resposta real confirmou Jade e palco/cardápio sem erros. Naturalidade durante fala em aparelho físico não verificada.
 - [x] Liberar frases completas mais cedo para fala, melhorar detecção de pedidos detalhados e continuidade das escolhas; 15 testes passaram, resposta real em ~1,4s no teste e reprodução medida preservada. Escuta em microfone físico não verificada.
 - [x] Ajustar a gola junto ao pescoço sem mudar sua altura e deixar preta a roupa por baixo; três testes e cardápio aberto conferidos sem erros. Acabamento em aparelho físico não verificado.
