@@ -459,7 +459,7 @@ function Logo() {
         <meshBasicMaterial color={stageColors.red} toneMapped={false} transparent opacity={0.8} />
       </mesh>
       <mesh>
-        <planeGeometry args={[4.67, 4.67]} />
+        <circleGeometry args={[2.34, 96]} />
         <meshBasicMaterial map={tex} transparent toneMapped={false} depthWrite={false} />
       </mesh>
     </group>
