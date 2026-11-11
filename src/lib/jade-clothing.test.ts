@@ -20,7 +20,7 @@ describe("Jade garment skinning", () => {
     expect(garment.skeleton).toBe(body.skeleton);
     expect(garment.geometry.getAttribute("skinWeight").getX(0)).toBeCloseTo(1);
   });
-  it("removes transparent tears without changing the source fabric material", () => {
+  it("preserves original dress vertices while adding body movement", () => {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position",new THREE.Float32BufferAttribute([0,1,0, 1,1,0, 0,2,0],3));
     g.setAttribute("skinIndex",new THREE.Uint16BufferAttribute(new Array(12).fill(0),4));
@@ -29,9 +29,8 @@ describe("Jade garment skinning", () => {
     const material = new THREE.MeshStandardMaterial({transparent:true,opacity:0.5,alphaTest:0.5});
     const cloth = new THREE.Mesh(g,material);
     const garment = bindJadeClothing(cloth,body);
-    const fabric = Array.isArray(garment.material) ? garment.material[0] : garment.material;
-    expect(fabric?.transparent).toBe(false);
-    expect(fabric?.alphaTest).toBe(0);
-    expect(material.opacity).toBe(0.5);
+    expect(Array.from(garment.geometry.getAttribute("position").array)).toEqual([0,1,0, 1,1,0, 0,2,0]);
+    expect(garment.geometry).not.toBe(g);
+    expect(garment.skeleton).toBe(body.skeleton);
   });
 });

@@ -41,19 +41,11 @@ export function bindJadeClothing(cloth: THREE.Mesh, body: THREE.SkinnedMesh) {
   }
   geometry.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(indices,4));
   geometry.setAttribute("skinWeight", new THREE.Float32BufferAttribute(weights,4));
-  const makeOpaque = (source: THREE.Material) => {
-    const material = source.clone();
-    material.transparent = false;
-    material.opacity = 1;
-    material.alphaTest = 0;
-    material.side = THREE.DoubleSide;
-    material.polygonOffset = true;
-    material.polygonOffsetFactor = -6;
-    material.polygonOffsetUnits = -6;
-    if (material instanceof THREE.MeshStandardMaterial) material.alphaMap = null;
-    return material;
-  };
-  const garment = new THREE.SkinnedMesh(geometry,Array.isArray(cloth.material) ? cloth.material.map(makeOpaque) : makeOpaque(cloth.material));
+  // Preserve the uploaded fabric; only add skeletal deformation, not a replacement surface.
+  const garment = new THREE.SkinnedMesh(geometry,Array.isArray(cloth.material) ? cloth.material.map(material => material.clone()) : cloth.material.clone());
+  if (cloth.morphTargetInfluences && garment.morphTargetInfluences) {
+    garment.morphTargetInfluences = [...cloth.morphTargetInfluences];
+  }
   garment.name = "JadeRiggedDress";
   garment.position.copy(body.position); garment.quaternion.copy(body.quaternion); garment.scale.copy(body.scale);
   garment.bindMode = body.bindMode;

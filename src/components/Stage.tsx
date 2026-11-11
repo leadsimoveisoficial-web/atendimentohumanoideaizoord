@@ -1,5 +1,4 @@
 import { browseMenu } from "@/lib/menu-interaction";
-import { createJadeCoverage } from "@/lib/jade-coverage";
 import { bindJadeClothing } from "@/lib/jade-clothing";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
@@ -123,14 +122,6 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       const materials = Array.isArray(garment.material) ? garment.material : [garment.material];
       materials.forEach(material => material.dispose());
     };
-  }, [scene]);
-  useEffect(() => {
-    const body = scene.getObjectByName("Object_26");
-    if (!(body instanceof THREE.SkinnedMesh) || !body.parent) return;
-    const color = getComputedStyle(document.documentElement).getPropertyValue("--stage-avatar-albedo").trim();
-    const lining = createJadeCoverage(body, color);
-    body.parent.add(lining);
-    return () => { lining.removeFromParent(); lining.geometry.dispose(); lining.material.dispose(); };
   }, [scene]);
   // Preserve uploaded albedo under the mixed warm/cyan light rig.
   useEffect(() => {
