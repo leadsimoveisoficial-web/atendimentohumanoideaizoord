@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Ajustar a gola junto ao pescoço e deixar preta a roupa por baixo, preservando vestido e movimentos.
+- [x] Ajustar a gola junto ao pescoço sem mudar sua altura e deixar preta a roupa por baixo; três testes e cardápio aberto conferidos sem erros. Acabamento em aparelho físico não verificado.
 - [x] Preencher as aberturas do tronco com material/textura do vestido original e pesos do corpo, sem baixar o vestido; três testes e abertura do cardápio conferidos sem erros. Acabamento em GPU física não verificado.
 - [x] Retirar o forro adicionado e restaurar o tecido original, mantendo o vestido ligado aos movimentos do corpo; 12 testes passaram e cardápio conferido sem erros.
 - [x] Remover transparência e recortes do material do vestido, preservando cobertura e movimentos; três testes passaram e cobertura conferida ao apontar. Acabamento em aparelho físico não verificado.
