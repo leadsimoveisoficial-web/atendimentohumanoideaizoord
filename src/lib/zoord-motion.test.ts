@@ -55,7 +55,19 @@ describe("permanent elevated gaze", () => {
   });
 });
 
-import { speechBeat, SPEECH_BEAT } from "./zoord-motion";
+import { speechBeat, SPEECH_BEAT, hostArmGesture } from "./zoord-motion";
+describe("human conversational arms", () => {
+  it("keeps elbows lowered and speech motion asymmetric and bounded", () => {
+    for (let t = 0; t < 30; t += 0.1) {
+      const right = hostArmGesture(t, 1, -1);
+      expect(right.down).toBeGreaterThanOrEqual(0.5);
+      expect(right.forward).toBeLessThanOrEqual(0.51);
+      expect(right.outward).toBeLessThanOrEqual(0.26);
+    }
+    expect(hostArmGesture(1, 1, 1)).not.toEqual(hostArmGesture(1, 1, -1));
+    expect(hostArmGesture(1, 0, 1)).toEqual({ outward: 0.14, down: 0.9, forward: 0.26 });
+  });
+});
 describe("speech beat gestures", () => {
   it("stays still for steady speech and when disabled", () => {
     expect(speechBeat(0.3, 0.3, true)).toBe(0);
