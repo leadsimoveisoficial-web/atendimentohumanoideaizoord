@@ -37,10 +37,10 @@ export function jadeJaws(scene: THREE.Object3D) {
 }
 
 /** Open around the head's horizontal axis, independent of the camera's world orientation. */
-export function applyJadeJaw(bone: THREE.Object3D, rest: THREE.Quaternion, opening: number) {
+export function applyJadeJaw(bone: THREE.Object3D, rest: THREE.Quaternion, opening: number, axis = new THREE.Vector3(1, 0, 0)) {
   bone.quaternion.copy(rest);
   if (!bone.parent || !Number.isFinite(opening)) return;
   bone.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(
-    new THREE.Vector3(1, 0, 0), THREE.MathUtils.clamp(opening, 0, 0.14),
+    axis, THREE.MathUtils.clamp(opening, 0, 0.14),
   ));
 }

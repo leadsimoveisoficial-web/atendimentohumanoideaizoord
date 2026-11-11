@@ -34,4 +34,13 @@ describe("Jade rig", () => {
     applyJadeJaw(jaw, rest, 0);
     expect(jaw.quaternion.angleTo(rest)).toBeCloseTo(0);
   });
+  it("uses the authored head basis for a horizontal jaw hinge", () => {
+    const head = new THREE.Bone(), jaw = new THREE.Bone(); head.add(jaw);
+    head.rotation.z = Math.PI / 2;
+    const axis = new THREE.Vector3(1, 0, 0).applyQuaternion(head.quaternion.clone().invert());
+    applyJadeJaw(jaw, new THREE.Quaternion(), 0.14, axis);
+    const expected = new THREE.Quaternion().setFromAxisAngle(axis, 0.14);
+    expect(jaw.quaternion.angleTo(expected)).toBeCloseTo(0);
+    expect(axis.clone().applyQuaternion(head.quaternion).distanceTo(new THREE.Vector3(1, 0, 0))).toBeCloseTo(0);
+  });
 });

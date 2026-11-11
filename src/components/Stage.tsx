@@ -16,8 +16,6 @@ import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
 import { gaze, setMouseGaze } from "@/lib/gaze";
 import zoord from "@/assets/atendente-jade.glb.asset.json";
 import { prepareJade, limbLength, jadeJawOpening, jadeJaws, applyJadeJaw } from "@/lib/jade-rig";
-import { easeWeight } from "@/lib/zoord-face";
-import { FaceDiagnostics } from "./FaceDiagnostics";
 
 import dakkaiLogo from "@/assets/dakkai-logo.webp";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
@@ -83,7 +81,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const headBasis = useMemo(() => {
     const head = bones.get("Head");
     const world = head?.getWorldQuaternion(new THREE.Quaternion()) ?? new THREE.Quaternion();
-    return { world, inverse: world.clone().invert() };
+    const inverse = world.clone().invert();
+    return { world, inverse, jawAxis: new THREE.Vector3(1, 0, 0).applyQuaternion(inverse).normalize() };
   }, [bones]);
   const nativeJaws = useMemo(() => jadeJaws(scene), [scene]);
   const wristRest = useMemo(() => new Map(["RightHand", "LeftHand"].flatMap(name => {
@@ -150,6 +149,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   }, [scene]);
   const restWeight = useRef(1);
   const beat = useRef({ fast: 0, slow: 0, lift: 0 });
+  const speechEnergy = useRef(0);
   const torsoTurn = useRef(0);
   const clipTransitionUntil = useRef(0);
   const breathingPose = useRef({ pitch: 0, yaw: 0, roll: 0 });
@@ -190,6 +190,9 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     // Gesture with the supplied talking clip while Zoord's voice is audible; hold briefly across syllable gaps.
     if (voiceLevel.v > 0.05) speakUntil.current = time + HOST_MOTION.speechHold;
     const talking = time < speakUntil.current;
+    speechEnergy.current = smoothMotion(speechEnergy.current,
+      (talking || manualPresenting) && !listening && !waving && point === null && !reduced.current
+        ? Math.min(1, voiceLevel.v * 3 + (manualPresenting ? 0.3 : 0)) : 0, dt, 7);
     if (talking !== speakingRef.current) { speakingRef.current = talking; setSpeaking(talking); }
     // Lower-body animation tracks are excluded: feet and hips retain the supplied standing pose.
     const active = actions[clipName];
@@ -233,8 +236,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       // Gentle, desynchronised hand sway keeps the arms alive at rest without drifting toward the body.
       const sway = reduced.current ? 0 : Math.sin(motionTime.current * 0.9 + (sign > 0 ? 1.3 : 0)) * 0.04;
       const elbow = shoulder.clone().add(new THREE.Vector3(sign * upper * 0.3, -upper * 0.94, 0.05 + sway * upper));
-      const expressive = (talking || manualPresenting) && point === null && !waving && !reduced.current;
-      const pulse = expressive ? (0.5 + 0.5 * Math.sin(time * 1.7 + sign * 1.2 + talkTurn)) * Math.min(1, voiceLevel.v * 3 + 0.3) : 0;
+      const pulse = (0.5 + 0.5 * Math.sin(time * 1.7 + sign * 1.2)) * speechEnergy.current;
       const palm = elbow.clone().add(new THREE.Vector3(sign * lower * (0.14 + pulse * 0.22), -lower * (0.9 - pulse * 0.7), lower * (0.26 + sway + pulse * 0.5)));
       poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, restWeight.current));
       poseLayer.apply(fore, () => aimLimb(fore, hand, palm, restWeight.current));
@@ -396,9 +398,9 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   // The supplied 29 morphs belong to clothing, not the face. Animate only native jaw bones.
   const jawWeight = useRef(0);
   useFrame((_, delta) => {
-    jawWeight.current = easeWeight(jawWeight.current, jadeJawOpening(voiceLevel.v), Math.min(delta, 0.1));
+    jawWeight.current = THREE.MathUtils.damp(jawWeight.current, jadeJawOpening(voiceLevel.v), 18, motionStep(delta));
     for (const { bone, rest } of nativeJaws) {
-      applyJadeJaw(bone, rest, jawWeight.current);
+      applyJadeJaw(bone, rest, jawWeight.current, headBasis.jawAxis);
     }
     if (import.meta.env.DEV) (window as unknown as { __voiceLevel?: typeof voiceLevel }).__voiceLevel = voiceLevel;
   });
@@ -645,7 +647,6 @@ export function Stage() {
   };
   return (
     <div className="stage-backdrop fixed inset-0">
-      <FaceDiagnostics />
       <div className={`stage-scene ${open !== null ? "stage-scene-menu" : ""}`}>
       {colorsReady && <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, STAGE_CAMERA.closeTargetY, STAGE_CAMERA.near], fov: STAGE_CAMERA.fov }} gl={{ antialias: true, alpha: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.08 }}>
         <StageCamera zoom={cameraZoom} demonstration={anim === "welcome"} />
