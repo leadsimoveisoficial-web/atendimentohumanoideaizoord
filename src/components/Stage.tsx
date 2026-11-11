@@ -106,7 +106,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   useEffect(() => {
     const body = scene.getObjectByName("Object_26");
     if (!(body instanceof THREE.SkinnedMesh) || !body.parent) return;
-    const color = getComputedStyle(document.documentElement).getPropertyValue("--stage-space").trim();
+    const color = getComputedStyle(document.documentElement).getPropertyValue("--stage-avatar-albedo").trim();
     const lining = createJadeCoverage(body, color);
     body.parent.add(lining);
     return () => { lining.removeFromParent(); lining.geometry.dispose(); lining.material.dispose(); };
@@ -718,7 +718,7 @@ export function Stage() {
             <RadioPlayer hidden={controlPanel === "gestures"} listening={listening} onOpen={() => setControlPanel("music")} onSpeak={(text) => voiceCommands.current?.say(text)} />
             <RecordRepeat />
             <GesturePanel hidden={controlPanel === "music"} onOpen={() => setControlPanel("gestures")} onGesture={performGesture} />
-            <Button variant="ghost" onClick={() => { setAnim("Idle_12"); voiceCommands.current?.present(null); }} className="stage-chip"><UtensilsCrossed />Apresentar cardápio</Button>
+            <Button variant="ghost" onClick={() => { setAnim("Idle_12"); voiceCommands.current?.present(open ?? 0); }} className="stage-chip"><UtensilsCrossed />Apresentar categoria</Button>
             <Button variant="ghost" onClick={() => { setAiPoint(null); setAnim("Idle_12"); }} className="stage-chip" aria-label="Voltar à postura inicial" title="Postura inicial"><RotateCcw /></Button>
           </nav>
         </div>
