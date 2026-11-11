@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Corrigir apenas o pequeno rasgo visual do vestido original, sem baixar ou adicionar cobertura.
+- [ ] Corrigir o rasgo e preencher as partes expostas do tronco com o mesmo tecido do vestido, mantendo ajuste justo e movimentos.
 - [x] Retirar o forro adicionado e restaurar o tecido original, mantendo o vestido ligado aos movimentos do corpo; 12 testes passaram e cardápio conferido sem erros.
 - [x] Remover transparência e recortes do material do vestido, preservando cobertura e movimentos; três testes passaram e cobertura conferida ao apontar. Acabamento em aparelho físico não verificado.
 - [x] Ligar vestido original ao esqueleto por transferência dos pesos do corpo, preservando forro opaco; rotação testada e apresentação conferida com áudio real sem erros.
