@@ -30,6 +30,15 @@ export function bindJadeClothing(cloth: THREE.Mesh, body: THREE.SkinnedMesh) {
     }
     if (!candidates.length) candidates = Array.from({length:skin.count}, (_,j)=>j);
     const nearest = candidates.map(j => ({j, d:(skin.getX(j)-x)**2+(skin.getY(j)-y)**2+(skin.getZ(j)-z)**2})).sort((a,b)=>a.d-b.d).slice(0,3);
+    const neckVertex = nearest[0];
+    if (y >= 16 && Math.abs(x) < 0.8 && neckVertex) {
+      // Fit only the collar to the native neck, leaving the rest of the dress unchanged.
+      const j = neckVertex.j;
+      positions.setXYZ(i,
+        THREE.MathUtils.lerp(x, skin.getX(j), 0.85),
+        THREE.MathUtils.lerp(y, skin.getY(j), 0.85),
+        THREE.MathUtils.lerp(z, skin.getZ(j), 0.85));
+    }
     const influence = new Map<number, number>();
     for (const {j,d} of nearest) for (let k=0;k<4;k++) {
       const bone = originalIndices.getComponent(j,k);
@@ -41,6 +50,8 @@ export function bindJadeClothing(cloth: THREE.Mesh, body: THREE.SkinnedMesh) {
   }
   geometry.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(indices,4));
   geometry.setAttribute("skinWeight", new THREE.Float32BufferAttribute(weights,4));
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
   // Preserve the uploaded fabric; only add skeletal deformation, not a replacement surface.
   const prepareFabric = (source: THREE.Material) => {
     const material = source.clone();

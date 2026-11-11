@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 /** Fitted fabric extensions reuse the dress texture and body weights. */
-export function createJadeCoverage(body: THREE.SkinnedMesh, dress: THREE.SkinnedMesh) {
+export function createJadeCoverage(body: THREE.SkinnedMesh, dress: THREE.SkinnedMesh, underdressColor?: string) {
   const geometry = body.geometry.clone();
   const positions = geometry.getAttribute("position");
   const source = geometry.index;
@@ -9,7 +9,7 @@ export function createJadeCoverage(body: THREE.SkinnedMesh, dress: THREE.Skinned
   const count = source?.count ?? positions.count;
   for (let i = 0; i < count; i += 3) {
     const triangle = [0, 1, 2].map(j => source ? source.getX(i + j) : i + j);
-    if (triangle.every(j => positions.getY(j) >= 9.8 && positions.getY(j) <= 16 && Math.abs(positions.getX(j)) <= 1.85)) indices.push(...triangle);
+    if (triangle.every(j => positions.getY(j) >= 9.8 && positions.getY(j) <= 16.6 && Math.abs(positions.getX(j)) <= (positions.getY(j) > 16 ? 0.7 : 1.85))) indices.push(...triangle);
   }
   geometry.setIndex(indices);
   geometry.clearGroups();
@@ -47,6 +47,14 @@ export function createJadeCoverage(body: THREE.SkinnedMesh, dress: THREE.Skinned
     material.normalMap = null;
     material.bumpMap = null;
     material.displacementMap = null;
+    if (underdressColor) {
+      material.color.set(underdressColor);
+      material.map = null;
+      material.emissiveMap = null;
+      material.emissiveIntensity = 0;
+      material.roughness = 0.9;
+      material.metalness = 0;
+    }
   }
   material.transparent = false;
   material.opacity = 1;
