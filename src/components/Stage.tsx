@@ -15,9 +15,7 @@ import * as THREE from "three";
 import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
 import { gaze, setMouseGaze } from "@/lib/gaze";
 import zoord from "@/assets/atendente-jade.glb.asset.json";
-import { prepareJade, limbLength, jadeJawOpening } from "@/lib/jade-rig";
-import { FACE_TARGETS, debugWeights, easeWeight, emptyFace, faceDebug, faceLive, visemesFromAudio, FACE_LIMITS } from "@/lib/zoord-face";
-import { FaceDiagnostics } from "./FaceDiagnostics";
+import { prepareJade, limbLength, jadeJawOpening, jadeJaws, applyJadeJaw } from "@/lib/jade-rig";
 
 import dakkaiLogo from "@/assets/dakkai-logo.webp";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
@@ -83,12 +81,14 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const headBasis = useMemo(() => {
     const head = bones.get("Head");
     const world = head?.getWorldQuaternion(new THREE.Quaternion()) ?? new THREE.Quaternion();
-    return { world, inverse: world.clone().invert() };
+    const inverse = world.clone().invert();
+    return { world, inverse, jawAxis: new THREE.Vector3(1, 0, 0).applyQuaternion(inverse).normalize() };
   }, [bones]);
-  const nativeJaws = useMemo(() => ["Jaw_R_049", "Jaw_L_058", "Jaw_L_058_0"].flatMap(name => {
-    const bone = scene.getObjectByName(name);
-    return bone ? [{ bone, rest: bone.quaternion.clone() }] : [];
-  }), [scene]);
+  const nativeJaws = useMemo(() => jadeJaws(scene), [scene]);
+  const wristRest = useMemo(() => new Map(["RightHand", "LeftHand"].flatMap(name => {
+    const bone = bones.get(name);
+    return bone ? [[bone, bone.quaternion.clone()] as const] : [];
+  })), [bones]);
   const reduced = useRef(false);
   const motionTime = useRef(0);
   const danceWeight = useRef(0);
@@ -119,10 +119,10 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
           mat.map.colorSpace = THREE.SRGBColorSpace;
           mat.emissiveMap = mat.map;
           mat.emissive.set(albedo);
-          mat.emissiveIntensity = 0.28; // softer self-fill: white uniform and face no longer bloom
+          mat.emissiveIntensity = 0.07; // restrained fill preserves skin and the white outfit's texture
         }
         // Studio reflections: metal parts catch the softboxes, fabric/skin stay close to source colors.
-        mat.envMapIntensity = mat.metalness > 0.3 || mat.metalnessMap ? 0.42 : 0.18;
+        mat.envMapIntensity = mat.metalness > 0.3 || mat.metalnessMap ? 0.28 : 0.12;
         mat.needsUpdate = true;
         return mat;
       };
@@ -149,6 +149,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   }, [scene]);
   const restWeight = useRef(1);
   const beat = useRef({ fast: 0, slow: 0, lift: 0 });
+  const speechEnergy = useRef(0);
   const torsoTurn = useRef(0);
   const clipTransitionUntil = useRef(0);
   const breathingPose = useRef({ pitch: 0, yaw: 0, roll: 0 });
@@ -189,6 +190,9 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     // Gesture with the supplied talking clip while Zoord's voice is audible; hold briefly across syllable gaps.
     if (voiceLevel.v > 0.05) speakUntil.current = time + HOST_MOTION.speechHold;
     const talking = time < speakUntil.current;
+    speechEnergy.current = smoothMotion(speechEnergy.current,
+      (talking || manualPresenting) && !listening && !waving && point === null && !reduced.current
+        ? Math.min(1, voiceLevel.v * 3 + (manualPresenting ? 0.3 : 0)) : 0, dt, 7);
     if (talking !== speakingRef.current) { speakingRef.current = talking; setSpeaking(talking); }
     // Lower-body animation tracks are excluded: feet and hips retain the supplied standing pose.
     const active = actions[clipName];
@@ -232,13 +236,12 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       // Gentle, desynchronised hand sway keeps the arms alive at rest without drifting toward the body.
       const sway = reduced.current ? 0 : Math.sin(motionTime.current * 0.9 + (sign > 0 ? 1.3 : 0)) * 0.04;
       const elbow = shoulder.clone().add(new THREE.Vector3(sign * upper * 0.3, -upper * 0.94, 0.05 + sway * upper));
-      const expressive = (talking || manualPresenting) && point === null && !waving && !reduced.current;
-      const pulse = expressive ? (0.5 + 0.5 * Math.sin(time * 1.7 + sign * 1.2 + talkTurn)) * Math.min(1, voiceLevel.v * 3 + 0.3) : 0;
+      const pulse = (0.5 + 0.5 * Math.sin(time * 1.7 + sign * 1.2)) * speechEnergy.current;
       const palm = elbow.clone().add(new THREE.Vector3(sign * lower * (0.14 + pulse * 0.22), -lower * (0.9 - pulse * 0.7), lower * (0.26 + sway + pulse * 0.5)));
       poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, restWeight.current));
       poseLayer.apply(fore, () => aimLimb(fore, hand, palm, restWeight.current));
       // Keep wrists aligned with the forearm so hands never bend into unnatural angles.
-      poseLayer.apply(hand, () => hand.quaternion.slerp(_id, restWeight.current * 0.35));
+      poseLayer.apply(hand, () => hand.quaternion.slerp(wristRest.get(hand) ?? _id, restWeight.current * 0.35));
     }
     // Speech beats: stressed syllables lift and open the forearms briefly, like a host marking key words.
     {
@@ -279,7 +282,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const palm = elbow.clone().add(new THREE.Vector3(Math.sin(t * 6.5) * lower * (reduced.current ? 0.03 : 0.18), lower * 0.8, lower * 0.35));
     poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, weight));
     poseLayer.apply(fore, () => aimLimb(fore, hand, palm, weight));
-    poseLayer.apply(hand, () => hand.quaternion.slerp(_id, weight * 0.4));
+    poseLayer.apply(hand, () => hand.quaternion.slerp(wristRest.get(hand) ?? _id, weight * 0.4));
   });
   // Audio-reactive upper-body rhythm; planted legs never inherit dance/root tracks.
   useFrame((_, delta) => {
@@ -334,7 +337,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     elbowTarget.z = shoulder.z + 0.18;
     poseLayer.apply(arm, () => aimLimb(arm, fore, elbowTarget, w.current));
     poseLayer.apply(fore, () => aimLimb(fore, hand, target, w.current));
-    poseLayer.apply(hand, () => hand.quaternion.slerp(_id, w.current * 0.45));
+    poseLayer.apply(hand, () => hand.quaternion.slerp(wristRest.get(hand) ?? _id, w.current * 0.45));
 
   });
   // Posture guard (runs last): the torso and head may never drift far from the supplied rest pose,
@@ -395,10 +398,9 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   // The supplied 29 morphs belong to clothing, not the face. Animate only native jaw bones.
   const jawWeight = useRef(0);
   useFrame((_, delta) => {
-    jawWeight.current = easeWeight(jawWeight.current, jadeJawOpening(voiceLevel.v), Math.min(delta, 0.1));
+    jawWeight.current = THREE.MathUtils.damp(jawWeight.current, jadeJawOpening(voiceLevel.v), 18, motionStep(delta));
     for (const { bone, rest } of nativeJaws) {
-      bone.quaternion.copy(rest);
-      rotateWorld(bone, _e.set(jawWeight.current, 0, 0));
+      applyJadeJaw(bone, rest, jawWeight.current, headBasis.jawAxis);
     }
     if (import.meta.env.DEV) (window as unknown as { __voiceLevel?: typeof voiceLevel }).__voiceLevel = voiceLevel;
   });
@@ -645,19 +647,18 @@ export function Stage() {
   };
   return (
     <div className="stage-backdrop fixed inset-0">
-      <FaceDiagnostics />
       <div className={`stage-scene ${open !== null ? "stage-scene-menu" : ""}`}>
       {colorsReady && <Canvas shadows="percentage" dpr={[1, 2]} camera={{ position: [0, STAGE_CAMERA.closeTargetY, STAGE_CAMERA.near], fov: STAGE_CAMERA.fov }} gl={{ antialias: true, alpha: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.08 }}>
         <StageCamera zoom={cameraZoom} demonstration={anim === "welcome"} />
         <fog attach="fog" args={[stageColors.space, 28, 65]} />
         <ambientLight intensity={0.65} color={stageColors.ambient} />
-        <directionalLight position={[-3, 7, 5]} intensity={2.4} color={stageColors.key} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-5} shadow-camera-right={5} shadow-camera-top={7} shadow-camera-bottom={-2} shadow-bias={-0.0002} shadow-normalBias={0.03} />
-        <directionalLight position={[3, 5, -4]} intensity={3.1} color={stageColors.rim} />
-        <pointLight position={[4, 3, 2]} intensity={8} color={stageColors.blue} distance={9} />
+        <directionalLight position={[-3, 7, 5]} intensity={1.25} color={stageColors.key} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-5} shadow-camera-right={5} shadow-camera-top={7} shadow-camera-bottom={-2} shadow-bias={-0.0002} shadow-normalBias={0.03} />
+        <directionalLight position={[3, 5, -4]} intensity={1.4} color={stageColors.rim} />
+        <pointLight position={[4, 3, 2]} intensity={3} color={stageColors.blue} distance={9} />
         <Environment resolution={512}>
-          <Lightformer form="rect" intensity={1.1} color={stageColors.key} position={[-2.5, 2.4, 4]} scale={[2.2, 3.2, 1]} target={[0, 1.4, 0]} />
-          <Lightformer form="rect" intensity={0.7} color={stageColors.key} position={[2.8, 2, 3.5]} scale={[1.4, 2.6, 1]} target={[0, 1.4, 0]} />
-          <Lightformer intensity={1.6} color={stageColors.key} position={[0, 5, 2]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
+          <Lightformer form="rect" intensity={0.65} color={stageColors.key} position={[-2.5, 2.4, 4]} scale={[2.2, 3.2, 1]} target={[0, 1.4, 0]} />
+          <Lightformer form="rect" intensity={0.4} color={stageColors.key} position={[2.8, 2, 3.5]} scale={[1.4, 2.6, 1]} target={[0, 1.4, 0]} />
+          <Lightformer intensity={0.65} color={stageColors.key} position={[0, 5, 2]} rotation-x={Math.PI / 2} scale={[10, 10, 1]} />
           <Lightformer intensity={1.3} color={stageColors.cyan} position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[20, 0.5, 1]} />
           <Lightformer intensity={1.3} color={stageColors.blue} position={[5, 1, -1]} rotation-y={-Math.PI / 2} scale={[20, 0.5, 1]} />
           <Lightformer intensity={0.8} color={stageColors.red} position={[0, 4, -5]} scale={[6, 2, 1]} />
