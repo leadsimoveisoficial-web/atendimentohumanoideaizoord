@@ -1,5 +1,6 @@
 # Roadmap
 
+- [ ] Corrigir aparência rasgada do vestido após ligação ao corpo, preservando cobertura e movimentos.
 - [ ] Ligar o vestido original ao esqueleto da Jade para acompanhar a apresentação, preservando o forro opaco.
 - [x] Dakkai Sushi preservado no palco, nome e cardápio; identidade Jade nos ícones do site e nome do projeto. Conferido visualmente sem erros.
 - [x] Nome do projeto e marca Jade Humanoide Atendente atualizados, com logo e ícones; cena conferida sem erros. Endereço do site permanece igual.
