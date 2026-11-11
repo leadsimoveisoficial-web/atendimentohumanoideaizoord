@@ -27,3 +27,20 @@ export function limbLength(bone: THREE.Object3D, child: THREE.Object3D) {
 export function jadeJawOpening(level: number) {
   return Number.isFinite(level) ? THREE.MathUtils.clamp(level, 0, 1) * 0.14 : 0;
 }
+
+/** The auxiliary left-jaw child inherits its parent's rotation; never drive it twice. */
+export function jadeJaws(scene: THREE.Object3D) {
+  return ["Jaw_R_049", "Jaw_L_058"].flatMap(name => {
+    const bone = scene.getObjectByName(name);
+    return bone ? [{ bone, rest: bone.quaternion.clone() }] : [];
+  });
+}
+
+/** Open around the head's horizontal axis, independent of the camera's world orientation. */
+export function applyJadeJaw(bone: THREE.Object3D, rest: THREE.Quaternion, opening: number) {
+  bone.quaternion.copy(rest);
+  if (!bone.parent || !Number.isFinite(opening)) return;
+  bone.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(
+    new THREE.Vector3(1, 0, 0), THREE.MathUtils.clamp(opening, 0, 0.14),
+  ));
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { jadeJawOpening, limbLength, prepareJade } from "./jade-rig";
+import { applyJadeJaw, jadeJaws, jadeJawOpening, limbLength, prepareJade } from "./jade-rig";
 
 describe("Jade rig", () => {
   it("uses the supplied Jade head and arm bones", () => {
@@ -17,5 +17,21 @@ describe("Jade rig", () => {
     expect(jadeJawOpening(0)).toBe(0);
     expect(jadeJawOpening(4)).toBe(0.14);
     expect(jadeJawOpening(Number.NaN)).toBe(0);
+  });
+  it("drives the two jaw parents without double-driving the auxiliary child", () => {
+    const scene = new THREE.Group();
+    const right = new THREE.Bone(); right.name = "Jaw_R_049";
+    const left = new THREE.Bone(); left.name = "Jaw_L_058";
+    const helper = new THREE.Bone(); helper.name = "Jaw_L_058_0";
+    scene.add(right, left); left.add(helper);
+    expect(jadeJaws(scene).map(({ bone }) => bone.name)).toEqual(["Jaw_R_049", "Jaw_L_058"]);
+  });
+  it("restores the original jaw in silence without accumulating rotation", () => {
+    const head = new THREE.Bone(), jaw = new THREE.Bone(); head.add(jaw);
+    const rest = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.2, 0.4, -0.1));
+    for (let i = 0; i < 20; i++) applyJadeJaw(jaw, rest, 0.14);
+    expect(jaw.quaternion.angleTo(rest)).toBeCloseTo(0.14);
+    applyJadeJaw(jaw, rest, 0);
+    expect(jaw.quaternion.angleTo(rest)).toBeCloseTo(0);
   });
 });

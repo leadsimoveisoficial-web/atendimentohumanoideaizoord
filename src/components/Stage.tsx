@@ -15,8 +15,8 @@ import * as THREE from "three";
 import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
 import { gaze, setMouseGaze } from "@/lib/gaze";
 import zoord from "@/assets/atendente-jade.glb.asset.json";
-import { prepareJade, limbLength, jadeJawOpening } from "@/lib/jade-rig";
-import { FACE_TARGETS, debugWeights, easeWeight, emptyFace, faceDebug, faceLive, visemesFromAudio, FACE_LIMITS } from "@/lib/zoord-face";
+import { prepareJade, limbLength, jadeJawOpening, jadeJaws, applyJadeJaw } from "@/lib/jade-rig";
+import { easeWeight } from "@/lib/zoord-face";
 import { FaceDiagnostics } from "./FaceDiagnostics";
 
 import dakkaiLogo from "@/assets/dakkai-logo.webp";
@@ -85,10 +85,11 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const world = head?.getWorldQuaternion(new THREE.Quaternion()) ?? new THREE.Quaternion();
     return { world, inverse: world.clone().invert() };
   }, [bones]);
-  const nativeJaws = useMemo(() => ["Jaw_R_049", "Jaw_L_058", "Jaw_L_058_0"].flatMap(name => {
-    const bone = scene.getObjectByName(name);
-    return bone ? [{ bone, rest: bone.quaternion.clone() }] : [];
-  }), [scene]);
+  const nativeJaws = useMemo(() => jadeJaws(scene), [scene]);
+  const wristRest = useMemo(() => new Map(["RightHand", "LeftHand"].flatMap(name => {
+    const bone = bones.get(name);
+    return bone ? [[bone, bone.quaternion.clone()] as const] : [];
+  })), [bones]);
   const reduced = useRef(false);
   const motionTime = useRef(0);
   const danceWeight = useRef(0);
@@ -238,7 +239,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, restWeight.current));
       poseLayer.apply(fore, () => aimLimb(fore, hand, palm, restWeight.current));
       // Keep wrists aligned with the forearm so hands never bend into unnatural angles.
-      poseLayer.apply(hand, () => hand.quaternion.slerp(_id, restWeight.current * 0.35));
+      poseLayer.apply(hand, () => hand.quaternion.slerp(wristRest.get(hand) ?? _id, restWeight.current * 0.35));
     }
     // Speech beats: stressed syllables lift and open the forearms briefly, like a host marking key words.
     {
@@ -279,7 +280,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const palm = elbow.clone().add(new THREE.Vector3(Math.sin(t * 6.5) * lower * (reduced.current ? 0.03 : 0.18), lower * 0.8, lower * 0.35));
     poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, weight));
     poseLayer.apply(fore, () => aimLimb(fore, hand, palm, weight));
-    poseLayer.apply(hand, () => hand.quaternion.slerp(_id, weight * 0.4));
+    poseLayer.apply(hand, () => hand.quaternion.slerp(wristRest.get(hand) ?? _id, weight * 0.4));
   });
   // Audio-reactive upper-body rhythm; planted legs never inherit dance/root tracks.
   useFrame((_, delta) => {
@@ -334,7 +335,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     elbowTarget.z = shoulder.z + 0.18;
     poseLayer.apply(arm, () => aimLimb(arm, fore, elbowTarget, w.current));
     poseLayer.apply(fore, () => aimLimb(fore, hand, target, w.current));
-    poseLayer.apply(hand, () => hand.quaternion.slerp(_id, w.current * 0.45));
+    poseLayer.apply(hand, () => hand.quaternion.slerp(wristRest.get(hand) ?? _id, w.current * 0.45));
 
   });
   // Posture guard (runs last): the torso and head may never drift far from the supplied rest pose,
@@ -397,8 +398,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   useFrame((_, delta) => {
     jawWeight.current = easeWeight(jawWeight.current, jadeJawOpening(voiceLevel.v), Math.min(delta, 0.1));
     for (const { bone, rest } of nativeJaws) {
-      bone.quaternion.copy(rest);
-      rotateWorld(bone, _e.set(jawWeight.current, 0, 0));
+      applyJadeJaw(bone, rest, jawWeight.current);
     }
     if (import.meta.env.DEV) (window as unknown as { __voiceLevel?: typeof voiceLevel }).__voiceLevel = voiceLevel;
   });
