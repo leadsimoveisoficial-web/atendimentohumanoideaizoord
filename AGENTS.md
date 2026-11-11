@@ -15,6 +15,7 @@
 - Manual genre introductions use the mounted voice controller without starting microphone capture; dance blends gently with speech and yields to listening, pointing and explicit gestures to avoid limb conflicts.
 - Paid AI uses own-account server keys only: stage OPENAI_API_KEY direct OpenAI, TI OpenRouter, Groq, then OpenAI reserves; errors allow local text, never switch voice/provider or bill Lovable.
 - Share conversational and gastronomic policy through zoord-conversation across live voice, delegated reasoning and question handlers; gate menu price context and local quotations with requestsMenuPrice so presentations do not volunteer financial values.
+- Retain reception/recent turns; record speech per chunk.
 
 - Keep one user-gesture-initialized, playback-gated stream analyser for live and menu audio, attaching late streams at playback time and resetting on stops; this avoids stream-arrival races without routing or duplicating speaker audio.
 - Use the shared playback meter for recordings too, with owner-scoped resets and a zero-gain destination branch for stream analysis; this prevents inactive players clearing mouth movement and ensures browsers process the analyser without duplicated speech.
