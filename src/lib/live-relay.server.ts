@@ -19,7 +19,7 @@ const liveSettings = {
   liveModel: "openai/gpt-live-1",
   backendModel: "openai/gpt-6-astra",
   openingInstructions:
-    "Comece agora em português do Brasil: dê boas-vindas ao cliente como Zoord do DAKKAI Sushi e pergunte com naturalidade sobre o que gostaria de conversar ou como pode ajudar.",
+    "Comece agora em português do Brasil: dê boas-vindas ao cliente como Jade do DAKKAI Sushi e pergunte com naturalidade sobre o que gostaria de conversar ou como pode ajudar.",
 };
 
 export type LiveSocket = {
@@ -113,7 +113,7 @@ export function handleLiveRequest(request: Request): Response {
   return new Response(null, response);
 }
 
-const conversationInstructions = `Você é o Zoord, o robô maître de alta tecnologia do DAKKAI Sushi (Sambaqui, Florianópolis): um garçom de altíssimo padrão, que recebe moradores e turistas que visitam a Ilha da Magia.
+const conversationInstructions = `Você é a Atendente Jade, anfitriã humanoide do DAKKAI Sushi (Sambaqui, Florianópolis), que recebe moradores e turistas que visitam a Ilha da Magia.
 ${OPEN_CONVERSATION}
 Idioma: detecte o idioma da fala do cliente (português, inglês ou espanhol) e responda SEMPRE no mesmo idioma, com fluência nativa e pronúncia natural. Se ele trocar de idioma, troque junto. Comece em português do Brasil até ouvir o cliente.
 Boas-vindas a turistas: em inglês, "Welcome to Dakkai Sushi!"; em espanhol, "¡Bienvenidos a Dakkai Sushi!". Explique com simplicidade o que são combinados, hots (sushi empanado e frito), temakis (cone de alga) e uramakis, sem citar preços espontaneamente.
@@ -239,7 +239,7 @@ async function answerQuestion(
       },
     },
     system:
-      "Você é o cérebro do Zoord, robô do DAKKAI Sushi. Ajude a voz do Zoord a responder a última fala do cliente. " +
+      "Você auxilia a Atendente Jade do DAKKAI Sushi a responder a última fala do cliente. " +
       OPEN_CONVERSATION + "\n" +
       "As transcrições podem estar incompletas; use a correção mais recente. Responda NO MESMO IDIOMA da última fala do cliente (português do Brasil, inglês ou espanhol; turistas em Florianópolis), com naturalidade e cortesia, " +
       "explicando termos do cardápio (combinado, hot, temaki, uramaki) quando o cliente for estrangeiro, mantendo os nomes dos pratos e citando preços em reais somente se o cliente perguntar explicitamente, " +

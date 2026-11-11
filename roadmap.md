@@ -1,5 +1,6 @@
 # Roadmap
 
+- [ ] Consolidar identidade Jade em conversas e apresentações e suavizar braços com movimentos menores e assimétricos, sem conflitos com gestos.
 - [x] Liberar frases completas mais cedo para fala, melhorar detecção de pedidos detalhados e continuidade das escolhas; 15 testes passaram, resposta real em ~1,4s no teste e reprodução medida preservada. Escuta em microfone físico não verificada.
 - [x] Ajustar a gola junto ao pescoço sem mudar sua altura e deixar preta a roupa por baixo; três testes e cardápio aberto conferidos sem erros. Acabamento em aparelho físico não verificado.
 - [x] Preencher as aberturas do tronco com material/textura do vestido original e pesos do corpo, sem baixar o vestido; três testes e abertura do cardápio conferidos sem erros. Acabamento em GPU física não verificado.

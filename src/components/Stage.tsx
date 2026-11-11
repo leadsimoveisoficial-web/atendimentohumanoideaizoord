@@ -34,7 +34,7 @@ import { PoseLayer } from "@/lib/zoord-pose";
 import { plantedPresentationClip } from "@/lib/zoord-presentation";
 import { RadioPlayer } from "./RadioPlayer";
 import { danceMotion, musicLevel } from "@/lib/music";
-import { HOST_MOTION, hostBreathing, hostDanceTarget, motionStep, smoothMotion, HEAD_POSTURE, hostLookPitch, speechBeat } from "@/lib/zoord-motion";
+import { HOST_MOTION, hostBreathing, hostDanceTarget, motionStep, smoothMotion, HEAD_POSTURE, hostLookPitch, speechBeat, hostArmGesture } from "@/lib/zoord-motion";
 import { GesturePanel, type StageGesture } from "./GesturePanel";
 import { Hand, UtensilsCrossed, X, RotateCcw, ZoomIn, ZoomOut, Focus } from "lucide-react";
 import { UserAccount } from "./UserAccount";
@@ -246,7 +246,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       if (neck) poseLayer.apply(neck, () => rotateWorld(neck, _e.set(-POSTURE.neckLift, 0, 0)));
     }
     // While the radio plays, the dance owns the arms — the relaxed pose would otherwise pin them down.
-    restWeight.current = THREE.MathUtils.damp(restWeight.current, !musicLevel.playing ? 1 : 0, 5, dt);
+    restWeight.current = THREE.MathUtils.damp(restWeight.current, !musicLevel.playing && !waving && point === null ? 1 : 0, 5, dt);
     // Relax both arms beside the torso instead of freezing midway through a talking gesture.
     for (const side of ["Right", "Left"]) {
       const arm = bones.get(`${side}Arm`);
@@ -262,8 +262,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       // Gentle, desynchronised hand sway keeps the arms alive at rest without drifting toward the body.
       const sway = reduced.current ? 0 : Math.sin(motionTime.current * 0.9 + (sign > 0 ? 1.3 : 0)) * 0.04;
       const elbow = shoulder.clone().add(new THREE.Vector3(sign * upper * 0.3, -upper * 0.94, 0.05 + sway * upper));
-      const pulse = (0.5 + 0.5 * Math.sin(time * 1.7 + sign * 1.2)) * speechEnergy.current;
-      const palm = elbow.clone().add(new THREE.Vector3(sign * lower * (0.14 + pulse * 0.22), -lower * (0.9 - pulse * 0.7), lower * (0.26 + sway + pulse * 0.5)));
+      const gesture = hostArmGesture(time, speechEnergy.current, sign);
+      const palm = elbow.clone().add(new THREE.Vector3(sign * lower * gesture.outward, -lower * gesture.down, lower * (gesture.forward + sway)));
       poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, restWeight.current));
       poseLayer.apply(fore, () => aimLimb(fore, hand, palm, restWeight.current));
       // Keep wrists aligned with the forearm so hands never bend into unnatural angles.
@@ -274,8 +274,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       const b = beat.current;
       b.fast = smoothMotion(b.fast, voiceLevel.v, dt, 18);
       b.slow = smoothMotion(b.slow, voiceLevel.v, dt, 2);
-      const enabled = talking && point === null && !waving && !musicLevel.playing && !reduced.current;
-      b.lift = smoothMotion(b.lift, speechBeat(b.fast, b.slow, enabled), dt, 9);
+      const enabled = talking && !listening && point === null && !waving && !musicLevel.playing && !reduced.current;
+      b.lift = smoothMotion(b.lift, speechBeat(b.fast, b.slow, enabled), dt, 5);
       if (b.lift > 0.002) {
         for (const [side, sign] of [["Right", -1], ["Left", 1]] as const) {
           const fore = bones.get(`${side}ForeArm`);

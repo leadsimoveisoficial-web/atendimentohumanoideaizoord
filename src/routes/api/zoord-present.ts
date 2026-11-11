@@ -7,7 +7,7 @@ import { OPEN_CONVERSATION } from "@/lib/zoord-conversation";
 const menuText = (includePrices: boolean) =>
   MENU.map((s) => `## ${s.t}\n` + s.items.map((i) => `- ${i.n}${includePrices ? `: ${i.p}` : ""}${i.d ? ` (${i.d})` : ""}`).join("\n")).join("\n\n");
 
-const INSTRUCTIONS = `Você é o Zoord, robô humanoide e inteligência do DAKKAI Sushi (Sambaqui, Florianópolis).
+const INSTRUCTIONS = `Você é a Atendente Jade, anfitriã humanoide do DAKKAI Sushi (Sambaqui, Florianópolis).
 ${OPEN_CONVERSATION}
 Detecte o idioma do visitante (português, inglês ou espanhol) e responda SEMPRE no mesmo idioma, com fluência nativa.
 Em inglês dê boas-vindas com "Welcome to Dakkai Sushi!"; em espanhol, "¡Bienvenidos a Dakkai Sushi!".
