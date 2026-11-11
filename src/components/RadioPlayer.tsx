@@ -115,8 +115,8 @@ export function RadioPlayer({ listening, onSpeak, onOpen, hidden }: { listening:
       onPlaying={() => { setError(""); setStatus("playing"); }} onPause={clearRhythm} onEnded={() => { clearRhythm(); setStatus("idle"); }}
       onError={() => { clearRhythm(); setStatus("idle"); setError("Esta rádio está indisponível. Escolha outro gênero."); }} />
     <Button variant="ghost" className={`stage-chip ${status === "playing" ? "stage-chip-active" : ""}`} onClick={() => { onOpen(); setOpen(!open); }}><Music2 />Música e dança</Button>
-    {createPortal(<StagePresence show={open && !hidden} className="zoord-radio-panel pointer-events-auto z-40 w-[calc(100vw-32px)] max-w-sm"><section aria-label="Rádio do Zoord" className="stage-glass max-h-[55vh] overflow-y-auto p-4 text-foreground">
-      <header className="mb-3 flex items-center justify-between"><h2 className="font-display text-sm">Rádio • Zoord</h2><Button size="icon" variant="ghost" aria-label="Fechar rádio" onClick={() => setOpen(false)}><X /></Button></header>
+    {createPortal(<StagePresence show={open && !hidden} className="zoord-radio-panel pointer-events-auto z-40 w-[calc(100vw-32px)] max-w-sm"><section aria-label="Rádio da Jade" className="stage-glass max-h-[55vh] overflow-y-auto p-4 text-foreground">
+      <header className="mb-3 flex items-center justify-between"><h2 className="font-display text-sm">Rádio • Jade</h2><Button size="icon" variant="ghost" aria-label="Fechar rádio" onClick={() => setOpen(false)}><X /></Button></header>
       <Select value={genre} onValueChange={(value) => { const selected = MUSIC_GENRES.find(g => g.id === value); if (!selected) return; void play(selected.id, true); }}>
         <SelectTrigger aria-label="Gênero musical" className="w-full"><SelectValue /></SelectTrigger>
         <SelectContent>{MUSIC_GENRES.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}</SelectContent>

@@ -5,10 +5,10 @@ export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "DAKKAI Sushi × Zoord — Cardápio 3D" },
-      { name: "description", content: "Conheça Zoord, o maître do Dakkai Sushi: cardápio com preços, atendimento por voz e rádios por gênero." },
-      { property: "og:title", content: "DAKKAI Sushi × Zoord — Cardápio 3D" },
-      { property: "og:description", content: "Conheça Zoord, o maître do Dakkai Sushi: cardápio com preços, atendimento por voz e rádios por gênero." },
+      { title: "DAKKAI Sushi × Atendente Jade — Cardápio 3D" },
+      { name: "description", content: "Conheça a Atendente Jade, a anfitriã do Dakkai Sushi: cardápio com preços, atendimento por voz e rádios por gênero." },
+      { property: "og:title", content: "DAKKAI Sushi × Atendente Jade — Cardápio 3D" },
+      { property: "og:description", content: "Conheça a Atendente Jade, a anfitriã do Dakkai Sushi: cardápio com preços, atendimento por voz e rádios por gênero." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

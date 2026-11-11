@@ -14,10 +14,11 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type Compo
 import * as THREE from "three";
 import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
 import { gaze, setMouseGaze } from "@/lib/gaze";
-import zoord from "@/assets/zoord-vrm.glb.asset.json";
+import zoord from "@/assets/atendente-jade.glb.asset.json";
+import { prepareJade, limbLength, jadeJawOpening } from "@/lib/jade-rig";
 import { FACE_TARGETS, debugWeights, easeWeight, emptyFace, faceDebug, faceLive, visemesFromAudio, FACE_LIMITS } from "@/lib/zoord-face";
 import { FaceDiagnostics } from "./FaceDiagnostics";
-import { ZoordMouth } from "./ZoordMouth";
+
 import dakkaiLogo from "@/assets/dakkai-logo.webp";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { voiceLevel } from "@/lib/voice-level";
@@ -72,13 +73,22 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const group = useRef<THREE.Group>(null);
   const { scene: sourceScene, animations } = useGLTF(zoord.url);
   const scene = useMemo(() => cloneSkeleton(sourceScene), [sourceScene]);
-  const bones = useMemo(() => {
-    const cache = new Map<string, THREE.Object3D>();
-    scene.traverse((node) => {
-      if (/mixamorig/i.test(node.name)) cache.set(node.name.replace(/^mixamorig:?/i, ""), node);
-    });
-    return cache;
-  }, [scene]);
+  const bones = useMemo(() => prepareJade(scene), [scene]);
+  const fitting = useMemo(() => {
+    scene.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(scene);
+    const scale = 3.49 / Math.max(box.max.y - box.min.y, 0.01);
+    return { scale, y: 0.3 - box.min.y * scale };
+  }, [scene, bones]);
+  const headBasis = useMemo(() => {
+    const head = bones.get("Head");
+    const world = head?.getWorldQuaternion(new THREE.Quaternion()) ?? new THREE.Quaternion();
+    return { world, inverse: world.clone().invert() };
+  }, [bones]);
+  const nativeJaws = useMemo(() => ["Jaw_R_049", "Jaw_L_058", "Jaw_L_058_0"].flatMap(name => {
+    const bone = scene.getObjectByName(name);
+    return bone ? [{ bone, rest: bone.quaternion.clone() }] : [];
+  }), [scene]);
   const reduced = useRef(false);
   const motionTime = useRef(0);
   const danceWeight = useRef(0);
@@ -159,7 +169,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const id = window.setInterval(() => setTalkTurn((n) => n + 1 + Math.floor(Math.random() * 2)), 3800);
     return () => window.clearInterval(id);
   }, [talkingNow]);
-  const talkClip = talkClips.length ? talkClips[talkTurn % talkClips.length]! : "Stand_and_Chat";
+  const talkClip = talkClips.length ? (talkClips[talkTurn % talkClips.length] ?? "Stand_and_Chat") : "Stand_and_Chat";
   const clipName = point !== null ? "Stand_and_Chat" : talkingNow ? talkClip : "Hand_on_Hip_Gesture";
   const headMotion = useMemo(() => ({ last: new THREE.Quaternion(), next: new THREE.Quaternion(), inverse: new THREE.Quaternion(), euler: new THREE.Euler(), strength: 0, lookX: 0, lookY: 0, world: new THREE.Quaternion(), initialized: false, position: new THREE.Vector3(), direction: new THREE.Vector3(), target: new THREE.Quaternion(), parent: new THREE.Quaternion() }), []);
   useEffect(() => {
@@ -206,7 +216,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       if (neck) poseLayer.apply(neck, () => rotateWorld(neck, _e.set(-POSTURE.neckLift, 0, 0)));
     }
     // While the radio plays, the dance owns the arms — the relaxed pose would otherwise pin them down.
-    restWeight.current = THREE.MathUtils.damp(restWeight.current, !talking && point === null && !waving && !manualPresenting && !musicLevel.playing ? 1 : 0, 5, dt);
+    restWeight.current = THREE.MathUtils.damp(restWeight.current, !musicLevel.playing ? 1 : 0, 5, dt);
     // Relax both arms beside the torso instead of freezing midway through a talking gesture.
     for (const side of ["Right", "Left"]) {
       const arm = bones.get(`${side}Arm`);
@@ -217,12 +227,14 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       const shoulder = arm.getWorldPosition(new THREE.Vector3());
       const sign = side === "Right" ? -1 : 1;
       const scale = arm.getWorldScale(new THREE.Vector3()).length() / Math.sqrt(3);
-      const upper = fore.position.length() * scale;
-      const lower = hand.position.length() * scale;
+      const upper = limbLength(arm, fore);
+      const lower = limbLength(fore, hand);
       // Gentle, desynchronised hand sway keeps the arms alive at rest without drifting toward the body.
       const sway = reduced.current ? 0 : Math.sin(motionTime.current * 0.9 + (sign > 0 ? 1.3 : 0)) * 0.04;
       const elbow = shoulder.clone().add(new THREE.Vector3(sign * upper * 0.3, -upper * 0.94, 0.05 + sway * upper));
-      const palm = elbow.clone().add(new THREE.Vector3(sign * lower * 0.14, -lower * 0.9, lower * (0.26 + sway)));
+      const expressive = (talking || manualPresenting) && point === null && !waving && !reduced.current;
+      const pulse = expressive ? (0.5 + 0.5 * Math.sin(time * 1.7 + sign * 1.2 + talkTurn)) * Math.min(1, voiceLevel.v * 3 + 0.3) : 0;
+      const palm = elbow.clone().add(new THREE.Vector3(sign * lower * (0.14 + pulse * 0.22), -lower * (0.9 - pulse * 0.7), lower * (0.26 + sway + pulse * 0.5)));
       poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, restWeight.current));
       poseLayer.apply(fore, () => aimLimb(fore, hand, palm, restWeight.current));
       // Keep wrists aligned with the forearm so hands never bend into unnatural angles.
@@ -261,8 +273,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const shoulder = arm.getWorldPosition(new THREE.Vector3());
     const weight = THREE.MathUtils.smoothstep(t, 0, 0.5) * (1 - THREE.MathUtils.smoothstep(t, 2.6, 3.2));
     const scale = arm.getWorldScale(new THREE.Vector3()).length() / Math.sqrt(3);
-    const upper = fore.position.length() * scale;
-    const lower = hand.position.length() * scale;
+    const upper = limbLength(arm, fore);
+    const lower = limbLength(fore, hand);
     const elbow = shoulder.clone().add(new THREE.Vector3(-upper * 0.85, -upper * 0.2, upper * 0.35));
     const palm = elbow.clone().add(new THREE.Vector3(Math.sin(t * 6.5) * lower * (reduced.current ? 0.03 : 0.18), lower * 0.8, lower * 0.35));
     poseLayer.apply(arm, () => aimLimb(arm, fore, elbow, weight));
@@ -288,7 +300,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       arm.updateWorldMatrix(true, true);
       const shoulder = arm.getWorldPosition(new THREE.Vector3());
       const scale = arm.getWorldScale(new THREE.Vector3()).length() / Math.sqrt(3);
-      const upper = fore.position.length() * scale, lower = hand.position.length() * scale;
+      const upper = limbLength(arm, fore), lower = limbLength(fore, hand);
       const sign = side === "Right" ? -1 : 1;
       const motion = danceMotion(musicLevel.genre, motionTime.current, energy, pulse, sign);
       const elbow = shoulder.clone().add(new THREE.Vector3(sign * upper * motion.reach, -upper * 0.82, upper * 0.15));
@@ -310,7 +322,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     arm.updateWorldMatrix(true, false);
     const shoulder = arm.getWorldPosition(new THREE.Vector3());
     const scale = arm.getWorldScale(new THREE.Vector3()).length() / Math.sqrt(3);
-    const reach = (fore.position.length() + hand.position.length()) * scale;
+    const reach = limbLength(arm, fore) + limbLength(fore, hand);
     // Present outward at chest height, never reach up toward the face or behind the body.
     target.y = THREE.MathUtils.clamp(target.y, shoulder.y - 0.45, shoulder.y + 0.12);
     target.z = shoulder.z + 0.65;
@@ -330,7 +342,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   const restPose = useMemo(() => {
     const m = new Map<THREE.Object3D, { q: THREE.Quaternion; max: number }>();
     for (const [n, max] of [["Hips", 0.35], ["Spine", 0.3], ["Spine1", 0.3], ["Spine2", 0.3], ["Neck", 0.45], ["Head", 0.7]] as const) {
-      const b = scene.getObjectByName(`mixamorig:${n}`) ?? scene.getObjectByName(`mixamorig${n}`);
+      const b = bones.get(n);
       if (b) m.set(b, { q: b.quaternion.clone(), max });
     }
     return m;
@@ -359,7 +371,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const yaw = THREE.MathUtils.clamp(Math.atan2(headMotion.direction.x, headMotion.direction.z) + headMotion.lookX * 0.25, -HEAD_POSTURE.turnMax, HEAD_POSTURE.turnMax);
     headMotion.direction.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
     headMotion.target.setFromUnitVectors(HEAD_FORWARD, headMotion.direction);
-    if (!headMotion.initialized) { head.getWorldQuaternion(headMotion.world); headMotion.initialized = true; }
+    if (!headMotion.initialized) { head.getWorldQuaternion(headMotion.world); headMotion.world.multiply(headBasis.inverse); headMotion.initialized = true; }
     headMotion.world.slerp(headMotion.target, 1 - Math.exp(-6 * dt));
     // Bound even transitional frames and nods: the face never tilts down beyond 2 degrees.
     const facing = HEAD_FORWARD.clone().applyQuaternion(headMotion.world);
@@ -371,7 +383,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
       headMotion.world.setFromUnitVectors(HEAD_FORWARD, headMotion.direction);
     }
     if (head.parent) head.parent.getWorldQuaternion(headMotion.parent); else headMotion.parent.identity();
-    head.quaternion.copy(headMotion.parent.invert()).multiply(headMotion.world).normalize();
+    head.quaternion.copy(headMotion.parent.invert()).multiply(headMotion.world).multiply(headBasis.world).normalize();
     if (import.meta.env.DEV) document.querySelector(".stage-scene canvas")?.setAttribute("data-scene-ready", "true");
   });
   useEffect(() => {
@@ -380,35 +392,15 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     });
     if (import.meta.env.DEV) (window as unknown as { __zoordScene?: THREE.Object3D }).__zoordScene = scene;
   }, [scene]);
-  // Real face: the avatar's own visemes, blinks and smile, driven by measured voice output.
-  const face = useMemo(() => {
-    let mesh: THREE.Mesh | null = null;
-    scene.traverse((o) => { if (!mesh && (o as THREE.Mesh).isMesh && (o as THREE.Mesh).morphTargetDictionary?.["aa"] !== undefined) mesh = o as THREE.Mesh; });
-    return { mesh: mesh as THREE.Mesh | null, current: emptyFace(), clock: 0, };
-  }, [scene]);
-  useFrame((_, rawDelta) => {
-    const mesh = face.mesh;
-    const dict = mesh?.morphTargetDictionary, inf = mesh?.morphTargetInfluences;
-    if (!dict || !inf) return;
-    const dt = Math.min(rawDelta, 0.1);
-    face.clock += dt;
-    let target = emptyFace();
-    if (faceDebug.enabled) target = debugWeights(faceDebug.values);
-    else {
-      Object.assign(target, visemesFromAudio(voiceLevel.v, voiceLevel.round, voiceLevel.wide));
-      // No automatic blinking: the owner wants focus on speech and mouth movement only.
-      // Neutral while listening, full soft smile on greetings, friendly while serving.
-      target.happy = listening ? 0 : waving ? FACE_LIMITS.smileMax : speakingRef.current || manualPresenting ? FACE_LIMITS.smileMax * 0.6 : FACE_LIMITS.smileMax * 0.3;
+  // The supplied 29 morphs belong to clothing, not the face. Animate only native jaw bones.
+  const jawWeight = useRef(0);
+  useFrame((_, delta) => {
+    jawWeight.current = easeWeight(jawWeight.current, jadeJawOpening(voiceLevel.v), Math.min(delta, 0.1));
+    for (const { bone, rest } of nativeJaws) {
+      bone.quaternion.copy(rest);
+      rotateWorld(bone, _e.set(jawWeight.current, 0, 0));
     }
-    for (const name of FACE_TARGETS) {
-      const idx = dict[name];
-      if (idx === undefined) continue;
-      // Blinks are instant curves already; everything else eases to avoid jumps.
-      const next = name.startsWith("blink") ? target[name] : easeWeight(face.current[name], target[name], dt);
-      face.current[name] = next;
-      inf[idx] = next;
-    }
-    Object.assign(faceLive, face.current);
+    if (import.meta.env.DEV) (window as unknown as { __voiceLevel?: typeof voiceLevel }).__voiceLevel = voiceLevel;
   });
   useEffect(() => { waveTime.current = 0; }, [waveId]);
   useEffect(() => {
@@ -429,11 +421,10 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   }, [clipName, actions]);
   return (
     <>
-      <group ref={group} position={[0, 0.3, 0]} scale={3.49 / 1.576}>
+      <group ref={group} position={[0, fitting.y, 0]} scale={fitting.scale}>
         <primitive object={scene} />
       </group>
-      {/* Previous avatar's animated LED mouth, anchored on this face's measured lip line (head-local). */}
-      <ZoordMouth scene={scene} position={[-0.004, 0.0025, 0.069]} rotationX={0} scale={0.0072} />
+
     </>
   );
 }
@@ -693,7 +684,7 @@ export function Stage() {
       </div>
 
       <div className="pointer-events-auto fixed right-3 top-28 z-30 flex flex-col gap-1">
-        <Button variant="ghost" className="stage-chip" aria-label="Aproximar Zoord" title="Aproximar" onClick={() => setZoom(STAGE_CAMERA.near)}><ZoomIn /></Button>
+        <Button variant="ghost" className="stage-chip" aria-label="Aproximar Jade" title="Aproximar" onClick={() => setZoom(STAGE_CAMERA.near)}><ZoomIn /></Button>
         <Button variant="ghost" className="stage-chip" aria-label="Mostrar corpo inteiro" title="Corpo inteiro" onClick={() => setZoom(STAGE_CAMERA.fullBody)}><ZoomOut /></Button>
         <Button variant="ghost" className="stage-chip" aria-label="Centralizar câmera" title="Centralizar câmera" onClick={() => setZoom(STAGE_CAMERA.near)}><Focus /></Button>
       </div>
@@ -702,7 +693,7 @@ export function Stage() {
       <div className="stage-overlay pointer-events-none fixed inset-0 flex flex-col justify-between p-4 md:p-6">
         <header className="stage-header flex items-center justify-between gap-3">
           <span className="flex items-center gap-3">
-            <span className="font-display text-sm tracking-[0.5em] text-foreground">DAKKAI <span className="text-dakkai">×</span> ZOORD</span>
+            <span className="font-display text-sm text-foreground">DAKKAI <span className="text-dakkai">×</span> Atendente Jade</span>
             <SecurityBadge />
           </span>
           <div className="pointer-events-auto flex items-center gap-3">
