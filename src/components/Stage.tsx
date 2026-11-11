@@ -12,7 +12,7 @@ import {
   ContactShadows,
 } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette, SMAA } from "@react-three/postprocessing";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import * as THREE from "three";
 import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
 import { gaze, setMouseGaze } from "@/lib/gaze";
@@ -104,7 +104,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   }, []);
   const maxAniso = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
   const camera = useThree((s) => s.camera);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const body = scene.getObjectByName("Object_26");
     if (!(body instanceof THREE.SkinnedMesh) || !body.parent) return;
     let cloth: THREE.Mesh | undefined;
@@ -116,10 +116,11 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     if (!cloth) return;
     const original = cloth;
     const garment = bindJadeClothing(original, body);
-    original.visible = false;
-    body.parent.add(garment);
     const underdressColor = getComputedStyle(document.documentElement).getPropertyValue("--stage-space").trim();
     const extension = createJadeCoverage(body, garment, underdressColor);
+    // Install both layers before the first painted frame; never reveal a partial outfit.
+    original.visible = false;
+    body.parent.add(garment);
     body.parent.add(extension);
     return () => {
       extension.removeFromParent(); extension.geometry.dispose(); extension.material.dispose();

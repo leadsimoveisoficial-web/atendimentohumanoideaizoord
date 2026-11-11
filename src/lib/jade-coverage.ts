@@ -17,7 +17,7 @@ export function createJadeCoverage(body: THREE.SkinnedMesh, dress: THREE.Skinned
   geometry.computeVertexNormals();
   const fabricPositions = dress.geometry.getAttribute("position");
   const fabricUV = dress.geometry.getAttribute("uv");
-  if (fabricUV) {
+  if (fabricUV && !underdressColor) {
     const buckets = new Map<string, number[]>();
     const key = (x: number, y: number, z: number) => `${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`;
     for (let i = 0; i < fabricPositions.count; i++) {

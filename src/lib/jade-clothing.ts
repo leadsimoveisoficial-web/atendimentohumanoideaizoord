@@ -21,15 +21,22 @@ export function bindJadeClothing(cloth: THREE.Mesh, body: THREE.SkinnedMesh) {
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i), y = positions.getY(i), z = positions.getZ(i);
     const cx = Math.floor(x/cell), cy = Math.floor(y/cell), cz = Math.floor(z/cell);
-    let candidates: number[] = [];
-    for (let radius = 1; radius <= 4 && candidates.length === 0; radius++) {
+    const nearest: {j: number; d: number}[] = [];
+    const consider = (j: number) => {
+      const d = (skin.getX(j)-x)**2+(skin.getY(j)-y)**2+(skin.getZ(j)-z)**2;
+      if (nearest.length === 3 && d >= (nearest[2]?.d ?? Infinity)) return;
+      let at = 0;
+      while (at < nearest.length && (nearest[at]?.d ?? Infinity) <= d) at++;
+      nearest.splice(at, 0, {j, d});
+      if (nearest.length > 3) nearest.pop();
+    };
+    for (let radius = 1; radius <= 4 && nearest.length === 0; radius++) {
       for (let a = -radius; a <= radius; a++) for (let b = -radius; b <= radius; b++) for (let c = -radius; c <= radius; c++) {
         const bucket = buckets.get(`${cx+a},${cy+b},${cz+c}`);
-        if (bucket) candidates.push(...bucket);
+        if (bucket) for (const j of bucket) consider(j);
       }
     }
-    if (!candidates.length) candidates = Array.from({length:skin.count}, (_,j)=>j);
-    const nearest = candidates.map(j => ({j, d:(skin.getX(j)-x)**2+(skin.getY(j)-y)**2+(skin.getZ(j)-z)**2})).sort((a,b)=>a.d-b.d).slice(0,3);
+    if (!nearest.length) for (let j = 0; j < skin.count; j++) consider(j);
     const neckVertex = nearest[0];
     if (y >= 16 && Math.abs(x) < 0.8 && neckVertex) {
       // Fit only the collar to the native neck, leaving the rest of the dress unchanged.
