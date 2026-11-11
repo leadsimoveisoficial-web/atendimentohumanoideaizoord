@@ -1,4 +1,5 @@
-import { choiceComment } from "@/lib/menu-script";
+import { browseMenu } from "@/lib/menu-interaction";
+import { createJadeCoverage } from "@/lib/jade-coverage";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -102,6 +103,14 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   }, []);
   const maxAniso = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
   const camera = useThree((s) => s.camera);
+  useEffect(() => {
+    const body = scene.getObjectByName("Object_26");
+    if (!(body instanceof THREE.SkinnedMesh) || !body.parent) return;
+    const color = getComputedStyle(document.documentElement).getPropertyValue("--stage-avatar-albedo").trim();
+    const lining = createJadeCoverage(body, color);
+    body.parent.add(lining);
+    return () => { lining.removeFromParent(); lining.geometry.dispose(); lining.material.dispose(); };
+  }, [scene]);
   // Preserve uploaded albedo under the mixed warm/cyan light rig.
   useEffect(() => {
     const ownedMaterials: THREE.MeshStandardMaterial[] = [];
@@ -633,17 +642,15 @@ export function Stage() {
     if (i !== null && MENU[i]) setOpen(i);
   }, []);
   const [chosen, setChosen] = useState<string | null>(null);
-  const chooseItem = (name: string, description?: string) => {
-    setChosen(name);
+  const chooseItem = (name: string) => {
+    browseMenu(voiceCommands.current, () => setChosen(name));
     if (gestureTimer.current) clearTimeout(gestureTimer.current);
     setAnim("nod");
     gestureTimer.current = setTimeout(() => setAnim("Idle_12"), 1800);
-    voiceCommands.current?.say(choiceComment(name, description));
   };
   const openMenu = (i: number) => {
-    setOpen(i);
+    browseMenu(voiceCommands.current, () => setOpen(i));
     setAnim("Idle_12");
-    voiceCommands.current?.present(i);
   };
   return (
     <div className="stage-backdrop fixed inset-0">
@@ -699,7 +706,7 @@ export function Stage() {
           </span>
           <div className="pointer-events-auto flex items-center gap-3">
             <UserAccount />
-            <Button variant="ghost" onClick={() => setOpen(0)} className="stage-chip"><UtensilsCrossed />Cardápio</Button>
+            <Button variant="ghost" onClick={() => openMenu(0)} className="stage-chip"><UtensilsCrossed />Cardápio</Button>
             <a href={WHATSAPP} target="_blank" rel="noreferrer" className="stage-chip stage-chip-red">Pedir no WhatsApp</a>
           </div>
         </header>
@@ -711,7 +718,7 @@ export function Stage() {
             <RadioPlayer hidden={controlPanel === "gestures"} listening={listening} onOpen={() => setControlPanel("music")} onSpeak={(text) => voiceCommands.current?.say(text)} />
             <RecordRepeat />
             <GesturePanel hidden={controlPanel === "music"} onOpen={() => setControlPanel("gestures")} onGesture={performGesture} />
-            <Button variant="ghost" onClick={() => { setAnim("Idle_12"); voiceCommands.current?.present(null); }} className="stage-chip"><UtensilsCrossed />Apresentar cardápio</Button>
+            <Button variant="ghost" onClick={() => { setAnim("Idle_12"); voiceCommands.current?.present(open ?? 0); }} className="stage-chip"><UtensilsCrossed />Apresentar categoria</Button>
             <Button variant="ghost" onClick={() => { setAiPoint(null); setAnim("Idle_12"); }} className="stage-chip" aria-label="Voltar à postura inicial" title="Postura inicial"><RotateCcw /></Button>
           </nav>
         </div>
@@ -722,7 +729,7 @@ export function Stage() {
           <div className="menu-sheet !max-h-full">
             <div className="flex items-center justify-between gap-4">
               <img src={dakkaiLogo} alt="DAKKAI Sushi" className="h-16 w-auto" />
-              <Button variant="ghost" onClick={() => setOpen(null)} className="stage-chip" aria-label="Fechar"><X /></Button>
+              <Button variant="ghost" onClick={() => browseMenu(voiceCommands.current, () => setOpen(null))} className="stage-chip" aria-label="Fechar"><X /></Button>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               {MENU.map((s, i) => (
@@ -733,7 +740,7 @@ export function Stage() {
             <ul key={open} className="mt-4 space-y-3">
               {MENU[open ?? 0]?.items.map((it, idx) => (
                 <li key={it.n} className="menu-item border-b border-border pb-3" style={{ animationDelay: `${120 + idx * 45}ms` }}>
-                  <Button variant="ghost" type="button" onClick={() => chooseItem(it.n, it.d)} className={`flex h-auto w-full items-start justify-between gap-4 whitespace-normal p-0 text-left transition-colors hover:text-glow ${chosen === it.n ? "text-glow" : ""}`}>
+                  <Button variant="ghost" type="button" onClick={() => chooseItem(it.n)} className={`flex h-auto w-full items-start justify-between gap-4 whitespace-normal p-0 text-left transition-colors hover:text-glow ${chosen === it.n ? "text-glow" : ""}`}>
                     <p className="font-semibold">{it.n}</p>
                     <span className="whitespace-nowrap font-display text-dakkai">{it.p}</span>
                   </Button>
