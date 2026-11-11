@@ -10,10 +10,13 @@ describe("Jade opaque lining", () => {
     g.setAttribute("skinWeight", new THREE.Float32BufferAttribute(Array.from({length:24},(_,i)=> i%4===0?1:0),4));
     const body = new THREE.SkinnedMesh(g, new THREE.MeshStandardMaterial());
     body.bind(new THREE.Skeleton([new THREE.Bone()]));
-    const lining = createJadeCoverage(body, "#202020");
+    const dress = new THREE.SkinnedMesh(g.clone(), new THREE.MeshStandardMaterial());
+    const lining = createJadeCoverage(body, dress);
     expect(lining.geometry.index?.count).toBe(3);
     expect(lining.skeleton).toBe(body.skeleton);
     expect(lining.geometry.getAttribute("skinWeight").array).toEqual(g.getAttribute("skinWeight").array);
     expect(lining.material.transparent).toBe(false);
+    expect(lining.material).not.toBe(dress.material);
+    expect(lining.material.type).toBe(dress.material.type);
   });
 });

@@ -42,7 +42,16 @@ export function bindJadeClothing(cloth: THREE.Mesh, body: THREE.SkinnedMesh) {
   geometry.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(indices,4));
   geometry.setAttribute("skinWeight", new THREE.Float32BufferAttribute(weights,4));
   // Preserve the uploaded fabric; only add skeletal deformation, not a replacement surface.
-  const garment = new THREE.SkinnedMesh(geometry,Array.isArray(cloth.material) ? cloth.material.map(material => material.clone()) : cloth.material.clone());
+  const prepareFabric = (source: THREE.Material) => {
+    const material = source.clone();
+    // Keep the original cut/texture; avoid skin winning the depth test at close fabric contact.
+    material.side = THREE.DoubleSide;
+    material.polygonOffset = true;
+    material.polygonOffsetFactor = -2;
+    material.polygonOffsetUnits = -2;
+    return material;
+  };
+  const garment = new THREE.SkinnedMesh(geometry,Array.isArray(cloth.material) ? cloth.material.map(prepareFabric) : prepareFabric(cloth.material));
   if (cloth.morphTargetInfluences && garment.morphTargetInfluences) {
     garment.morphTargetInfluences = [...cloth.morphTargetInfluences];
   }
