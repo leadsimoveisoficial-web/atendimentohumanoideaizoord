@@ -7,11 +7,8 @@ const JADE_BONES: Record<string, string> = {
   LeftShoulder: "Scapula_L_065", LeftArm: "Shoulder_L_066", LeftForeArm: "Elbow_L_069", LeftHand: "Wrist_L_072",
 };
 
-/** Restore the authored bind pose, not a mid-stride frame from the walk test. */
+/** Keep the authored node transforms; Skeleton.pose ignores this export's scaled parent hierarchy. */
 export function prepareJade(scene: THREE.Object3D) {
-  const skeletons = new Set<THREE.Skeleton>();
-  scene.traverse(node => { if (node instanceof THREE.SkinnedMesh) skeletons.add(node.skeleton); });
-  for (const skeleton of skeletons) skeleton.pose();
   scene.updateMatrixWorld(true);
   const bones = new Map<string, THREE.Object3D>();
   for (const [role, name] of Object.entries(JADE_BONES)) {
