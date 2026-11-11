@@ -1,5 +1,6 @@
 import { browseMenu } from "@/lib/menu-interaction";
 import { bindJadeClothing } from "@/lib/jade-clothing";
+import { createJadeCoverage } from "@/lib/jade-coverage";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -117,7 +118,10 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const garment = bindJadeClothing(original, body);
     original.visible = false;
     body.parent.add(garment);
+    const extension = createJadeCoverage(body, garment);
+    body.parent.add(extension);
     return () => {
+      extension.removeFromParent(); extension.geometry.dispose(); extension.material.dispose();
       original.visible = true; garment.removeFromParent(); garment.geometry.dispose();
       const materials = Array.isArray(garment.material) ? garment.material : [garment.material];
       materials.forEach(material => material.dispose());
