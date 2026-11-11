@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Finalizar marca e nome Jade Humanoide Atendente, incluindo ícone do aplicativo.
+- [ ] Reduzir espera da escuta e resposta da Jade sem comprometer frases ou interrupção.
 - [x] Adicionar forro branco opaco ligado ao esqueleto para cobrir o peito durante movimentos; botão apresenta somente a categoria selecionada. Cinco testes passaram; cobertura ao apontar e interrupção do áudio por cliques conferidas sem erros. Movimento em aparelho físico não verificado.
 - [x] Navegar no cardápio sem fala automática: abrir, trocar categoria e selecionar prato interrompem a apresentação; quatro testes e áudio real confirmaram silêncio após cliques.
 - [x] Retirar controles faciais antigos e usar somente a mandíbula original da Jade, alinhada à orientação da cabeça; braços seguem energia suavizada da fala. 19 testes e apresentação com áudio real passaram, sem erros; telas ampla/estreita conferidas. Não é reconhecimento de fonemas nem Audio2Face.
