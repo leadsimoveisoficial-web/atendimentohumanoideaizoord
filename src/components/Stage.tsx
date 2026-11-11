@@ -1,4 +1,5 @@
 import { browseMenu } from "@/lib/menu-interaction";
+import { createJadeCoverage } from "@/lib/jade-coverage";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -102,6 +103,14 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
   }, []);
   const maxAniso = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
   const camera = useThree((s) => s.camera);
+  useEffect(() => {
+    const body = scene.getObjectByName("Object_26");
+    if (!(body instanceof THREE.SkinnedMesh) || !body.parent) return;
+    const color = getComputedStyle(document.documentElement).getPropertyValue("--stage-space").trim();
+    const lining = createJadeCoverage(body, color);
+    body.parent.add(lining);
+    return () => { lining.removeFromParent(); lining.geometry.dispose(); lining.material.dispose(); };
+  }, [scene]);
   // Preserve uploaded albedo under the mixed warm/cyan light rig.
   useEffect(() => {
     const ownedMaterials: THREE.MeshStandardMaterial[] = [];
