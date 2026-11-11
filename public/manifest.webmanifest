@@ -1,7 +1,7 @@
 {
-  "name": "Zoord — Dakkai Sushi",
-  "short_name": "Zoord",
-  "description": "Zoord, o maître 3D do Dakkai Sushi.",
+  "name": "Jade Humanoide Atendente",
+  "short_name": "Jade",
+  "description": "Jade Humanoide Atendente, atendimento por voz em 3D.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

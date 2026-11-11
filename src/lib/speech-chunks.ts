@@ -2,7 +2,7 @@
 export function takeSentences(buffer: string, minLength = 12): { ready: string[]; rest: string } {
   const ready: string[] = [];
   let start = 0;
-  const re = /[.!?…]+["')\]]?\s+/g;
+  const re = /(?:[!?…]+["')\]]?(?:\s+|$)|\.+["')\]]?\s+)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(buffer))) {
     const end = m.index + m[0].length;

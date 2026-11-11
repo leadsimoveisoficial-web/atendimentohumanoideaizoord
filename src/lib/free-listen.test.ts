@@ -18,6 +18,16 @@ class Recognition {
 beforeEach(() => { Recognition.instances = []; vi.useFakeTimers(); vi.stubGlobal("window", { SpeechRecognition: Recognition }); });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 describe("voice listening lifecycle", () => {
+  it("resumes an ended listening session after 80ms without overlapping recognizers", () => {
+    const listener = createFreeListener({ lang: "pt-BR", onFinal: vi.fn(), onError: vi.fn() });
+    listener.start();
+    Recognition.instances[0]?.onend?.();
+    vi.advanceTimersByTime(79);
+    expect(Recognition.instances).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    expect(Recognition.instances).toHaveLength(2);
+    expect(Recognition.instances[0]?.abort).toHaveBeenCalledTimes(1);
+  });
   it("ignores retired sessions after stop and restart", () => {
     const onFinal = vi.fn();
     const listener = createFreeListener({ lang: "pt-BR", onFinal, onError: vi.fn() });

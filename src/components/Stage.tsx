@@ -701,7 +701,7 @@ export function Stage() {
       <div className="stage-overlay pointer-events-none fixed inset-0 flex flex-col justify-between p-4 md:p-6">
         <header className="stage-header flex items-center justify-between gap-3">
           <span className="flex items-center gap-3">
-            <span className="font-display text-sm text-foreground">DAKKAI <span className="text-dakkai">×</span> Atendente Jade</span>
+            <span className="font-display text-sm text-foreground">DAKKAI SUSHI <span className="text-dakkai">×</span> Jade Humanoide Atendente</span>
             <SecurityBadge />
           </span>
           <div className="pointer-events-auto flex items-center gap-3">

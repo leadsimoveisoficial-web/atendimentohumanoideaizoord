@@ -5,9 +5,9 @@ export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "DAKKAI Sushi × Atendente Jade — Cardápio 3D" },
+      { title: "Jade Humanoide Atendente — Atendimento 3D" },
       { name: "description", content: "Conheça a Atendente Jade, a anfitriã do Dakkai Sushi: cardápio com preços, atendimento por voz e rádios por gênero." },
-      { property: "og:title", content: "DAKKAI Sushi × Atendente Jade — Cardápio 3D" },
+      { property: "og:title", content: "Jade Humanoide Atendente — Atendimento 3D" },
       { property: "og:description", content: "Conheça a Atendente Jade, a anfitriã do Dakkai Sushi: cardápio com preços, atendimento por voz e rádios por gênero." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
