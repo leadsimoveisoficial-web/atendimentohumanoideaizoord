@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Manter Dakkai Sushi no palco e no cardápio; identidade Jade somente no site.
+- [x] Dakkai Sushi preservado no palco, nome e cardápio; identidade Jade nos ícones do site e nome do projeto. Conferido visualmente sem erros.
 - [x] Nome do projeto e marca Jade Humanoide Atendente atualizados, com logo e ícones; cena conferida sem erros. Endereço do site permanece igual.
 - [x] Reinício da escuta reduzido de 250ms para 80ms e perguntas completas liberadas para voz sem esperar o próximo token; oito testes passaram. Tempo total em microfone físico depende do navegador e da conexão, não medido.
 - [x] Adicionar forro branco opaco ligado ao esqueleto para cobrir o peito durante movimentos; botão apresenta somente a categoria selecionada. Cinco testes passaram; cobertura ao apontar e interrupção do áudio por cliques conferidas sem erros. Movimento em aparelho físico não verificado.
