@@ -17,7 +17,7 @@ import { dispatchMusic, musicCommand, type MusicCommand } from "@/lib/music";
 import { StagePresence } from "./StagePresence";
 import { useAccount } from "./UserAccount";
 
-export type LiveZoordCommands = { present: (category: number | null) => void; say: (text: string) => void };
+export type LiveZoordCommands = { present: (category: number | null) => void; say: (text: string) => void; stop: () => void };
 
 export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | null) => void; onGreeting: () => void; onListening: (active: boolean) => void; onOrder?: (order: NewOrder) => void }>(function LiveZoord({ onPoint, onGreeting, onListening, onOrder }, ref) {
   const [caption, setCaption] = useState("");
@@ -321,6 +321,13 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
   welcomeRef.current = () => sayText(WELCOME[languageRef.current]);
 
   useImperativeHandle(ref, () => ({
+    stop() {
+      pendingMenu.current = null;
+      call.stop();
+      stopFreeConversation();
+      setCaption("");
+      setThinking(false);
+    },
     say: sayText,
     present(category) {
       if (freeModeRef.current) {
