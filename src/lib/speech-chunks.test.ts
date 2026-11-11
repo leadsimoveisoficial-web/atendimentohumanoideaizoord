@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { takeSentences, wantsDetail } from "./speech-chunks";
 
 describe("takeSentences", () => {
+  it("releases a completed question immediately without waiting for the next token", () => {
+    expect(takeSentences("Qual é seu nome?").ready).toEqual(["Qual é seu nome?"]);
+    expect(takeSentences("O preço é 49.").ready).toEqual([]);
+  });
   it("releases the first complete sentence before the stream ends", () => {
     const r = takeSentences("Boa noite, senhor. Recomendo o salm");
     expect(r.ready).toEqual(["Boa noite, senhor."]);

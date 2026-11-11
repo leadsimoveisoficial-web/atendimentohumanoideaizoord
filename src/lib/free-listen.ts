@@ -26,6 +26,7 @@ export function recognitionSupported(): boolean {
 }
 
 export type SpeechLang = "pt-BR" | "en-US" | "es-ES";
+export const LISTEN_RESTART_MS = 80;
 
 const LANG_HINTS: Array<[SpeechLang, RegExp]> = [
   ["en-US", /\b(the|and|you|your|please|what|have|want|would|thanks|hello|hi|menu|combo|price|how much|good)\b/i],
@@ -121,7 +122,7 @@ export function createFreeListener(options: {
         // Chrome ends the session periodically; restart to keep listening.
         // A fresh instance is more reliable than restarting an ended one.
         clearTimeout(restartTimer);
-        restartTimer = setTimeout(() => { if (active && recognition === instance) restart(); }, 250);
+        restartTimer = setTimeout(() => { if (active && recognition === instance) restart(); }, LISTEN_RESTART_MS);
       }
     };
     return instance;
