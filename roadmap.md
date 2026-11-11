@@ -1,5 +1,6 @@
 # Roadmap
 
+- [ ] Retirar controles faciais antigos e usar somente o rig original da Jade, alinhando mandíbula e gestos dos braços com a fala.
 - [x] Reduzir a luz excessiva sobre Jade, destacando rosto e cores sem alterar o palco; aparência conferida no tamanho atual e sem erros.
 - [x] Retomar a Jade aprovada: palco e voz preservados, mandíbula sem duplicação e pulsos com orientação original; 22 testes passaram e apresentação com áudio real e telas ampla/estreita conferidas. Audio2Face não conectado.
 
