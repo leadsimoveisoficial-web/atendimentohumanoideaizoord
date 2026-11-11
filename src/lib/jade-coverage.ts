@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 /** Fitted fabric extensions reuse the dress texture and body weights. */
-export function createJadeCoverage(body: THREE.SkinnedMesh, dress: THREE.SkinnedMesh) {
+export function createJadeCoverage(body: THREE.SkinnedMesh, dress: THREE.SkinnedMesh, underdressColor?: string) {
   const geometry = body.geometry.clone();
   const positions = geometry.getAttribute("position");
   const source = geometry.index;
@@ -47,6 +47,14 @@ export function createJadeCoverage(body: THREE.SkinnedMesh, dress: THREE.Skinned
     material.normalMap = null;
     material.bumpMap = null;
     material.displacementMap = null;
+    if (underdressColor) {
+      material.color.set(underdressColor);
+      material.map = null;
+      material.emissiveMap = null;
+      material.emissiveIntensity = 0;
+      material.roughness = 0.9;
+      material.metalness = 0;
+    }
   }
   material.transparent = false;
   material.opacity = 1;

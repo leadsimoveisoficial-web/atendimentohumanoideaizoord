@@ -118,7 +118,8 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
     const garment = bindJadeClothing(original, body);
     original.visible = false;
     body.parent.add(garment);
-    const extension = createJadeCoverage(body, garment);
+    const underdressColor = getComputedStyle(document.documentElement).getPropertyValue("--stage-space").trim();
+    const extension = createJadeCoverage(body, garment, underdressColor);
     body.parent.add(extension);
     return () => {
       extension.removeFromParent(); extension.geometry.dispose(); extension.material.dispose();
