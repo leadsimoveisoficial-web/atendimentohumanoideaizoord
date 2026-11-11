@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Reduzir a luz excessiva sobre Jade, destacando rosto e cores sem alterar o palco.
-- [ ] Retomar a Jade aprovada: preservar palco e voz, ajustar mandíbula sem duplicação e manter orientação original dos pulsos; conferir fala real e telas ampla/estreita.
+- [x] Reduzir a luz excessiva sobre Jade, destacando rosto e cores sem alterar o palco; aparência conferida no tamanho atual e sem erros.
+- [x] Retomar a Jade aprovada: palco e voz preservados, mandíbula sem duplicação e pulsos com orientação original; 22 testes passaram e apresentação com áudio real e telas ampla/estreita conferidas. Audio2Face não conectado.
 
 - [x] Aplicar câmera cinematográfica do arquivo enviado: cintura para cima, rosto centralizado, deslocamento discreto, zoom suave e retorno após demonstrações; avatar e áudio preservados. Três testes passaram; aproximação/corpo inteiro/retorno e celular conferidos em capturas. Fluidez em GPU física não medida; captura automática em tela alta excedeu o tempo disponível.
 
