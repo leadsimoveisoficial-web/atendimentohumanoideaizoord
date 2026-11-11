@@ -55,6 +55,9 @@ export function bindJadeClothing(cloth: THREE.Mesh, body: THREE.SkinnedMesh) {
     material.opacity = 1;
     material.alphaTest = 0;
     material.side = THREE.DoubleSide;
+    material.polygonOffset = true;
+    material.polygonOffsetFactor = -6;
+    material.polygonOffsetUnits = -6;
     if (material instanceof THREE.MeshStandardMaterial) material.alphaMap = null;
     return material;
   };
