@@ -6,6 +6,7 @@ import { isCustomerBargeIn, isEchoOf, ECHO_TAIL_MS, recognitionLang, ZOORD_LANGU
 import { stopFreeSpeech } from "@/lib/free-speech";
 import { speakZoord } from "@/lib/zoord-voice";
 import { takeSentences } from "@/lib/speech-chunks";
+import { conversationHistory } from "@/lib/dialogue-history";
 import { categoryScript, guessCategory } from "@/lib/menu-script";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Mic, MicOff, PhoneOff, Volume2 } from "lucide-react";
@@ -199,7 +200,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       const res = await fetch("/api/zoord-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history: freeHistory.current.slice(-24), language: lang, guest: guestRef.current, image: captureFrame() }),
+        body: JSON.stringify({ message: text, history: conversationHistory(freeHistory.current), language: lang, guest: guestRef.current, image: captureFrame() }),
         signal: ac.signal,
       });
       if (!res.ok || !res.body) throw new Error("Não consegui responder agora. Tente novamente.");
@@ -211,13 +212,18 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       let answer = "";
       let spokeFirst = false;
       let pending = "";
+      const previousHistory = freeHistory.current;
+      let delivered = "";
       let queue: Promise<unknown> = Promise.resolve();
       const enqueue = (sentence: string) => {
-        queue = queue.then(() => {
+        queue = queue.then(async () => {
           ac.signal.throwIfAborted();
           setPhase("speaking");
-          speakingText.current = answer;
-          return speakZoord(sentence, { lang, signal: ac.signal });
+          speakingText.current = sentence;
+          // Retain only speech actually started, including a turn interrupted by the customer.
+          delivered = `${delivered} ${sentence}`.trim();
+          freeHistory.current = conversationHistory([...previousHistory, { role: "user", content: text }, { role: "assistant", content: delivered }]);
+          await speakZoord(sentence, { lang, signal: ac.signal });
         });
         queue.catch(() => undefined);
       };
@@ -235,8 +241,6 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       ac.signal.throwIfAborted();
       if (pending.trim()) enqueue(pending.trim());
       if (!answer.trim()) throw new Error("Não consegui responder agora. Tente novamente.");
-      speakingText.current = answer;
-      freeHistory.current = [...freeHistory.current, { role: "user" as const, content: text }, { role: "assistant" as const, content: answer.trim() }].slice(-24);
       await queue;
     } catch (e) {
       if (!ac.signal.aborted) setFreeError((e as Error).message || "Não consegui responder agora.");
