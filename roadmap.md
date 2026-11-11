@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Troca para Jade cancelada pelo usuário; restaurar versão anterior pelo histórico.
+
 - [x] Aplicar câmera cinematográfica do arquivo enviado: cintura para cima, rosto centralizado, deslocamento discreto, zoom suave e retorno após demonstrações; avatar e áudio preservados. Três testes passaram; aproximação/corpo inteiro/retorno e celular conferidos em capturas. Fluidez em GPU física não medida; captura automática em tela alta excedeu o tempo disponível.
 
 - [x] Corrigir “painel restrito” no site: versão atual publicada; mesma conta antes bloqueada abriu /ti, salvou/releu/excluiu tarefa no site publicado; segurança continuou bloqueada.

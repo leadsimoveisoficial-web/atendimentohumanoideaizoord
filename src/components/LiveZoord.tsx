@@ -317,7 +317,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
       .catch(() => { if (!ac.signal.aborted) setFreeError("Não consegui falar agora. A música continua disponível."); })
       .finally(() => { if (freeAbort.current === ac) { freeAbort.current = null; setFreeActive(false); setPhase("idle"); } });
   }
-  const WELCOME = { pt: "Seja bem-vindo ao Dakkai Sushi! Toque em Falar com o Zoord quando quiser conversar.", en: "Welcome to Dakkai Sushi! Tap Talk to Zoord whenever you like.", es: "¡Bienvenidos a Dakkai Sushi! Toque Hablar con Zoord cuando quiera." } as const;
+  const WELCOME = { pt: "Seja bem-vindo ao Dakkai Sushi! Toque em Falar com a Jade quando quiser conversar.", en: "Welcome to Dakkai Sushi! Tap Talk to Jade whenever you like.", es: "¡Bienvenidos a Dakkai Sushi! Toque Hablar con Jade cuando quiera." } as const;
   welcomeRef.current = () => sayText(WELCOME[languageRef.current]);
 
   useImperativeHandle(ref, () => ({
@@ -463,8 +463,8 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
           >
             <Mic />
             {freeModeRef.current
-              ? freeConversationOn.current ? freeListening ? "Ouvindo… (encerrar)" : phase === "thinking" ? "Pensando… (encerrar)" : "Falando… (encerrar)" : "Falar com o Zoord"
-              : stopping ? "Encerrando…" : "Falar com o Zoord"}
+              ? freeConversationOn.current ? freeListening ? "Ouvindo… (encerrar)" : phase === "thinking" ? "Pensando… (encerrar)" : "Falando… (encerrar)" : "Falar com a Jade"
+              : stopping ? "Encerrando…" : "Falar com a Jade"}
           </Button>
         ) : (
           <>
@@ -475,7 +475,7 @@ export const LiveZoord = forwardRef<LiveZoordCommands, { onPoint: (i: number | n
           </>
         )}
         <Button variant="ghost" onClick={toggleCam} disabled={camPending} className={`stage-chip ${cam ? "stage-chip-active" : ""}`}>{cam ? <CameraOff /> : <Camera />}{camPending ? "Abrindo câmera…" : cam ? "Câmera ligada" : "Câmera"}</Button>
-        <div role="radiogroup" aria-label="Idioma do Zoord" className="stage-chip flex items-center gap-1 px-1">
+        <div role="radiogroup" aria-label="Idioma da Jade" className="stage-chip flex items-center gap-1 px-1">
           {ZOORD_LANGUAGES.map((l) => (
             <button
               key={l.id}

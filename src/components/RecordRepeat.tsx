@@ -61,7 +61,7 @@ export function RecordRepeat() {
     try {
       await el.play();
     } catch {
-      setError("Não consegui tocar o áudio. Toque em Zoord repete para tentar novamente.");
+      setError("Não consegui tocar o áudio. Toque em Jade repete para tentar novamente.");
       finish();
     }
   };
@@ -74,7 +74,7 @@ export function RecordRepeat() {
         <Button variant="ghost" className="stage-chip" onClick={record} disabled={state === "playing"}><Mic />Gravar minha voz</Button>
       )}
       {(state === "ready" || state === "playing") && (
-        <Button variant="ghost" className="stage-chip" onClick={play} disabled={state === "playing"}><Play />Zoord repete</Button>
+        <Button variant="ghost" className="stage-chip" onClick={play} disabled={state === "playing"}><Play />Jade repete</Button>
       )}
       {error && <span className="stage-chip" role="alert">{error}</span>}
     </>
