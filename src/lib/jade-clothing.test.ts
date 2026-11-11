@@ -33,4 +33,19 @@ describe("Jade garment skinning", () => {
     expect(garment.geometry).not.toBe(g);
     expect(garment.skeleton).toBe(body.skeleton);
   });
+  it("uses the nearest body vertices rather than their source order", () => {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position",new THREE.Float32BufferAttribute([0.4,1,0, 0.3,1,0, 0.2,1,0, 0.1,1,0],3));
+    geometry.setAttribute("skinIndex",new THREE.Uint16BufferAttribute([0,0,0,0, 1,0,0,0, 2,0,0,0, 3,0,0,0],4));
+    geometry.setAttribute("skinWeight",new THREE.Float32BufferAttribute([1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],4));
+    const body = new THREE.SkinnedMesh(geometry);
+    body.bind(new THREE.Skeleton(Array.from({length:4},()=>new THREE.Bone())));
+    const clothGeometry = new THREE.BufferGeometry();
+    clothGeometry.setAttribute("position",new THREE.Float32BufferAttribute([0,1,0],3));
+    const garment = bindJadeClothing(new THREE.Mesh(clothGeometry),body);
+    const indices = garment.geometry.getAttribute("skinIndex");
+    const weights = garment.geometry.getAttribute("skinWeight");
+    expect([indices.getX(0),indices.getY(0),indices.getZ(0)]).toEqual([3,2,1]);
+    expect(weights.getX(0)+weights.getY(0)+weights.getZ(0)+weights.getW(0)).toBeCloseTo(1);
+  });
 });

@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Corrigir demora da roupa: transferência reduzida de 4663ms para 572ms no navegador de teste; vestido/forro montados antes do primeiro quadro. Dez testes passaram, cardápio/gesto conferidos sem erros; tempo em aparelho físico não medido.
+
 - [x] Melhorar continuidade em conversas longas e interrupções, simplificar o tom e preservar voz/aparência; 16 testes passaram, duas respostas reais preservaram nome/escolhas e retornaram à escuta sem erros. Microfone físico e timbre não verificados.
 
 - [x] Consolidar identidade Jade em conversas e apresentações e suavizar braços com movimentos menores e assimétricos, sem conflitos com gestos; 11 testes passaram, resposta real confirmou Jade e palco/cardápio sem erros. Naturalidade durante fala em aparelho físico não verificada.
