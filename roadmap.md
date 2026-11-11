@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Corrigir aparência rasgada do vestido após ligação ao corpo, preservando cobertura e movimentos.
-- [ ] Ligar o vestido original ao esqueleto da Jade para acompanhar a apresentação, preservando o forro opaco.
+- [x] Remover transparência e recortes do material do vestido, preservando cobertura e movimentos; três testes passaram e cobertura conferida ao apontar. Acabamento em aparelho físico não verificado.
+- [x] Ligar vestido original ao esqueleto por transferência dos pesos do corpo, preservando forro opaco; rotação testada e apresentação conferida com áudio real sem erros.
 - [x] Dakkai Sushi preservado no palco, nome e cardápio; identidade Jade nos ícones do site e nome do projeto. Conferido visualmente sem erros.
 - [x] Nome do projeto e marca Jade Humanoide Atendente atualizados, com logo e ícones; cena conferida sem erros. Endereço do site permanece igual.
 - [x] Reinício da escuta reduzido de 250ms para 80ms e perguntas completas liberadas para voz sem esperar o próximo token; oito testes passaram. Tempo total em microfone físico depende do navegador e da conexão, não medido.
