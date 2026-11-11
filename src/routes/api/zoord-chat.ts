@@ -50,7 +50,10 @@ export const Route = createFileRoute("/api/zoord-chat")({
 
         try {
           const stream = await openaiChatStream({
-            system: SYSTEM + menuText(requestsMenuPrice(message)) + guestDirective(body.guest) + languageDirective(language),
+            system: SYSTEM + menuText(requestsMenuPrice(message)) + guestDirective(body.guest) + languageDirective(language)
+              + (wantsDetail(message)
+                ? "\nRESPOSTA ATUAL: desenvolva a explicação solicitada, mantendo os fatos verificados e o contexto do cliente."
+                : "\nRESPOSTA ATUAL: priorize rapidez e naturalidade. Responda em no máximo duas frases breves, sem introdução cerimonial ou curiosidades históricas não pedidas. Use a escolha do cliente diretamente; não repita perguntas já respondidas."),
             messages: [...history, { role: "user", content: message }],
             signal: request.signal,
             maxTokens: wantsDetail(message) ? 700 : 160,
