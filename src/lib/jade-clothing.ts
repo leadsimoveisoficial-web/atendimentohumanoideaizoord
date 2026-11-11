@@ -11,8 +11,8 @@ export function bindJadeClothing(cloth: THREE.Mesh, body: THREE.SkinnedMesh) {
   geometry.computeVertexNormals();
   const normals = geometry.getAttribute("normal");
   for (let i = 0; i < positions.count; i++) {
-    positions.setXYZ(i, positions.getX(i) + normals.getX(i) * 0.06,
-      positions.getY(i) + normals.getY(i) * 0.06, positions.getZ(i) + normals.getZ(i) * 0.06);
+    positions.setXYZ(i, positions.getX(i) - normals.getX(i) * 0.06,
+      positions.getY(i) - normals.getY(i) * 0.06, positions.getZ(i) - normals.getZ(i) * 0.06);
   }
   positions.needsUpdate = true;
   const skin = body.geometry.getAttribute("position");
