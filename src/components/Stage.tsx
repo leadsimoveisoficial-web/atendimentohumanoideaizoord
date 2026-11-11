@@ -19,6 +19,7 @@ import zoord from "@/assets/atendente-jade.glb.asset.json";
 import { prepareJade, limbLength, jadeJawOpening, jadeJaws, applyJadeJaw } from "@/lib/jade-rig";
 
 import dakkaiLogo from "@/assets/dakkai-logo.webp";
+import jadeLogo from "@/assets/jade-logo.jpg";
 import { LiveZoord, type LiveZoordCommands } from "./LiveZoord";
 import { voiceLevel } from "@/lib/voice-level";
 import { SecurityBadge } from "./SecurityBadge";
@@ -441,7 +442,7 @@ function Robot({ anim, point, listening, waveId, onWaveEnd }: { anim: string; po
 }
 
 function Logo() {
-  const tex = useTexture(dakkaiLogo);
+  const tex = useTexture(jadeLogo);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
   const ref = useRef<THREE.Mesh>(null);
@@ -458,7 +459,7 @@ function Logo() {
         <meshBasicMaterial color={stageColors.red} toneMapped={false} transparent opacity={0.8} />
       </mesh>
       <mesh>
-        <planeGeometry args={[6.4, 4.67]} />
+        <planeGeometry args={[4.67, 4.67]} />
         <meshBasicMaterial map={tex} transparent toneMapped={false} depthWrite={false} />
       </mesh>
     </group>
@@ -701,7 +702,7 @@ export function Stage() {
       <div className="stage-overlay pointer-events-none fixed inset-0 flex flex-col justify-between p-4 md:p-6">
         <header className="stage-header flex items-center justify-between gap-3">
           <span className="flex items-center gap-3">
-            <span className="font-display text-sm text-foreground">DAKKAI <span className="text-dakkai">×</span> Atendente Jade</span>
+            <span className="font-display text-sm text-foreground">Jade Humanoide Atendente</span>
             <SecurityBadge />
           </span>
           <div className="pointer-events-auto flex items-center gap-3">
