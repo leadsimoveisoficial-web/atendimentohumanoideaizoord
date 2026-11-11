@@ -7,14 +7,6 @@ export function bindJadeClothing(cloth: THREE.Mesh, body: THREE.SkinnedMesh) {
   const geometry = cloth.geometry.clone();
   geometry.applyMatrix4(body.matrixWorld.clone().invert().multiply(cloth.matrixWorld));
   const positions = geometry.getAttribute("position");
-  // Keep the outer fabric clear of the opaque lining and skin during torso bends.
-  geometry.computeVertexNormals();
-  const normals = geometry.getAttribute("normal");
-  for (let i = 0; i < positions.count; i++) {
-    positions.setXYZ(i, positions.getX(i) - normals.getX(i) * 0.06,
-      positions.getY(i) - normals.getY(i) * 0.06, positions.getZ(i) - normals.getZ(i) * 0.06);
-  }
-  positions.needsUpdate = true;
   const skin = body.geometry.getAttribute("position");
   const originalIndices = body.geometry.getAttribute("skinIndex");
   const originalWeights = body.geometry.getAttribute("skinWeight");
