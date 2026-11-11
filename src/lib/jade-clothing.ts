@@ -36,7 +36,7 @@ export function bindJadeClothing(cloth: THREE.Mesh, body: THREE.SkinnedMesh) {
       const j = neckVertex.j;
       positions.setXYZ(i,
         THREE.MathUtils.lerp(x, skin.getX(j), 0.85),
-        THREE.MathUtils.lerp(y, skin.getY(j), 0.85),
+        y,
         THREE.MathUtils.lerp(z, skin.getZ(j), 0.85));
     }
     const influence = new Map<number, number>();

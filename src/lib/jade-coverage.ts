@@ -9,7 +9,7 @@ export function createJadeCoverage(body: THREE.SkinnedMesh, dress: THREE.Skinned
   const count = source?.count ?? positions.count;
   for (let i = 0; i < count; i += 3) {
     const triangle = [0, 1, 2].map(j => source ? source.getX(i + j) : i + j);
-    if (triangle.every(j => positions.getY(j) >= 9.8 && positions.getY(j) <= 16.6 && Math.abs(positions.getX(j)) <= (positions.getY(j) > 16 ? 0.7 : 1.85))) indices.push(...triangle);
+    if (triangle.every(j => positions.getY(j) >= 9.8 && positions.getY(j) <= 16 && Math.abs(positions.getX(j)) <= 1.85)) indices.push(...triangle);
   }
   geometry.setIndex(indices);
   geometry.clearGroups();
