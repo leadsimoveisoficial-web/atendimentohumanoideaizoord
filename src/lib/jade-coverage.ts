@@ -13,6 +13,8 @@ export function createJadeCoverage(body: THREE.SkinnedMesh, dress: THREE.Skinned
   }
   geometry.setIndex(indices);
   geometry.clearGroups();
+  geometry.deleteAttribute("tangent");
+  geometry.computeVertexNormals();
   const fabricPositions = dress.geometry.getAttribute("position");
   const fabricUV = dress.geometry.getAttribute("uv");
   if (fabricUV) {
@@ -40,6 +42,12 @@ export function createJadeCoverage(body: THREE.SkinnedMesh, dress: THREE.Skinned
   }
   const sourceMaterial = Array.isArray(dress.material) ? dress.material[0] : dress.material;
   const material = sourceMaterial?.clone() ?? new THREE.MeshStandardMaterial();
+  if (material instanceof THREE.MeshStandardMaterial) {
+    // Dress tangent-space detail cannot be reused on the body's different topology.
+    material.normalMap = null;
+    material.bumpMap = null;
+    material.displacementMap = null;
+  }
   material.transparent = false;
   material.opacity = 1;
   material.alphaTest = 0;
